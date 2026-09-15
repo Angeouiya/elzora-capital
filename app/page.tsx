@@ -224,7 +224,7 @@ export default function HomePage() {
             type="button"
             aria-label={menuOpen ? "Fermer le menu" : "Ouvrir le menu"}
             onClick={() => setMenuOpen((v) => !v)}
-            className="md:hidden h-10 w-10 rounded-lg flex items-center justify-center text-[#101010] hover:bg-[#F5F5F3] transition-colors"
+            className="md:hidden h-11 w-11 rounded-lg flex items-center justify-center text-[#101010] hover:bg-[#F5F5F3] transition-colors"
           >
             {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -351,7 +351,7 @@ export default function HomePage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Rechercher une entreprise, un projet, une ville…"
-                className="w-full h-11 pl-10 pr-4 rounded-lg bg-white border border-[#101010]/10 text-sm text-[#101010] placeholder:text-[#101010]/40 outline-none transition-all focus:ring-2 focus:ring-[#B6FF00]/50 focus:border-[#B6FF00]"
+                className="w-full h-12 md:h-11 pl-10 pr-4 rounded-xl bg-white border border-[#101010]/10 text-base md:text-sm text-[#101010] placeholder:text-[#101010]/40 outline-none transition-all focus:ring-2 focus:ring-[#B6FF00]/50 focus:border-[#B6FF00]"
               />
             </div>
             <div className="flex items-center gap-2 overflow-x-auto pb-0.5 -mx-1 px-1" style={{ scrollbarWidth: "none" }}>
@@ -367,7 +367,7 @@ export default function HomePage() {
                       key={s}
                       type="button"
                       onClick={() => setSector(s)}
-                      className={`shrink-0 h-8 px-4 rounded-full text-xs font-medium transition-colors ${
+                      className={`shrink-0 h-11 md:h-8 px-4 rounded-full text-xs font-medium transition-colors ${
                         sector === s
                           ? "bg-[#101010] text-[#F5F5F3] font-semibold"
                           : "bg-white text-[#101010]/60 border border-[#101010]/10 hover:text-[#101010] hover:bg-[#F5F5F3]"
@@ -531,7 +531,7 @@ export default function HomePage() {
                         }
                         title={saved ? "Retirer des favoris" : "Enregistrer"}
                         onClick={() => toggleFavorite(offer.id)}
-                        className={`h-10 w-10 rounded-lg flex items-center justify-center transition-colors ${
+                        className={`h-11 w-11 rounded-lg flex items-center justify-center transition-colors ${
                           saved
                             ? "bg-[#EFFBDD] text-[#507300]"
                             : "bg-[#F5F5F3] text-[#101010]/60 hover:text-[#101010]"

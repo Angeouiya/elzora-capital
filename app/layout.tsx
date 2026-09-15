@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -19,11 +19,18 @@ export const metadata: Metadata = {
   description: "Financement direct de projets d'entreprises rigoureusement analysés en Afrique de l'Ouest.",
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#f9f9f7",
+};
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="fr" className="h-full">
       <body
-        className={`${hankenGrotesk.variable} ${jetbrainsMono.variable} bg-surface text-on-surface font-body-md text-body-md antialiased min-h-screen flex flex-col`}
+        className={`${hankenGrotesk.variable} ${jetbrainsMono.variable} min-h-screen w-full bg-surface text-on-surface font-body-md text-body-md antialiased flex flex-col`}
       >
         {children}
       </body>

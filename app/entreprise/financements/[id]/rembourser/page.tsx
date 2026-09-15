@@ -353,7 +353,7 @@ export default function RembourserPage() {
 
         {/* ===== Échéancier ===== */}
         <Card padding="none" id="echeancier">
-          <div className="p-6 pb-0">
+          <div className="p-4 sm:p-6 pb-0">
             <CardHeader className="flex flex-wrap items-center justify-between gap-2 mb-0">
               <CardTitle>Échéancier complet</CardTitle>
               <Badge variant="default">
@@ -368,7 +368,31 @@ export default function RembourserPage() {
               dette).
             </p>
           ) : (
-            <div className="overflow-x-auto mt-4">
+            <>
+              <div className="md:hidden mt-4 px-4 space-y-3">
+              {repayments.map((r, i) => {
+                const effectiveStatus = verifyingIds.has(r.id) ? "VERIFICATION" : r.status;
+                const canPay = (r.status === "DUE" || r.status === "LATE" || r.status === "PARTIAL") && !verifyingIds.has(r.id);
+                return (
+                  <article key={r.id} className="rounded-xl border border-[#101010]/8 bg-white p-4 space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div><p className="text-sm font-semibold text-[#101010]">Échéance #{i + 1}</p><p className="text-xs text-[#101010]/55">{formatDate(r.scheduleDate)}</p></div>
+                      <StatusBadge status={effectiveStatus} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                      <div><p className="text-xs text-[#101010]/50">Total</p><p className="font-semibold">{formatFCFA(totalOf(r))}</p></div>
+                      <div><p className="text-xs text-[#101010]/50">Reste</p><p className={r.status === "LATE" ? "font-semibold text-[#C62828]" : "font-semibold text-[#101010]"}>{formatFCFA(remainingOf(r))}</p></div>
+                      <div><p className="text-xs text-[#101010]/50">Capital</p><p>{r.capitalAmount ? formatFCFA(r.capitalAmount) : "—"}</p></div>
+                      <div><p className="text-xs text-[#101010]/50">Intérêts</p><p>{formatFCFA(r.interestAmount)}</p></div>
+                    </div>
+                    {canPay && <Button className="w-full" size="md" icon={<Banknote className="h-4 w-4" />} onClick={() => { setCopied(false); setPayModalFor(r); }}>Régler l’échéance</Button>}
+                    {r.status === "PAID" && r.reference && <p className="text-xs font-mono text-[#101010]/45">Référence : {r.reference}</p>}
+                  </article>
+                );
+              })}
+              <div className="rounded-xl bg-[#F5F5F3] p-4 text-sm"><span className="text-[#101010]/55">Total restant</span><p className="mt-1 text-lg font-bold">{formatFCFA(totals.remaining)}</p></div>
+            </div>
+            <div className="hidden md:block overflow-x-auto overscroll-x-contain mt-4">
               <table className="w-full text-sm min-w-[900px]">
                 <thead>
                   <tr className="bg-[#F5F5F3] border-y border-[#101010]/5">
@@ -477,9 +501,10 @@ export default function RembourserPage() {
                 </tfoot>
               </table>
             </div>
+            </>
           )}
 
-          <div className="px-6 py-5">
+          <div className="px-4 sm:px-6 py-5">
             <p className="text-xs font-bold uppercase tracking-wide text-[#101010]/50 mb-3">
               Légende des statuts
             </p>

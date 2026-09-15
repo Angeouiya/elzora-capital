@@ -124,9 +124,13 @@
   html {
     -webkit-text-size-adjust: 100%; /* évite le zoom auto iOS sur les inputs */
     scroll-behavior: smooth;
+    overflow-x: clip;
   }
 
   body {
+    min-width: 320px;
+    overflow-x: clip;
+    overflow-wrap: anywhere;
     overscroll-behavior-y: none;
     -webkit-tap-highlight-color: transparent;
     font-family: "Hanken Grotesk", sans-serif;
@@ -157,8 +161,21 @@
     color: #101010;
   }
 
+  button, [role="button"], a, input, select, textarea {
+    -webkit-tap-highlight-color: transparent;
+  }
+
   ::-webkit-scrollbar {
     display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }
 

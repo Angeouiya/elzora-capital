@@ -25,7 +25,7 @@ export function Modal({ open, onClose, title, children, className = "" }: ModalP
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       {/* Overlay */}
       <div
         className="absolute inset-0 bg-[#101010]/50 backdrop-blur-sm"
@@ -33,20 +33,20 @@ export function Modal({ open, onClose, title, children, className = "" }: ModalP
       />
       {/* Dialog */}
       <div
-        className={`relative bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[85vh] overflow-y-auto ${className}`}
+        className={`relative bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-lg max-h-[min(90dvh,48rem)] overflow-y-auto ${className}`}
       >
         {title && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-[#101010]/10">
+          <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[#101010]/10">
             <h2 className="text-lg font-semibold text-[#101010]">{title}</h2>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-[#101010]/50 hover:bg-[#F5F5F3] transition-colors"
+              className="h-10 w-10 inline-flex items-center justify-center rounded-lg text-[#101010]/50 hover:bg-[#F5F5F3] transition-colors"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
         )}
-        <div className="p-6">{children}</div>
+        <div className="p-4 sm:p-6">{children}</div>
       </div>
     </div>
   );

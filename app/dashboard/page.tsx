@@ -168,13 +168,13 @@ export default function DashboardPage() {
           <div className="hidden md:flex items-center gap-2">
             <Link
               href="/notifications"
-              className="h-10 w-10 rounded-lg flex items-center justify-center text-[#101010]/60 hover:bg-[#F5F5F3] transition-colors"
+              className="h-11 w-11 rounded-lg flex items-center justify-center text-[#101010]/60 hover:bg-[#F5F5F3] transition-colors"
             >
               <Bell className="h-4 w-4" />
             </Link>
             <Link
               href="/profil"
-              className="h-10 w-10 rounded-full bg-[#B6FF00] flex items-center justify-center text-[#101010] font-semibold text-sm"
+              className="h-11 w-11 rounded-full bg-[#B6FF00] flex items-center justify-center text-[#101010] font-semibold text-sm"
             >
               ME
             </Link>
@@ -183,7 +183,7 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
-            className="md:hidden h-10 w-10 rounded-lg flex items-center justify-center text-[#101010] hover:bg-[#F5F5F3] transition-colors"
+            className="md:hidden h-11 w-11 rounded-lg flex items-center justify-center text-[#101010] hover:bg-[#F5F5F3] transition-colors"
           >
             {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>

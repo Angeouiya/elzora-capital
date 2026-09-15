@@ -22,14 +22,14 @@ export function KPI({ value, label, trend, trendValue, icon, className = "" }: K
   const TrendIcon = trend ? trendConfig[trend].icon : null;
 
   return (
-    <div className={`bg-white rounded-xl border border-[#101010]/5 p-6 ${className}`}>
+    <div className={`bg-white rounded-xl border border-[#101010]/5 p-4 sm:p-5 lg:p-6 ${className}`}>
       <div className="flex items-start justify-between">
         <div className="flex flex-col gap-1">
           <span className="text-sm text-[#101010]/60">{label}</span>
-          <span className="text-2xl font-bold text-[#101010]">{value}</span>
+          <span className="text-xl sm:text-2xl font-bold tracking-tight text-[#101010]">{value}</span>
         </div>
         {icon && (
-          <div className="p-2.5 rounded-lg bg-[#EFFBDD]">{icon}</div>
+          <div className="shrink-0 p-2.5 rounded-lg bg-[#EFFBDD]">{icon}</div>
         )}
       </div>
       {trend && TrendIcon && (

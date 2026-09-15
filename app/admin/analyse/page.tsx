@@ -109,7 +109,7 @@ export default function AdminAnalysePage() {
   const [actionModal, setActionModal] = useState<string | null>(null);
 
   return (
-    <div className="flex h-screen bg-[#F5F5F3]">
+    <div className="flex flex-col lg:flex-row min-h-screen bg-[#F5F5F3]">
       <Sidebar
         items={adminMenu}
         header={
@@ -132,8 +132,8 @@ export default function AdminAnalysePage() {
         }
       />
 
-      <main className="flex-1 overflow-y-auto">
-        <div className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-[#101010]/5 px-8 py-4 flex items-center justify-between">
+      <main className="min-w-0 flex-1 overflow-y-auto">
+        <div className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-[#101010]/5 px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h1 className="text-xl font-bold text-[#101010]">Analyse des dossiers</h1>
             <p className="text-sm text-[#101010]/60">
@@ -146,7 +146,7 @@ export default function AdminAnalysePage() {
           </Badge>
         </div>
 
-        <div className="p-8 space-y-6">
+        <div className="p-4 sm:p-6 lg:p-8 space-y-6">
           {/* Circuit */}
           <Card>
             <CardHeader>

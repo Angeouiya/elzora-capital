@@ -73,7 +73,7 @@ const typeConfig: Record<string, string> = {
 
 export default function AdminFinancesPage() {
   return (
-    <div className="flex h-screen bg-[#F5F5F3]">
+    <div className="flex flex-col lg:flex-row min-h-screen bg-[#F5F5F3]">
       <Sidebar
         items={adminMenu}
         header={
@@ -96,15 +96,15 @@ export default function AdminFinancesPage() {
         }
       />
 
-      <main className="flex-1 overflow-y-auto">
-        <div className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-[#101010]/5 px-8 py-4">
+      <main className="min-w-0 flex-1 overflow-y-auto">
+        <div className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-[#101010]/5 px-4 sm:px-6 lg:px-8 py-4">
           <h1 className="text-xl font-bold text-[#101010]">Finances</h1>
           <p className="text-sm text-[#101010]/60">
             Où en suis-je ? Vue d&apos;ensemble des flux financiers
           </p>
         </div>
 
-        <div className="p-8 space-y-6">
+        <div className="p-4 sm:p-6 lg:p-8 space-y-6">
           {/* KPI */}
           <section>
             <h2 className="text-sm font-semibold text-[#101010]/60 uppercase tracking-wide mb-4">

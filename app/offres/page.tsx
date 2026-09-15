@@ -70,7 +70,7 @@ export default function OffresPage() {
   return (
     <>
       <header className="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
-        <div className="h-16 px-space-md flex items-center justify-between">
+        <div className="h-16 px-4 sm:px-space-md max-w-6xl mx-auto flex items-center justify-between gap-2">
           <Link href="/" className="flex items-center gap-space-sm">
             <NexoraLogo size={32} />
             <div className="flex flex-col">
@@ -79,8 +79,8 @@ export default function OffresPage() {
             </div>
           </Link>
           <div className="flex items-center gap-space-xs">
-            <Link href="/connexion" className="min-h-[44px] px-space-sm flex items-center justify-center font-label-sm text-label-sm text-on-surface font-medium hover:text-primary transition-colors">Connexion</Link>
-            <Link href="/inscription" className="min-h-[44px] px-space-md py-space-xs rounded-full bg-primary-container text-on-background font-label-sm text-label-sm font-semibold flex items-center justify-center hover:opacity-90 transition-opacity">Créer un compte</Link>
+            <Link href="/connexion" className="hidden sm:flex min-h-[44px] px-space-sm items-center justify-center font-label-sm text-label-sm text-on-surface font-medium hover:text-primary transition-colors">Connexion</Link>
+            <Link href="/inscription" className="min-h-[44px] px-3 sm:px-space-md py-space-xs rounded-full bg-primary-container text-on-background font-label-sm text-label-sm font-semibold flex items-center justify-center hover:opacity-90 transition-opacity"><span className="sm:hidden">Créer</span><span className="hidden sm:inline">Créer un compte</span></Link>
           </div>
         </div>
       </header>
@@ -100,7 +100,7 @@ export default function OffresPage() {
             <div className="relative flex items-center w-full">
               <Search className="absolute left-space-sm text-secondary w-[20px] h-[20px] pointer-events-none" strokeWidth={1.5} />
               <input
-                className="w-full h-11 pl-10 pr-space-md bg-surface-container-lowest text-on-surface font-body-md text-body-md rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-on-surface transition-all placeholder:text-secondary"
+                className="w-full h-12 md:h-11 pl-10 pr-space-md bg-surface-container-lowest text-on-surface font-body-md text-base md:text-body-md rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-container/60 transition-all placeholder:text-secondary"
                 placeholder="Rechercher une entreprise, un secteur..."
                 type="text"
                 value={search}
@@ -108,21 +108,21 @@ export default function OffresPage() {
               />
             </div>
             <div className="flex items-center gap-space-xs overflow-x-auto py-0.5 -mx-space-md px-space-md" style={{ scrollbarWidth: "none" }}>
-              <button className="shrink-0 flex items-center justify-center h-8 w-8 rounded-lg bg-surface-container-low text-on-surface hover:bg-surface-container transition-colors" type="button" aria-label="Filtres">
+              <button className="shrink-0 flex items-center justify-center h-11 w-11 md:h-8 md:w-8 rounded-lg bg-surface-container-low text-on-surface hover:bg-surface-container transition-colors" type="button" aria-label="Filtres">
                 <SlidersHorizontal className="w-[18px] h-[18px]" strokeWidth={1.5} />
               </button>
               {sectors.map((s) => (
                 <button
                   key={s}
                   onClick={() => setActiveSector(s)}
-                  className={`shrink-0 px-space-md h-8 rounded-full font-label-sm text-label-sm transition-colors ${activeSector === s ? "bg-on-surface text-surface-container-lowest font-semibold" : "bg-surface-container-lowest text-secondary font-medium hover:text-on-surface"}`}
+                  className={`shrink-0 px-space-md h-11 md:h-8 rounded-full font-label-sm text-label-sm transition-colors ${activeSector === s ? "bg-on-surface text-surface-container-lowest font-semibold" : "bg-surface-container-lowest text-secondary font-medium hover:text-on-surface"}`}
                   type="button"
                 >{s}</button>
               ))}
             </div>
           </section>
 
-          <section className="px-space-md flex flex-col gap-space-md animate-fade-in-up animate-fade-in-up-delay-2">
+          <section className="px-space-md max-w-6xl mx-auto w-full flex flex-col md:grid md:grid-cols-2 xl:grid-cols-3 gap-space-md animate-fade-in-up animate-fade-in-up-delay-2">
             {loading ? (
               <div className="py-space-xl flex flex-col items-center gap-space-sm">
                 <div className="w-8 h-8 border-2 border-secondary/30 border-t-primary rounded-full animate-spin" />
@@ -138,7 +138,7 @@ export default function OffresPage() {
                 return (
                   <article key={o.id} className="bg-surface-container-lowest rounded-xl p-space-md flex flex-col gap-space-sm shadow-sm hover-lift card-hover-glow">
                     <div className="flex flex-col gap-0.5">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-start justify-between gap-3">
                         <h2 className="font-headline-sm text-headline-sm font-bold text-on-surface">{o.project.company.name}</h2>
                         <span className="font-label-caps text-label-caps text-secondary uppercase">{o.project.sector}{o.project.city ? ` • ${o.project.city}` : ""}</span>
                       </div>

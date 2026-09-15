@@ -219,7 +219,7 @@ export default function ConnexionPage() {
                         ? "Masquer le mot de passe"
                         : "Afficher le mot de passe"
                     }
-                    className="text-[#101010]/40 hover:text-[#101010] transition-colors shrink-0"
+                    className="h-11 w-11 -mr-2 inline-flex items-center justify-center rounded-lg text-[#101010]/40 hover:bg-[#F5F5F3] hover:text-[#101010] transition-colors shrink-0"
                   >
                     {showPassword ? (
                       <EyeOff className="h-4.5 w-4.5" />

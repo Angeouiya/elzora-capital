@@ -18,12 +18,14 @@ export function Tabs({ tabs, defaultTab, className = "" }: TabsProps) {
 
   return (
     <div className={className}>
-      <div className="flex gap-1 border-b border-[#101010]/10 pb-px overflow-x-auto">
+      <div role="tablist" className="flex gap-1 border-b border-[#101010]/10 pb-px overflow-x-auto overscroll-x-contain [scrollbar-width:none]">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActive(tab.id)}
-            className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-all border-b-2 -mb-px ${
+            role="tab"
+            aria-selected={active === tab.id}
+            className={`min-h-11 px-3 sm:px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-all border-b-2 -mb-px ${
               active === tab.id
                 ? "border-[#B6FF00] text-[#101010]"
                 : "border-transparent text-[#101010]/50 hover:text-[#101010]/80"

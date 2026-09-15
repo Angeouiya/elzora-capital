@@ -9,8 +9,8 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
 const paddingClasses = {
   none: "",
   sm: "p-4",
-  md: "p-6",
-  lg: "p-8",
+  md: "p-4 sm:p-6",
+  lg: "p-5 sm:p-8",
 };
 
 export function Card({
@@ -35,9 +35,9 @@ export function CardHeader({ children, className = "" }: { children: ReactNode; 
 }
 
 export function CardTitle({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <h3 className={`text-lg font-semibold text-[#101010] ${className}`}>{children}</h3>;
+  return <h3 className={`text-base sm:text-lg font-semibold leading-snug text-[#101010] ${className}`}>{children}</h3>;
 }
 
 export function CardDescription({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <p className={`text-sm text-[#101010]/60 mt-1 ${className}`}>{children}</p>;
+  return <p className={`text-sm leading-relaxed text-[#101010]/60 mt-1 ${className}`}>{children}</p>;
 }

@@ -86,7 +86,7 @@ export default function AdminUtilisateursPage() {
   });
 
   return (
-    <div className="flex h-screen bg-[#F5F5F3]">
+    <div className="flex flex-col lg:flex-row min-h-screen bg-[#F5F5F3]">
       <Sidebar
         items={adminMenu}
         header={
@@ -109,18 +109,18 @@ export default function AdminUtilisateursPage() {
         }
       />
 
-      <main className="flex-1 overflow-y-auto">
-        <div className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-[#101010]/5 px-8 py-4">
+      <main className="min-w-0 flex-1 overflow-y-auto">
+        <div className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-[#101010]/5 px-4 sm:px-6 lg:px-8 py-4">
           <h1 className="text-xl font-bold text-[#101010]">Gestion des utilisateurs</h1>
           <p className="text-sm text-[#101010]/60">
             Où en suis-je ? {filtered.length} utilisateur{filtered.length > 1 ? "s" : ""} affiché{filtered.length > 1 ? "s" : ""}
           </p>
         </div>
 
-        <div className="p-8 space-y-6">
+        <div className="p-4 sm:p-6 lg:p-8 space-y-6">
           {/* Filters */}
           <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-            <div className="flex gap-2">
+            <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
               {filters.map((f) => (
                 <Button
                   key={f.value}
