@@ -159,8 +159,8 @@ export default function OffresPage() {
                         <span className="text-secondary font-medium">Collecté : <strong className="font-data-mono font-semibold text-on-surface">{new Intl.NumberFormat("fr-FR").format(o.collectedAmount)}</strong> / {new Intl.NumberFormat("fr-FR").format(o.targetAmount)} FCFA</span>
                         <span className="font-data-mono font-bold text-on-surface">{percent}%</span>
                       </div>
-                      <div className="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
-                        <div className="h-full bg-on-surface rounded-full transition-all duration-500 animate-progress-fill" style={{ width: `${percent}%` }}></div>
+                      <div className="w-full h-2.5 bg-[#101010]/8 ring-1 ring-inset ring-[#101010]/5 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-[#9BD900] to-[#B6FF00] rounded-full shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] transition-all duration-700 ease-out animate-progress-fill" style={{ width: `${percent}%` }}></div>
                       </div>
                       <div className="flex items-center gap-space-xs text-secondary">
                         <Wallet className="w-[14px] h-[14px]" strokeWidth={1.5} />
@@ -168,7 +168,7 @@ export default function OffresPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-space-xs pt-1">
-                      <Link href={`/offres/${o.id}`} className="flex-1 h-11 bg-primary-container text-on-background rounded-lg flex items-center justify-center gap-1.5 font-label-sm text-label-sm font-semibold hover:opacity-90 transition-opacity">
+                      <Link href={`/offres/${o.id}`} className="flex-1 h-11 bg-[#B6FF00] text-[#101010] rounded-xl flex items-center justify-center gap-1.5 font-label-sm text-label-sm font-semibold shadow-[0_2px_12px_rgba(182,255,0,0.35)] hover:shadow-[0_4px_20px_rgba(182,255,0,0.45)] hover:brightness-105 active:brightness-95 transition-all">
                         <span>Voir l&apos;offre</span>
                         <ArrowUpRight className="w-[16px] h-[16px]" strokeWidth={2} />
                       </Link>

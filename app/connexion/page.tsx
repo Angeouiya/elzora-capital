@@ -167,10 +167,10 @@ export default function ConnexionPage() {
                   Adresse email
                 </label>
                 <div
-                  className={`flex items-center gap-2.5 bg-[#f9f9f7] rounded-lg px-4 border transition-colors ${
+                  className={`flex items-center gap-2.5 bg-white rounded-xl px-4 shadow-[0_1px_2px_rgba(16,16,16,0.03)] transition-all ${
                     error && !emailValid
-                      ? "border-[#C62828]"
-                      : "border-transparent focus-within:border-[#B6FF00]"
+                      ? "ring-2 ring-[#C62828]"
+                      : "ring-1 ring-[#101010]/10 focus-within:ring-2 focus-within:ring-[#B6FF00] focus-within:shadow-[0_0_0_4px_rgba(182,255,0,0.15)]"
                   }`}
                 >
                   <Mail className="h-4.5 w-4.5 text-[#101010]/40 shrink-0" />
@@ -181,7 +181,7 @@ export default function ConnexionPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="votre@email.com"
                     autoComplete="email"
-                    className="flex-1 h-12 bg-transparent text-sm text-[#101010] placeholder:text-[#101010]/35 outline-none"
+                    className="flex-1 h-12 bg-transparent text-base md:text-sm text-[#101010] placeholder:text-[#101010]/35 outline-none"
                   />
                 </div>
               </div>
@@ -195,10 +195,10 @@ export default function ConnexionPage() {
                   Mot de passe
                 </label>
                 <div
-                  className={`flex items-center gap-2.5 bg-[#f9f9f7] rounded-lg px-4 border transition-colors ${
+                  className={`flex items-center gap-2.5 bg-white rounded-xl px-4 shadow-[0_1px_2px_rgba(16,16,16,0.03)] transition-all ${
                     error && !passwordValid
-                      ? "border-[#C62828]"
-                      : "border-transparent focus-within:border-[#B6FF00]"
+                      ? "ring-2 ring-[#C62828]"
+                      : "ring-1 ring-[#101010]/10 focus-within:ring-2 focus-within:ring-[#B6FF00] focus-within:shadow-[0_0_0_4px_rgba(182,255,0,0.15)]"
                   }`}
                 >
                   <Lock className="h-4.5 w-4.5 text-[#101010]/40 shrink-0" />
@@ -209,7 +209,7 @@ export default function ConnexionPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
                     autoComplete="current-password"
-                    className="flex-1 h-12 bg-transparent text-sm text-[#101010] placeholder:text-[#101010]/35 outline-none"
+                    className="flex-1 h-12 bg-transparent text-base md:text-sm text-[#101010] placeholder:text-[#101010]/35 outline-none"
                   />
                   <button
                     type="button"

@@ -13,16 +13,19 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClasses: Record<Variant, string> = {
-  primary: "bg-[#B6FF00] text-[#101010] font-semibold hover:opacity-90",
-  secondary: "bg-[#F5F5F3] text-[#101010] font-medium ring-1 ring-[#101010]/10 hover:bg-[#EFFBDD]",
-  ghost: "bg-transparent text-[#101010] hover:bg-[#F5F5F3]",
-  destructive: "bg-[#C62828] text-white font-medium hover:opacity-90",
+  primary:
+    "bg-[#B6FF00] text-[#101010] font-semibold shadow-[0_2px_12px_rgba(182,255,0,0.35)] hover:shadow-[0_4px_20px_rgba(182,255,0,0.45)] hover:brightness-105 active:brightness-95",
+  secondary:
+    "bg-white text-[#101010] font-medium ring-1 ring-[#101010]/12 shadow-[0_1px_3px_rgba(16,16,16,0.05)] hover:ring-[#101010]/25 hover:bg-[#EFFBDD]/60 active:bg-[#EFFBDD]",
+  ghost: "bg-transparent text-[#101010] hover:bg-[#101010]/5 active:bg-[#101010]/10",
+  destructive:
+    "bg-[#C62828] text-white font-medium shadow-[0_2px_12px_rgba(198,40,40,0.3)] hover:shadow-[0_4px_18px_rgba(198,40,40,0.4)] hover:brightness-110 active:brightness-95",
 };
 
 const sizeClasses: Record<Size, string> = {
-  sm: "h-8 px-3 text-xs rounded-md gap-1.5",
-  md: "h-11 px-4 text-sm rounded-lg gap-2",
-  lg: "h-12 px-6 text-base rounded-lg gap-2.5",
+  sm: "h-9 px-3.5 text-[13px] rounded-lg gap-1.5",
+  md: "h-11 px-5 text-sm rounded-xl gap-2",
+  lg: "h-12 px-6 text-base rounded-xl gap-2.5",
 };
 
 export function Button({
@@ -37,7 +40,7 @@ export function Button({
 }: ButtonProps) {
   return (
     <button
-      className={`inline-flex items-center justify-center font-medium transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+      className={`inline-flex items-center justify-center font-medium transition-all duration-200 ease-out active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#101010] disabled:opacity-50 disabled:pointer-events-none disabled:shadow-none ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
       disabled={disabled || loading}
       {...props}
     >

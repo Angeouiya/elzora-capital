@@ -2,27 +2,28 @@
 
 Plateforme de financement participatif destinée à l'Afrique de l'Ouest. Les entreprises soumettent des projets, l'équipe analyse et publie les offres, les investisseurs financent et perçoivent leurs remboursements.
 
+**Production :** https://elzora-capital.promise-corporation.workers.dev (Cloudflare Workers + D1)
+
 ## Stack technique
 
 - **Next.js 16** (App Router, Turbopack) + TypeScript
-- **Tailwind CSS v4** (thème dans `app/globals.css`)
-- **Prisma + SQLite** (base de données)
-- **NextAuth v5** (authentification par identifiants)
+- **Tailwind CSS v4** (thème dans `app/globals.css`, palette exacte spec §04)
+- **Prisma 7 + Cloudflare D1** (SQLite en local, D1 en production — driver adapter)
+- **OpenNext Cloudflare** (`@opennextjs/cloudflare`) — déploiement Workers
+- **NextAuth v5** (authentification par identifiants, JWT)
 - **Lucide React** (icônes outline)
 - Polices : Hanken Grotesk + JetBrains Mono
 
-## Démarrage
+## Démarrage local
 
 ```bash
 npm install
-cp .env.example .env        # puis ajustez les valeurs
 npx prisma generate
-npx prisma db push
-npx tsx prisma/seed.ts      # données de démonstration
+npm run db:d1:local      # schéma + données de démo dans le D1 local (miniflare)
 npm run dev
 ```
 
-Ouvrir http://localhost:3000
+Ouvrir http://localhost:3000 — les bindings D1 sont exposés en dev via `initOpenNextCloudflareForDev` (miniflare).
 
 ## Comptes de démonstration
 
@@ -32,26 +33,44 @@ Ouvrir http://localhost:3000
 | Entreprise | entreprise@nexora.ci | password123 | /entreprise/dashboard |
 | Admin | admin@nexora.ci | password123 | /admin/dashboard |
 
+## Déploiement Cloudflare
+
+```bash
+npm run deploy           # opennextjs-cloudflare build && deploy
+npm run db:d1:remote     # (re)charge schéma + seed dans le D1 distant
+```
+
+Configuration :
+- `wrangler.jsonc` — worker `elzora-capital`, binding D1 `DB` (base `elzora-capital-production`), assets statiques
+- `open-next.config.ts` — adaptateur Cloudflare (cache dummy)
+- `.dev.vars` — secrets locaux (`AUTH_SECRET`) ; en production : `wrangler secret put AUTH_SECRET`
+- `prisma/d1/schema.sql` — DDL généré (`prisma migrate diff --from-empty --to-schema`)
+- `prisma/d1/seed.sql` — données de démonstration exportées (`npm run db:export-seed`)
+- `scripts/patch-opennext-windows.mjs` — patch Windows (symlinks → copie) appliqué en `postinstall`
+
 ## Architecture
 
 ```
 app/
   page.tsx                  Accueil public (offres, recherche)
   offres/                   Catalogue + fiche offre + souscription
-  connexion/ inscription/   Authentification
+  connexion/ inscription/   Authentification (+ mot-de-passe-oublie, cgu, confidentialite)
   dashboard/                Espace investisseur (KPIs, investissements, paiements, retrait)
   entreprise/               Espace entreprise (dossiers, financements, remboursements)
   admin/                    Portail administrateur séparé (analyse, offres, finances, audit)
-  api/                      27 routes API (Route Handlers)
+  api/                      30 routes API (Route Handlers)
 components/ui/              13 composants partagés (Button, Card, KPI, Sidebar…)
 lib/
-  auth.ts                   NextAuth (credentials + rôles JWT)
-  db.ts                     Client Prisma
+  auth.config.ts            Config NextAuth partagée (Edge-compatible, middleware)
+  auth.ts                   NextAuth complet (credentials + rôles JWT, Node runtime)
+  db.ts                     Client Prisma + adapter D1 (lazy, contexte Cloudflare)
+  generated/prisma/         Client Prisma 7 généré (runtime workerd, ESM)
   calculations.ts           Règles métier (commissions 6% + 2%, échéanciers, répartition)
 prisma/
   schema.prisma             12 modèles (User, Company, Project, Offer, Investment…)
-  seed.ts                   Données de démonstration
-middleware.ts               Protection des routes par rôle
+  seed.ts                   Données de démonstration (D1 local via getPlatformProxy)
+  d1/                       DDL + seed SQL pour Cloudflare D1
+middleware.ts               Protection des routes par rôle (Edge, sans Prisma)
 ```
 
 ## Règles métier principales
@@ -70,8 +89,11 @@ La plateforme fonctionne en mode démonstration : les paiements sont simulés et
 
 | Commande | Description |
 |----------|-------------|
-| `npm run dev` | Serveur de développement |
-| `npm run build` | Build de production |
-| `npm run db:generate` | Génère le client Prisma |
-| `npm run db:push` | Synchronise le schéma avec la base |
-| `npm run db:seed` | Charge les données de démo |
+| `npm run dev` | Serveur de développement (bindings D1 via miniflare) |
+| `npm run build` | Build de production Next.js |
+| `npm run deploy` | Build OpenNext + déploiement Cloudflare Workers |
+| `npm run preview` | Build OpenNext + `wrangler dev` local |
+| `npm run db:generate` | Génère le client Prisma (workerd) |
+| `npm run db:export-seed` | Exporte dev.db vers prisma/d1/seed.sql |
+| `npm run db:d1:local` | Charge schéma + seed dans le D1 local |
+| `npm run db:d1:remote` | Charge schéma + seed dans le D1 distant |

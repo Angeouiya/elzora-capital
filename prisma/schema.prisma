@@ -1,10 +1,15 @@
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+  runtime  = "workerd"
+
+  // Module ESM + TypeScript : compatible Next.js (Turbopack) et Workers
+  moduleFormat          = "esm"
+  generatedFileExtension = "ts"
 }
 
 datasource db {
   provider = "sqlite"
-  url      = "file:./dev.db"
 }
 
 model User {
@@ -22,6 +27,7 @@ model User {
   avatar        String?
   twoFactor     Boolean  @default(false)
   emailVerified Boolean  @default(false)
+  verificationCode String? // code de confirmation du contact (mode démonstration)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -42,6 +48,7 @@ model Company {
   sector             String   @default("Services")
   address            String?
   description        String?
+  goal               String?  // INVEST | BORROW | BOTH (objectif déclaré à l'inscription)
   status             String   @default("DRAFT") // DRAFT | PENDING | VERIFIED | REJECTED
   userId             String   @unique
   user               User     @relation(fields: [userId], references: [id])

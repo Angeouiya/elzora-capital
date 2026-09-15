@@ -22,7 +22,7 @@ export function Card({
 }: CardProps) {
   return (
     <div
-      className={`bg-white rounded-xl shadow-sm border border-[#101010]/5 ${paddingClasses[padding]} ${hover ? "hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer" : ""} ${className}`}
+      className={`bg-white rounded-2xl shadow-[0_1px_2px_rgba(16,16,16,0.04),0_8px_32px_rgba(16,16,16,0.06)] ring-1 ring-[#101010]/6 ${paddingClasses[padding]} ${hover ? "hover:shadow-[0_2px_4px_rgba(16,16,16,0.06),0_16px_44px_rgba(16,16,16,0.1)] hover:ring-[#B6FF00]/50 hover:-translate-y-1 transition-all duration-300 cursor-pointer" : ""} ${className}`}
       {...props}
     >
       {children}

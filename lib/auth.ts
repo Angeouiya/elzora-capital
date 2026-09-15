@@ -1,9 +1,11 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import { authConfig } from "@/lib/auth.config";
 import { prisma } from "@/lib/db";
 import bcrypt from "bcryptjs";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  ...authConfig,
   providers: [
     Credentials({
       name: "credentials",
@@ -37,29 +39,4 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
-  session: { strategy: "jwt" },
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.role = (user as unknown as Record<string, unknown>).role;
-        token.accountType = (user as unknown as Record<string, unknown>).accountType;
-        token.kycStatus = (user as unknown as Record<string, unknown>).kycStatus;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (session.user) {
-        // NextAuth v5 (JWT) ne copie pas automatiquement l'identifiant :
-        // token.sub contient l'id utilisateur défini à la connexion.
-        (session.user as unknown as Record<string, unknown>).id = token.sub;
-        (session.user as unknown as Record<string, unknown>).role = token.role;
-        (session.user as unknown as Record<string, unknown>).accountType = token.accountType;
-        (session.user as unknown as Record<string, unknown>).kycStatus = token.kycStatus;
-      }
-      return session;
-    },
-  },
-  pages: {
-    signIn: "/connexion",
-  },
 });

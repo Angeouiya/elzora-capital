@@ -16,7 +16,7 @@ export function ProgressBar({
   className = "",
 }: ProgressBarProps) {
   const pct = Math.min(Math.max((value / max) * 100, 0), 100);
-  const height = size === "sm" ? "h-1.5" : "h-2.5";
+  const height = size === "sm" ? "h-2" : "h-3";
 
   return (
     <div className={`flex flex-col gap-1.5 ${className}`}>
@@ -30,9 +30,9 @@ export function ProgressBar({
           )}
         </div>
       )}
-      <div className={`w-full ${height} bg-[#F5F5F3] rounded-full overflow-hidden`}>
+      <div className={`w-full ${height} bg-[#101010]/8 ring-1 ring-inset ring-[#101010]/5 rounded-full overflow-hidden`}>
         <div
-          className={`${height} bg-[#B6FF00] rounded-full transition-all duration-500 ease-out`}
+          className={`${height} bg-gradient-to-r from-[#9BD900] to-[#B6FF00] rounded-full shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] transition-all duration-700 ease-out`}
           style={{ width: `${pct}%` }}
         />
       </div>

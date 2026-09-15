@@ -277,7 +277,7 @@ export default function HomePage() {
               <ShieldCheck className="h-3.5 w-3.5 mr-1.5" />
               Investir en Afrique de l&apos;Ouest
             </Badge>
-            <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-[#101010] leading-[1.1]">
+            <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-[#101010] leading-[1.12] text-balance">
               Investissez dans des entreprises,{" "}
               <span className="text-[#507300]">en direct</span>.
             </h1>
@@ -289,14 +289,14 @@ export default function HomePage() {
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
                 href="/offres"
-                className="inline-flex items-center gap-2 h-12 px-6 rounded-lg bg-[#B6FF00] text-[#101010] text-sm font-semibold hover:opacity-90 transition-opacity"
+                className="inline-flex items-center gap-2 h-12 px-6 rounded-xl bg-[#B6FF00] text-[#101010] text-sm font-semibold shadow-[0_2px_12px_rgba(182,255,0,0.35)] hover:shadow-[0_4px_20px_rgba(182,255,0,0.45)] hover:brightness-105 active:brightness-95 transition-all"
               >
                 Explorer les offres
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
                 href="/entreprise"
-                className="inline-flex items-center gap-2 h-12 px-6 rounded-lg bg-[#F5F5F3] ring-1 ring-[#101010]/10 text-[#101010] text-sm font-medium hover:bg-[#EFFBDD] transition-colors"
+                className="inline-flex items-center gap-2 h-12 px-6 rounded-xl bg-white ring-1 ring-[#101010]/12 shadow-[0_1px_3px_rgba(16,16,16,0.05)] text-[#101010] text-sm font-medium hover:ring-[#101010]/25 hover:bg-[#EFFBDD]/60 active:bg-[#EFFBDD] transition-all"
               >
                 <Building2 className="h-4 w-4" />
                 Financer mon entreprise
@@ -557,7 +557,7 @@ export default function HomePage() {
               <span className="text-xs font-semibold uppercase tracking-wider text-[#507300]">
                 Processus d&apos;allocation
               </span>
-              <h2 className="text-2xl sm:text-3xl font-bold text-[#101010] tracking-tight mt-1">
+              <h2 className="text-2xl sm:text-3xl font-bold text-[#101010] tracking-tight mt-2 text-balance">
                 Comment fonctionne Nexora
               </h2>
             </div>
@@ -565,7 +565,7 @@ export default function HomePage() {
               {steps.map((step) => (
                 <div
                   key={step.n}
-                  className="bg-[#f9f9f7] rounded-xl p-6 border border-[#101010]/5 hover-lift"
+                  className="bg-[#f9f9f7] rounded-2xl p-6 ring-1 ring-[#101010]/6 hover-lift hover:ring-[#B6FF00]/50"
                 >
                   <div className="flex items-center justify-between mb-4">
                     <div className="h-11 w-11 rounded-lg bg-[#EFFBDD] flex items-center justify-center">
@@ -609,14 +609,14 @@ export default function HomePage() {
               <div className="mt-6 flex flex-wrap gap-3">
                 <Link
                   href="/entreprise"
-                  className="inline-flex items-center gap-2 h-12 px-6 rounded-lg bg-[#B6FF00] text-[#101010] text-sm font-semibold hover:opacity-90 transition-opacity"
+                  className="inline-flex items-center gap-2 h-12 px-6 rounded-xl bg-[#B6FF00] text-[#101010] text-sm font-semibold shadow-[0_2px_12px_rgba(182,255,0,0.35)] hover:shadow-[0_4px_20px_rgba(182,255,0,0.45)] hover:brightness-105 active:brightness-95 transition-all"
                 >
                   Déposer un projet
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
                   href="/entreprise"
-                  className="inline-flex items-center gap-2 h-12 px-6 rounded-lg bg-white/10 text-white text-sm font-medium hover:bg-white/15 transition-colors"
+                  className="inline-flex items-center gap-2 h-12 px-6 rounded-xl bg-white/10 ring-1 ring-white/15 text-white text-sm font-medium hover:bg-white/15 hover:ring-white/25 active:bg-white/20 transition-all"
                 >
                   En savoir plus
                 </Link>

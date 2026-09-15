@@ -1,7 +1,20 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../lib/generated/prisma/client.js";
+import { PrismaD1 } from "@prisma/adapter-d1";
 import bcrypt from "bcryptjs";
 
-const prisma = new PrismaClient();
+/**
+ * Seed du D1 local (miniflare) via getPlatformProxy — même emplacement
+ * que `wrangler d1 execute --local` (.wrangler/state).
+ */
+async function createPrismaClient(): Promise<PrismaClient> {
+  const { getPlatformProxy } = await import("wrangler");
+  const { env } = await getPlatformProxy();
+  return new PrismaClient({
+    adapter: new PrismaD1(env.DB as ConstructorParameters<typeof PrismaD1>[0]),
+  });
+}
+
+const prisma = await createPrismaClient();
 
 async function main() {
   console.log("Nexora Capital — Seed de démonstration");
