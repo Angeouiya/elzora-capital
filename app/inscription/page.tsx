@@ -3,6 +3,22 @@
 import { useState } from "react";
 import Link from "next/link";
 import { NexoraLogo } from "@/components/NexoraLogo";
+import {
+  ArrowRight,
+  Check,
+  ChevronLeft,
+  Circle,
+  CircleCheck,
+  Eye,
+  EyeOff,
+  FileUp,
+  LoaderCircle,
+  Lock,
+  Mail,
+  ScanFace,
+  ShieldCheck,
+  User,
+} from "lucide-react";
 
 const steps = [
   { n: 1, label: "Informations" },
@@ -56,7 +72,7 @@ export default function InscriptionPage() {
                 <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-data-mono font-bold ${
                   step > s.n ? "bg-tertiary text-on-tertiary" : step === s.n ? "bg-on-surface text-surface" : "bg-surface-container-high text-secondary"
                 }`}>
-                  {step > s.n ? <span className="material-symbols-outlined text-[14px]">check</span> : s.n}
+                  {step > s.n ? <Check className="w-[14px] h-[14px]" strokeWidth={1.5} /> : s.n}
                 </div>
                 <span className={`font-label-sm text-label-sm ${step === s.n ? "text-on-surface font-semibold" : step > s.n ? "text-tertiary font-medium" : "text-secondary"}`}>{s.label}</span>
               </div>
@@ -79,7 +95,7 @@ export default function InscriptionPage() {
               <div className="space-y-1.5">
                 <label className="font-label-caps text-label-caps uppercase text-secondary" htmlFor="prenom">Prénom</label>
                 <div className="relative">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary text-[18px]">person</span>
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary w-[18px] h-[18px]" strokeWidth={1.5} />
                   <input id="prenom" className="w-full h-11 pl-10 pr-3 bg-surface-container-low rounded-lg text-on-surface font-body-md focus:outline-none focus:ring-1 focus:ring-on-surface transition-all" placeholder="Amadou" value={prenom} onChange={(e) => setPrenom(e.target.value)} />
                 </div>
               </div>
@@ -92,7 +108,7 @@ export default function InscriptionPage() {
             <div className="space-y-1.5">
               <label className="font-label-caps text-label-caps uppercase text-secondary" htmlFor="email-reg">Adresse email</label>
               <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary text-[18px]">mail</span>
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary w-[18px] h-[18px]" strokeWidth={1.5} />
                 <input id="email-reg" type="email" className="w-full h-11 pl-10 pr-3 bg-surface-container-low rounded-lg text-on-surface font-body-md focus:outline-none focus:ring-1 focus:ring-on-surface transition-all" placeholder="votre@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
               </div>
             </div>
@@ -129,7 +145,7 @@ export default function InscriptionPage() {
 
             <button onClick={() => setStep(2)} className="w-full h-12 bg-primary-container text-on-surface font-headline-sm text-body-md font-bold rounded-lg flex items-center justify-center gap-2 glow-primary transition-all active:scale-[0.99]">
               <span>Continuer</span>
-              <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+              <ArrowRight className="w-[18px] h-[18px]" strokeWidth={1.5} />
             </button>
           </div>
         )}
@@ -145,10 +161,10 @@ export default function InscriptionPage() {
             <div className="space-y-1.5">
               <label className="font-label-caps text-label-caps uppercase text-secondary" htmlFor="pwd-reg">Mot de passe</label>
               <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary text-[18px]">lock</span>
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary w-[18px] h-[18px]" strokeWidth={1.5} />
                 <input id="pwd-reg" type={showPwd ? "text" : "password"} className="w-full h-11 pl-10 pr-10 bg-surface-container-low rounded-lg text-on-surface font-body-md focus:outline-none focus:ring-1 focus:ring-on-surface transition-all" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
                 <button onClick={() => setShowPwd(!showPwd)} className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary hover:text-on-surface transition-colors">
-                  <span className="material-symbols-outlined text-[18px]">{showPwd ? "visibility_off" : "visibility"}</span>
+                  {showPwd ? <EyeOff className="w-[18px] h-[18px]" strokeWidth={1.5} /> : <Eye className="w-[18px] h-[18px]" strokeWidth={1.5} />}
                 </button>
               </div>
               {/* Strength bars */}
@@ -164,9 +180,11 @@ export default function InscriptionPage() {
             <div className="space-y-1.5">
               {pwdChecks.map((c) => (
                 <div key={c.label} className="flex items-center gap-2">
-                  <span className={`material-symbols-outlined text-[16px] ${c.test(password) ? "text-tertiary" : "text-secondary"}`}>
-                    {c.test(password) ? "check_circle" : "radio_button_unchecked"}
-                  </span>
+                  {c.test(password) ? (
+                    <CircleCheck className="w-[16px] h-[16px] text-tertiary" strokeWidth={1.5} />
+                  ) : (
+                    <Circle className="w-[16px] h-[16px] text-secondary" strokeWidth={1.5} />
+                  )}
                   <span className={`font-body-sm text-body-sm ${c.test(password) ? "text-tertiary" : "text-secondary"}`}>{c.label}</span>
                 </div>
               ))}
@@ -180,7 +198,7 @@ export default function InscriptionPage() {
 
             <div className="flex items-center justify-between p-3 bg-surface-container-low rounded-lg">
               <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-[20px] text-secondary">security</span>
+                <ShieldCheck className="w-[20px] h-[20px] text-secondary" strokeWidth={1.5} />
                 <div>
                   <span className="font-body-sm text-body-sm text-on-surface font-medium block">Authentification à deux facteurs</span>
                   <span className="font-body-sm text-body-sm text-secondary">Protection renforcée par SMS</span>
@@ -193,12 +211,12 @@ export default function InscriptionPage() {
 
             <div className="flex gap-3">
               <button onClick={() => setStep(1)} className="flex-1 h-12 bg-surface-container-low text-on-surface font-label-sm text-label-sm font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-colors hover:bg-surface-container">
-                <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                <ChevronLeft className="w-[18px] h-[18px]" strokeWidth={1.5} />
                 <span>Retour</span>
               </button>
               <button onClick={() => setStep(3)} className="flex-[2] h-12 bg-primary-container text-on-surface font-headline-sm text-body-md font-bold rounded-lg flex items-center justify-center gap-2 glow-primary transition-all active:scale-[0.99]">
                 <span>Continuer</span>
-                <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                <ArrowRight className="w-[18px] h-[18px]" strokeWidth={1.5} />
               </button>
             </div>
           </div>
@@ -209,7 +227,7 @@ export default function InscriptionPage() {
           <div className="bg-surface-container-lowest rounded-xl p-5 shadow-sm space-y-5 animate-scale-in">
             <div>
               <h2 className="font-headline-sm text-headline-sm text-on-surface font-semibold">Vérification de votre identité</h2>
-              <p className="font-body-sm text-body-sm text-secondary mt-1">Conformité KYC — BCEAO/UEMOA.</p>
+              <p className="font-body-sm text-body-sm text-secondary mt-1">Vérification KYC — Nexora Capital.</p>
             </div>
 
             {/* ID Upload */}
@@ -218,12 +236,12 @@ export default function InscriptionPage() {
               <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-surface-container-high rounded-xl cursor-pointer hover:border-primary transition-colors bg-surface-container-low/50">
                 {idFile ? (
                   <div className="flex items-center gap-2 text-tertiary">
-                    <span className="material-symbols-outlined text-[24px]">check_circle</span>
+                    <CircleCheck className="w-[24px] h-[24px]" strokeWidth={1.5} />
                     <span className="font-body-sm text-body-sm font-medium">{idFile}</span>
                   </div>
                 ) : (
                   <>
-                    <span className="material-symbols-outlined text-[32px] text-secondary mb-2">upload_file</span>
+                    <FileUp className="w-[32px] h-[32px] text-secondary mb-2" strokeWidth={1.5} />
                     <span className="font-body-sm text-body-sm text-on-surface font-medium">Téléverser votre pièce d&apos;identité</span>
                     <span className="font-label-sm text-label-sm text-secondary mt-1">CNI, Passeport, Permis de conduire</span>
                   </>
@@ -238,12 +256,12 @@ export default function InscriptionPage() {
               <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-surface-container-high rounded-xl cursor-pointer hover:border-primary transition-colors bg-surface-container-low/50">
                 {selfie ? (
                   <div className="flex items-center gap-2 text-tertiary">
-                    <span className="material-symbols-outlined text-[24px]">check_circle</span>
+                    <CircleCheck className="w-[24px] h-[24px]" strokeWidth={1.5} />
                     <span className="font-body-sm text-body-sm font-medium">{selfie}</span>
                   </div>
                 ) : (
                   <>
-                    <span className="material-symbols-outlined text-[32px] text-secondary mb-2">face</span>
+                    <ScanFace className="w-[32px] h-[32px] text-secondary mb-2" strokeWidth={1.5} />
                     <span className="font-body-sm text-body-sm text-on-surface font-medium">Prendre ou importer une photo</span>
                     <span className="font-label-sm text-label-sm text-secondary mt-1">Photo nette, fond uni</span>
                   </>
@@ -254,7 +272,7 @@ export default function InscriptionPage() {
 
             <div className="flex gap-3">
               <button onClick={() => setStep(2)} className="flex-1 h-12 bg-surface-container-low text-on-surface font-label-sm text-label-sm font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-colors hover:bg-surface-container">
-                <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                <ChevronLeft className="w-[18px] h-[18px]" strokeWidth={1.5} />
                 <span>Retour</span>
               </button>
               <button
@@ -263,11 +281,11 @@ export default function InscriptionPage() {
                 className={`flex-[2] h-12 font-headline-sm text-body-md font-bold rounded-lg flex items-center justify-center gap-2 transition-all active:scale-[0.99] ${created ? "bg-tertiary-container text-on-tertiary-container" : "bg-primary-container text-on-surface glow-primary"}`}
               >
                 {creating ? (
-                  <><span className="material-symbols-outlined text-[20px] animate-spin">progress_activity</span><span>Création en cours...</span></>
+                  <><LoaderCircle className="w-[20px] h-[20px] animate-spin" strokeWidth={1.5} /><span>Création en cours...</span></>
                 ) : created ? (
-                  <><span className="material-symbols-outlined text-[20px]">check_circle</span><span>Compte créé !</span></>
+                  <><CircleCheck className="w-[20px] h-[20px]" strokeWidth={1.5} /><span>Compte créé !</span></>
                 ) : (
-                  <><span className="material-symbols-outlined text-[20px]">check_circle</span><span>Créer mon compte</span></>
+                  <><CircleCheck className="w-[20px] h-[20px]" strokeWidth={1.5} /><span>Créer mon compte</span></>
                 )}
               </button>
             </div>

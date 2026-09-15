@@ -3,6 +3,15 @@
 import { useState } from "react";
 import { NexoraLogo } from "@/components/NexoraLogo";
 import { BottomNav } from "@/components/BottomNav";
+import {
+  ArrowRight,
+  BadgeCheck,
+  Check,
+  ChevronDown,
+  Info,
+  SlidersHorizontal,
+  User,
+} from "lucide-react";
 
 export default function ConditionsPage() {
   const [amount, setAmount] = useState("35 000 000");
@@ -39,10 +48,10 @@ export default function ConditionsPage() {
           </div>
           <div className="flex items-center gap-space-sm">
             <button className="w-11 h-11 flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors">
-              <span className="material-symbols-outlined text-[20px]">tune</span>
+              <SlidersHorizontal className="w-[20px] h-[20px]" strokeWidth={1.5} />
             </button>
             <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-              <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
+              <User className="text-on-primary w-[18px] h-[18px]" strokeWidth={1.5} />
             </div>
           </div>
         </div>
@@ -67,14 +76,14 @@ export default function ConditionsPage() {
             <div className="flex items-center min-w-[340px] justify-between relative">
               <div className="flex items-center gap-1.5 z-10">
                 <div className="w-6 h-6 rounded-full bg-tertiary-container text-on-tertiary-container flex items-center justify-center">
-                  <span className="material-symbols-outlined text-[14px]">check</span>
+                  <Check className="w-[14px] h-[14px]" strokeWidth={1.5} />
                 </div>
                 <span className="font-label-caps text-label-caps text-on-surface">Entreprise</span>
               </div>
               <div className="h-0.5 w-6 bg-tertiary-container mx-1"></div>
               <div className="flex items-center gap-1.5 z-10">
                 <div className="w-6 h-6 rounded-full bg-tertiary-container text-on-tertiary-container flex items-center justify-center">
-                  <span className="material-symbols-outlined text-[14px]">check</span>
+                  <Check className="w-[14px] h-[14px]" strokeWidth={1.5} />
                 </div>
                 <span className="font-label-caps text-label-caps text-on-surface">Projet</span>
               </div>
@@ -106,7 +115,7 @@ export default function ConditionsPage() {
           <div className="animate-fade-in-up animate-fade-in-up-delay-2 bg-surface-container-lowest rounded-xl p-5 shadow-sm space-y-6">
             {/* Info Box */}
             <div className="flex items-start gap-3 p-3.5 rounded bg-surface-container-low">
-              <span className="material-symbols-outlined text-primary text-[20px] shrink-0 mt-0.5">info</span>
+              <Info className="text-primary w-[20px] h-[20px] shrink-0 mt-0.5" strokeWidth={1.5} />
               <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
                 L&apos;entreprise définit librement le taux, la durée et la fréquence proposés aux investisseurs, sous réserve de validation par le comité Nexora.
               </p>
@@ -190,9 +199,7 @@ export default function ConditionsPage() {
                   <option value="18">18 mois</option>
                   <option value="24">24 mois</option>
                 </select>
-                <span className="material-symbols-outlined absolute right-4 top-3 pointer-events-none text-on-surface-variant">
-                  expand_more
-                </span>
+                <ChevronDown className="absolute right-4 top-3 pointer-events-none text-on-surface-variant w-6 h-6" strokeWidth={1.5} />
               </div>
             </div>
 
@@ -216,7 +223,7 @@ export default function ConditionsPage() {
             {/* Projection Card */}
             <div className="card-hover-glow rounded-lg p-4 bg-tertiary-container/30 space-y-3">
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-on-tertiary-container text-[18px]">verified</span>
+                <BadgeCheck className="text-on-tertiary-container w-[18px] h-[18px]" strokeWidth={1.5} />
                 <span className="font-label-caps text-label-caps uppercase tracking-wider font-bold text-on-tertiary-container">Modélisation Prévisionnelle</span>
               </div>
               <div className="flex flex-col gap-2 pt-1 font-body-sm text-body-sm text-on-tertiary-container">
@@ -239,7 +246,7 @@ export default function ConditionsPage() {
           <div className="animate-fade-in-up animate-fade-in-up-delay-3 mt-6 flex flex-col gap-3">
             <button className="glow-primary w-full h-12 rounded bg-primary-container text-on-primary-fixed font-headline-sm text-body-lg font-bold flex items-center justify-center gap-2 active:opacity-90 shadow-sm transition-opacity" type="button">
               <span>Continuer vers Budget &amp; Pièces</span>
-              <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
+              <ArrowRight className="w-[20px] h-[20px]" strokeWidth={1.5} />
             </button>
             <button className="w-full py-2.5 text-center text-on-surface-variant font-body-md hover:text-on-surface transition-colors" type="button">
               Enregistrer et quitter

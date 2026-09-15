@@ -1,0 +1,207 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  phone         String?
+  password      String
+  firstName     String
+  lastName      String
+  role          String   @default("INVESTOR") // INVESTOR | ENTERPRISE | ADMIN
+  kycStatus     String   @default("PENDING") // PENDING | IN_PROGRESS | VERIFIED | REJECTED
+  accountType   String   @default("INDIVIDUAL") // INDIVIDUAL | COMPANY
+  country       String   @default("CI")
+  language      String   @default("fr")
+  avatar        String?
+  twoFactor     Boolean  @default(false)
+  emailVerified Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  company       Company?
+  investments   Investment[]
+  kycDocuments  KYCDocument[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+}
+
+model Company {
+  id                 String   @id @default(cuid())
+  name               String
+  legalForm          String   @default("SARL")
+  country            String   @default("CI")
+  registrationNumber String?
+  taxId              String?
+  sector             String   @default("Services")
+  address            String?
+  description        String?
+  status             String   @default("DRAFT") // DRAFT | PENDING | VERIFIED | REJECTED
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id])
+  projects           Project[]
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model Project {
+  id               String   @id @default(cuid())
+  companyId        String
+  company          Company  @relation(fields: [companyId], references: [id])
+  title            String
+  description      String
+  sector           String
+  country          String   @default("CI")
+  city             String?
+  totalAmount      Int      // montant total du projet en FCFA
+  ownContribution  Int      // apport propre
+  requestedAmount  Int      // montant recherché
+  budget           String?  // JSON détaillé
+  usageDescription String?  // utilisation des capitaux
+  status           String   @default("DRAFT") // DRAFT | SUBMITTED | UNDER_REVIEW | COMPLEMENT_REQUESTED | APPROVED | REJECTED | PUBLISHED
+  rejectionReason  String?
+  submittedAt      DateTime?
+  approvedAt       DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  offer        Offer?
+}
+
+model Offer {
+  id              String   @id @default(cuid())
+  projectId       String   @unique
+  project         Project  @relation(fields: [projectId], references: [id])
+  type            String   @default("DEBT") // DEBT | EQUITY
+  rate            Int      // taux en points de base (ex: 800 = 8.00%)
+  ratePeriod      String   @default("TOTAL") // TOTAL | ANNUAL
+  duration        Int      // durée en mois
+  minTicket       Int      @default(10000)
+  maxTicket       Int      @default(5000000)
+  targetAmount    Int
+  collectedAmount Int      @default(0)
+  investorCount   Int      @default(0)
+  status          String   @default("DRAFT") // DRAFT | PUBLISHED | CLOSED_SUCCESS | CLOSED_FAIL
+  startDate       DateTime?
+  endDate         DateTime?
+  publishedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  investments   Investment[]
+  disbursements Disbursement[]
+  repayments    Repayment[]
+}
+
+model Investment {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  offerId   String
+  offer     Offer    @relation(fields: [offerId], references: [id])
+  amount    Int
+  status    String   @default("PENDING") // PENDING | CONFIRMED | CANCELLED
+  signedAt  DateTime?
+  paidAt    DateTime?
+  createdAt DateTime @default(now())
+
+  payments      Payment[]
+  distributions Distribution[]
+}
+
+model Payment {
+  id             String   @id @default(cuid())
+  investmentId   String
+  investment     Investment @relation(fields: [investmentId], references: [id])
+  reference      String   @unique
+  amount         Int
+  method         String   @default("TRANSFER") // TRANSFER | MOBILE_MONEY
+  status         String   @default("PENDING") // PENDING | CONFIRMED | REJECTED | CANCELLED
+  providerRef    String?
+  confirmedAt    DateTime?
+  createdAt      DateTime @default(now())
+}
+
+model Disbursement {
+  id          String   @id @default(cuid())
+  offerId     String
+  offer       Offer    @relation(fields: [offerId], references: [id])
+  amount      Int
+  tranche     Int      @default(1)
+  status      String   @default("PENDING") // PENDING | APPROVED | EXECUTED
+  approvedBy  String?
+  executedAt  DateTime?
+  createdAt   DateTime @default(now())
+}
+
+model Repayment {
+  id              String   @id @default(cuid())
+  offerId         String
+  offer           Offer    @relation(fields: [offerId], references: [id])
+  scheduleDate    DateTime
+  capitalAmount   Int
+  interestAmount  Int
+  feeAmount       Int      @default(0)
+  status          String   @default("UPCOMING") // UPCOMING | DUE | PAID | PARTIAL | LATE
+  paidAmount      Int      @default(0)
+  paidAt          DateTime?
+  reference       String?
+  createdAt       DateTime @default(now())
+
+  distributions Distribution[]
+}
+
+model Distribution {
+  id             String   @id @default(cuid())
+  repaymentId    String
+  repayment      Repayment  @relation(fields: [repaymentId], references: [id])
+  investmentId   String
+  investment     Investment @relation(fields: [investmentId], references: [id])
+  capitalAmount  Int
+  interestAmount Int
+  status         String   @default("PENDING") // PENDING | AVAILABLE | WITHDRAWN
+  withdrawnAt    DateTime?
+  createdAt      DateTime @default(now())
+}
+
+model KYCDocument {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String   // IDENTITY | PROOF_ADDRESS | BANK_STATEMENT | TAX_ID | REGISTRATION | SELFIE | FINANCIAL | BUSINESS_PLAN
+  fileName  String
+  fileSize  Int?
+  status    String   @default("PENDING") // PENDING | VERIFIED | REJECTED | EXPIRED
+  note      String?
+  uploadedAt DateTime @default(now())
+  verifiedAt DateTime?
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String   // INSCRIPTION | VERIFICATION | DOCUMENT | DECISION | PUBLICATION | SUBSCRIPTION | PAYMENT | CLOSURE | DISBURSEMENT | REPORT | DUE_DATE | DISTRIBUTION | INCIDENT
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String
+  entity    String
+  entityId  String?
+  details   String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+}

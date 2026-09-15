@@ -3,6 +3,15 @@
 import { useState } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { BottomNav } from "@/components/BottomNav";
+import {
+  Banknote,
+  Download,
+  FileText,
+  Landmark,
+  PiggyBank,
+  TrendingUp,
+  type LucideIcon,
+} from "lucide-react";
 
 interface Transaction {
   id: number;
@@ -12,16 +21,16 @@ interface Transaction {
   amount: string;
   date: string;
   status: "completed" | "pending" | "failed";
-  icon: string;
+  icon: LucideIcon;
 }
 
 const allTransactions: Transaction[] = [
-  { id: 1, type: "interest", title: "Coupon — Atelier Nova", subtitle: "Échéance 1/6", amount: "+666 FCFA", date: "15 Oct. 2024", status: "completed", icon: "payments" },
-  { id: 2, type: "debit", title: "Investissement — Atelier Nova", subtitle: "Ligne d'ensachage robotisée", amount: "-50 000 FCFA", date: "10 Oct. 2024", status: "completed", icon: "trending_up" },
-  { id: 3, type: "credit", title: "Dépôt — Solde disponible", subtitle: "Virement depuis BOA", amount: "+200 000 FCFA", date: "08 Oct. 2024", status: "completed", icon: "account_balance" },
-  { id: 4, type: "debit", title: "Retrait — Solde libérés", subtitle: "Portefeuille", amount: "+145 000 FCFA", date: "05 Oct. 2024", status: "completed", icon: "payments" },
-  { id: 5, type: "interest", title: "Coupon — Agro-Alliance", subtitle: "Échéance 4/12", amount: "+1 875 FCFA", date: "15 Sept. 2024", status: "completed", icon: "payments" },
-  { id: 6, type: "debit", title: "Investissement — Agro-Alliance", subtitle: "Stock d'anacarde", amount: "-300 000 FCFA", date: "01 Sept. 2024", status: "completed", icon: "savings" },
+  { id: 1, type: "interest", title: "Coupon — Atelier Nova", subtitle: "Échéance 1/6", amount: "+666 FCFA", date: "15 Oct. 2024", status: "completed", icon: Banknote },
+  { id: 2, type: "debit", title: "Investissement — Atelier Nova", subtitle: "Ligne d'ensachage robotisée", amount: "-50 000 FCFA", date: "10 Oct. 2024", status: "completed", icon: TrendingUp },
+  { id: 3, type: "credit", title: "Dépôt — Solde disponible", subtitle: "Virement depuis BOA", amount: "+200 000 FCFA", date: "08 Oct. 2024", status: "completed", icon: Landmark },
+  { id: 4, type: "debit", title: "Retrait — Solde libérés", subtitle: "Portefeuille", amount: "+145 000 FCFA", date: "05 Oct. 2024", status: "completed", icon: Banknote },
+  { id: 5, type: "interest", title: "Coupon — Agro-Alliance", subtitle: "Échéance 4/12", amount: "+1 875 FCFA", date: "15 Sept. 2024", status: "completed", icon: Banknote },
+  { id: 6, type: "debit", title: "Investissement — Agro-Alliance", subtitle: "Stock d'anacarde", amount: "-300 000 FCFA", date: "01 Sept. 2024", status: "completed", icon: PiggyBank },
 ];
 
 const filters = ["Toutes", "Entrées", "Sorties", "Intérêts"];
@@ -72,7 +81,7 @@ export default function HistoriquePage() {
               </button>
             ))}
             <button className="ml-auto w-9 h-8 rounded-lg bg-surface-container-lowest text-on-surface hover:bg-surface-container transition-colors">
-              <span className="material-symbols-outlined text-[18px]">download</span>
+              <Download className="w-[18px] h-[18px]" strokeWidth={1.5} />
             </button>
           </div>
 
@@ -89,9 +98,9 @@ export default function HistoriquePage() {
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
                     t.type === "credit" ? "bg-tertiary-container" : t.type === "interest" ? "bg-primary-container" : "bg-surface-container"
                   }`}>
-                    <span className={`material-symbols-outlined text-[20px] ${
+                    <t.icon className={`w-[20px] h-[20px] ${
                       t.type === "credit" ? "text-on-tertiary-container" : t.type === "interest" ? "text-on-surface" : "text-secondary"
-                    }`}>{t.icon}</span>
+                    }`} strokeWidth={1.5} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
@@ -126,10 +135,10 @@ export default function HistoriquePage() {
           <div className="pt-space-sm animate-fade-in-up animate-fade-in-up-delay-3">
             <button className="w-full h-11 bg-surface-container-lowest text-on-surface font-label-sm text-label-sm font-medium rounded-lg shadow-sm flex items-center justify-between px-space-md hover:bg-surface-container-low transition-colors">
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px] text-secondary">description</span>
+                <FileText className="w-[18px] h-[18px] text-secondary" strokeWidth={1.5} />
                 <span>Télécharger l&apos;extrait PDF</span>
               </div>
-              <span className="material-symbols-outlined text-[18px] text-secondary">download</span>
+              <Download className="w-[18px] h-[18px] text-secondary" strokeWidth={1.5} />
             </button>
           </div>
         </div>

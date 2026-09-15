@@ -3,6 +3,32 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { BottomNav } from "@/components/BottomNav";
+import {
+  Banknote,
+  Bell,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  CirclePause,
+  Eye,
+  FileText,
+  Gavel,
+  Headset,
+  History,
+  KeyRound,
+  Landmark,
+  Languages,
+  LineChart,
+  Mail,
+  Megaphone,
+  MessageSquare,
+  MonitorSmartphone,
+  Plus,
+  ShieldCheck,
+  Smartphone,
+  Trash2,
+  type LucideIcon,
+} from "lucide-react";
 
 /* ------------------------------------------------------------------ */
 /* Custom toggle switch                                                */
@@ -78,14 +104,14 @@ function SectionHeader({
 /* ------------------------------------------------------------------ */
 
 function ToggleRow({
-  icon,
+  icon: Icon,
   title,
   subtitle,
   checked,
   onChange,
   tone = "primary",
 }: {
-  icon: string;
+  icon: LucideIcon;
   title: string;
   subtitle: string;
   checked: boolean;
@@ -99,7 +125,7 @@ function ToggleRow({
     >
       <div className="flex items-center gap-space-sm min-w-0">
         <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center shrink-0">
-          <span className="material-symbols-outlined text-[20px] text-on-surface-variant">{icon}</span>
+          <Icon className="w-[20px] h-[20px] text-on-surface-variant" strokeWidth={1.5} />
         </div>
         <div className="min-w-0">
           <p className="font-body-md text-body-md font-medium text-on-surface leading-tight">{title}</p>
@@ -116,12 +142,12 @@ function ToggleRow({
 /* ------------------------------------------------------------------ */
 
 function LinkRow({
-  icon,
+  icon: Icon,
   title,
   subtitle,
   value,
 }: {
-  icon: string;
+  icon: LucideIcon;
   title: string;
   subtitle: string;
   value?: ReactNode;
@@ -133,7 +159,7 @@ function LinkRow({
     >
       <div className="flex items-center gap-space-sm min-w-0">
         <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center shrink-0">
-          <span className="material-symbols-outlined text-[20px] text-on-surface-variant">{icon}</span>
+          <Icon className="w-[20px] h-[20px] text-on-surface-variant" strokeWidth={1.5} />
         </div>
         <div className="min-w-0">
           <p className="font-body-md text-body-md font-medium text-on-surface leading-tight">{title}</p>
@@ -142,7 +168,7 @@ function LinkRow({
       </div>
       <span className="flex items-center gap-1 shrink-0">
         {value && <span className="font-body-md text-body-md text-secondary">{value}</span>}
-        <span className="material-symbols-outlined text-[20px] text-secondary transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-on-surface">chevron_right</span>
+        <ChevronRight className="w-[20px] h-[20px] text-secondary transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-on-surface" strokeWidth={1.5} />
       </span>
     </button>
   );
@@ -196,11 +222,11 @@ export default function ParametresPage() {
           <section className="animate-fade-in-up animate-fade-in-up-delay-1 space-y-space-xs">
             <SectionHeader index="01" title="Général" />
             <div className="bg-surface-container-lowest rounded-lg shadow-sm divide-y divide-surface-container hover-lift">
-              <ToggleRow icon="notifications" title="Notifications push" subtitle="Alertes en temps réel des projets" checked={pushEnabled} onChange={setPushEnabled} />
-              <ToggleRow icon="mail" title="Notifications email" subtitle="Relevés et confirmations d’opération" checked={emailEnabled} onChange={setEmailEnabled} />
-              <ToggleRow icon="sms" title="Notifications SMS" subtitle="Rappels d’échéance critiques" checked={smsEnabled} onChange={setSmsEnabled} />
-              <LinkRow icon="language" title="Langue" subtitle="Langue de l’interface" value="Français" />
-              <LinkRow icon="payments" title="Devise d’affichage" subtitle="Unité des montants affichés" value={<span className="font-data-mono text-data-mono text-secondary">FCFA (XOF)</span>} />
+              <ToggleRow icon={Bell} title="Notifications push" subtitle="Alertes en temps réel des projets" checked={pushEnabled} onChange={setPushEnabled} />
+              <ToggleRow icon={Mail} title="Notifications email" subtitle="Relevés et confirmations d’opération" checked={emailEnabled} onChange={setEmailEnabled} />
+              <ToggleRow icon={MessageSquare} title="Notifications SMS" subtitle="Rappels d’échéance critiques" checked={smsEnabled} onChange={setSmsEnabled} />
+              <LinkRow icon={Languages} title="Langue" subtitle="Langue de l’interface" value="Français" />
+              <LinkRow icon={Banknote} title="Devise d’affichage" subtitle="Unité des montants affichés" value={<span className="font-data-mono text-data-mono text-secondary">FCFA (XOF)</span>} />
             </div>
           </section>
 
@@ -224,10 +250,10 @@ export default function ParametresPage() {
               }
             />
             <div className="bg-surface-container-lowest rounded-lg shadow-sm divide-y divide-surface-container hover-lift">
-              <LinkRow icon="password" title="Changer le mot de passe" subtitle="Dernière modification le 12 juin 2024" />
-              <ToggleRow icon="verified_user" title="Authentification à deux facteurs" subtitle="Code à usage unique (TOTP)" checked={twoFactorEnabled} onChange={setTwoFactorEnabled} tone="green" />
-              <LinkRow icon="devices" title="Sessions actives" subtitle="Appareils actuellement connectés" value="2 appareils" />
-              <LinkRow icon="history" title="Historique de connexion" subtitle="Dernières activités du compte" />
+              <LinkRow icon={KeyRound} title="Changer le mot de passe" subtitle="Dernière modification le 12 juin 2024" />
+              <ToggleRow icon={ShieldCheck} title="Authentification à deux facteurs" subtitle="Code à usage unique (TOTP)" checked={twoFactorEnabled} onChange={setTwoFactorEnabled} tone="green" />
+              <LinkRow icon={MonitorSmartphone} title="Sessions actives" subtitle="Appareils actuellement connectés" value="2 appareils" />
+              <LinkRow icon={History} title="Historique de connexion" subtitle="Dernières activités du compte" />
             </div>
           </section>
 
@@ -238,7 +264,7 @@ export default function ParametresPage() {
               {/* BOA */}
               <div className="flex items-center gap-space-sm px-space-md py-space-sm cursor-pointer hover:bg-surface-container-low/60 transition-colors">
                 <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center shrink-0">
-                  <span className="material-symbols-outlined text-[20px] text-on-surface-variant">account_balance</span>
+                  <Landmark className="w-[20px] h-[20px] text-on-surface-variant" strokeWidth={1.5} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-space-xs flex-wrap">
@@ -247,12 +273,12 @@ export default function ParametresPage() {
                   </div>
                   <p className="font-data-mono text-data-mono text-secondary mt-0.5">•••• 4912 • Virement sous 24 h</p>
                 </div>
-                <span className="material-symbols-outlined text-[20px] text-secondary shrink-0">chevron_right</span>
+                <ChevronRight className="w-[20px] h-[20px] text-secondary shrink-0" strokeWidth={1.5} />
               </div>
               {/* Wave */}
               <div className="flex items-center gap-space-sm px-space-md py-space-sm cursor-pointer hover:bg-surface-container-low/60 transition-colors">
                 <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center shrink-0">
-                  <span className="material-symbols-outlined text-[20px] text-on-surface-variant">smartphone</span>
+                  <Smartphone className="w-[20px] h-[20px] text-on-surface-variant" strokeWidth={1.5} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-space-xs flex-wrap">
@@ -261,7 +287,7 @@ export default function ParametresPage() {
                   </div>
                   <p className="font-data-mono text-data-mono text-secondary mt-0.5">••• 89 • Versement instantané</p>
                 </div>
-                <span className="material-symbols-outlined text-[20px] text-secondary shrink-0">chevron_right</span>
+                <ChevronRight className="w-[20px] h-[20px] text-secondary shrink-0" strokeWidth={1.5} />
               </div>
               {/* Add account */}
               <div className="px-space-md py-space-sm">
@@ -269,7 +295,7 @@ export default function ParametresPage() {
                   type="button"
                   className="w-full min-h-[44px] rounded-lg border border-dashed border-outline-variant/80 text-on-surface-variant font-label-sm text-label-sm font-semibold flex items-center justify-center gap-1.5 hover:border-primary hover:text-primary hover:bg-primary-container/10 transition-all duration-200 active:scale-[0.99]"
                 >
-                  <span className="material-symbols-outlined text-[18px]">add</span>
+                  <Plus className="w-[18px] h-[18px]" strokeWidth={1.5} />
                   Ajouter un compte
                 </button>
               </div>
@@ -291,7 +317,7 @@ export default function ParametresPage() {
                 >
                   <div className="flex items-center gap-space-sm min-w-0">
                     <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center shrink-0">
-                      <span className="material-symbols-outlined text-[20px] text-on-surface-variant">visibility</span>
+                      <Eye className="w-[20px] h-[20px] text-on-surface-variant" strokeWidth={1.5} />
                     </div>
                     <div className="min-w-0">
                       <p className="font-body-md text-body-md font-medium text-on-surface leading-tight">Visibilité du profil</p>
@@ -300,7 +326,7 @@ export default function ParametresPage() {
                   </div>
                   <span className="flex items-center gap-1 shrink-0">
                     <span className="font-body-md text-body-md text-secondary">{profileVisibility}</span>
-                    <span className={`material-symbols-outlined text-[20px] text-secondary transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${visibilityOpen ? "rotate-180" : ""}`}>expand_more</span>
+                    <ChevronDown className={`w-[20px] h-[20px] text-secondary transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${visibilityOpen ? "rotate-180" : ""}`} strokeWidth={1.5} />
                   </span>
                 </button>
                 {visibilityOpen && (
@@ -323,15 +349,15 @@ export default function ParametresPage() {
                       >
                         <span className={`font-body-md text-body-md ${profileVisibility === option ? "text-on-surface font-semibold" : "text-secondary"}`}>{option}</span>
                         {profileVisibility === option && (
-                          <span className="material-symbols-outlined text-[18px] text-primary">check</span>
+                          <Check className="w-[18px] h-[18px] text-primary" strokeWidth={1.5} />
                         )}
                       </button>
                     ))}
                   </div>
                 )}
               </div>
-              <ToggleRow icon="analytics" title="Partage de données" subtitle="Statistiques anonymisées d’usage" checked={dataSharingEnabled} onChange={setDataSharingEnabled} />
-              <ToggleRow icon="campaign" title="Consentement marketing" subtitle="Offres partenaires et actualités" checked={marketingEnabled} onChange={setMarketingEnabled} />
+              <ToggleRow icon={LineChart} title="Partage de données" subtitle="Statistiques anonymisées d’usage" checked={dataSharingEnabled} onChange={setDataSharingEnabled} />
+              <ToggleRow icon={Megaphone} title="Consentement marketing" subtitle="Offres partenaires et actualités" checked={marketingEnabled} onChange={setMarketingEnabled} />
             </div>
           </section>
 
@@ -339,10 +365,10 @@ export default function ParametresPage() {
           <section className="animate-fade-in-up animate-fade-in-up-delay-4 space-y-space-xs">
             <SectionHeader index="05" title="Légal et assistance" />
             <div className="bg-surface-container-lowest rounded-lg shadow-sm divide-y divide-surface-container hover-lift">
-              <LinkRow icon="description" title="Conditions Générales d’Utilisation" subtitle="CGU de la plateforme" />
-              <LinkRow icon="privacy_tip" title="Politique de confidentialité" subtitle="Collecte et protection des données" />
-              <LinkRow icon="gavel" title="Mentions légales" subtitle="Éditeur et hébergement" />
-              <LinkRow icon="support_agent" title="Nous contacter" subtitle="Support 7j/7 • support@nexora.capital" />
+              <LinkRow icon={FileText} title="Conditions Générales d’Utilisation" subtitle="CGU de la plateforme" />
+              <LinkRow icon={ShieldCheck} title="Politique de confidentialité" subtitle="Collecte et protection des données" />
+              <LinkRow icon={Gavel} title="Mentions légales" subtitle="Éditeur et hébergement" />
+              <LinkRow icon={Headset} title="Nous contacter" subtitle="Support 7j/7 • support@nexora.capital" />
             </div>
           </section>
 
@@ -354,14 +380,14 @@ export default function ParametresPage() {
                 type="button"
                 className="w-full min-h-[48px] rounded-lg border border-error/50 bg-surface-container-lowest/60 text-error font-label-sm text-label-sm font-semibold flex items-center justify-center gap-1.5 hover:border-error hover:bg-error/10 transition-all duration-200 active:scale-[0.99]"
               >
-                <span className="material-symbols-outlined text-[20px]">pause_circle</span>
+                <CirclePause className="w-[20px] h-[20px]" strokeWidth={1.5} />
                 Désactiver mon compte
               </button>
               <button
                 type="button"
                 className="w-full min-h-[48px] rounded-lg bg-error text-on-error font-label-sm text-label-sm font-semibold flex items-center justify-center gap-1.5 hover:opacity-90 transition-all duration-200 active:scale-[0.99] shadow-sm"
               >
-                <span className="material-symbols-outlined text-[20px]">delete_forever</span>
+                <Trash2 className="w-[20px] h-[20px]" strokeWidth={1.5} />
                 Supprimer mon compte
               </button>
               <p className="font-body-sm text-body-sm text-on-error-container/80 text-center leading-snug pt-0.5">

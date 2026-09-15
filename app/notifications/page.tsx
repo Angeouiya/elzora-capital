@@ -1,109 +1,354 @@
 "use client";
 
-import { useState } from "react";
-import { AppHeader } from "@/components/AppHeader";
-import { BottomNav } from "@/components/BottomNav";
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import {
+  Bell,
+  BellOff,
+  Check,
+  CheckCheck,
+  CircleAlert,
+  CircleCheck,
+  Clock,
+  CreditCard,
+  FileCheck,
+  FileText,
+  Landmark,
+  LoaderCircle,
+  Mail,
+  ShieldCheck,
+  TrendingUp,
+  UserCheck,
+  Wallet,
+  XCircle,
+} from "lucide-react";
+import { NexoraLogo } from "@/components/NexoraLogo";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { Card } from "@/components/ui/Card";
 
 interface Notification {
-  id: number;
-  type: "payment" | "alert" | "info" | "success" | "warning";
+  id: string;
+  type: string;
   title: string;
   message: string;
-  time: string;
   read: boolean;
-  icon: string;
+  createdAt: string;
 }
 
-const initialNotifications: Notification[] = [
-  { id: 1, type: "payment", title: "Coupon reçu — Atelier Nova", message: "Versement de 666 FCFA crédité sur votre compte Nexora.", time: "Il y a 2h", read: false, icon: "payments" },
-  { id: 2, type: "success", title: "Investissement confirmé", message: "Votre souscription de 50 000 FCFA au projet Atelier Nova a été validée.", time: "Hier, 14:30", read: false, icon: "check_circle" },
-  { id: 3, type: "alert", title: "Nouvelle offre disponible", message: "SOLIS OUEST — Mini-centrale solaire, rendement 8,5% sur 12 mois.", time: "Hier, 09:00", read: true, icon: "campaign" },
-  { id: 4, type: "info", title: "Document KYC approuvé", message: "Votre justificatif de revenus a été validé par notre équipe conformité.", time: "12 Sept. 2024", read: true, icon: "verified" },
-  { id: 5, type: "warning", title: "Échéance approaching", message: "Prochain coupon Agro-Alliance prévu le 15 Octobre 2024.", time: "10 Sept. 2024", read: true, icon: "event_upcoming" },
-  { id: 6, type: "info", title: "Mise à jour conditions", message: "Les nouvelles conditions générales d'utilisation sont disponibles.", time: "5 Sept. 2024", read: true, icon: "description" },
-];
-
-const typeColors: Record<string, { bg: string; text: string }> = {
-  payment: { bg: "bg-primary-container", text: "text-on-surface" },
-  success: { bg: "bg-tertiary-container", text: "text-on-tertiary-container" },
-  alert: { bg: "bg-surface-container", text: "text-on-surface" },
-  info: { bg: "bg-surface-container-low", text: "text-secondary" },
-  warning: { bg: "bg-error-container/40", text: "text-error" },
+const typeConfig: Record<
+  string,
+  { icon: typeof Bell; color: string; label: string }
+> = {
+  INSCRIPTION: {
+    icon: UserCheck,
+    color: "bg-blue-50 text-blue-700",
+    label: "Inscription",
+  },
+  VERIFICATION: {
+    icon: ShieldCheck,
+    color: "bg-amber-50 text-amber-700",
+    label: "Vérification",
+  },
+  DOCUMENT: {
+    icon: FileCheck,
+    color: "bg-amber-50 text-amber-700",
+    label: "Document",
+  },
+  DECISION: {
+    icon: CircleAlert,
+    color: "bg-purple-50 text-purple-700",
+    label: "Décision",
+  },
+  PUBLICATION: {
+    icon: TrendingUp,
+    color: "bg-[#EFFBDD] text-[#166534]",
+    label: "Publication",
+  },
+  SUBSCRIPTION: {
+    icon: Wallet,
+    color: "bg-[#EFFBDD] text-[#166534]",
+    label: "Souscription",
+  },
+  PAYMENT: {
+    icon: CreditCard,
+    color: "bg-[#EFFBDD] text-[#166534]",
+    label: "Paiement",
+  },
+  CLOSURE: {
+    icon: XCircle,
+    color: "bg-[#C62828]/10 text-[#C62828]",
+    label: "Clôture",
+  },
+  DISBURSEMENT: {
+    icon: Landmark,
+    color: "bg-blue-50 text-blue-700",
+    label: "Décaissement",
+  },
+  REPORT: {
+    icon: FileText,
+    color: "bg-[#F5F5F3] text-[#101010]/60",
+    label: "Rapport",
+  },
+  DUE_DATE: {
+    icon: Clock,
+    color: "bg-amber-50 text-amber-700",
+    label: "Échéance",
+  },
+  DISTRIBUTION: {
+    icon: Wallet,
+    color: "bg-[#EFFBDD] text-[#166534]",
+    label: "Versement",
+  },
+  INCIDENT: {
+    icon: CircleAlert,
+    color: "bg-[#C62828]/10 text-[#C62828]",
+    label: "Incident",
+  },
 };
 
+const defaultType = {
+  icon: Bell,
+  color: "bg-[#F5F5F3] text-[#101010]/60",
+  label: "Notification",
+};
+
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  if (isNaN(diff)) return "—";
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "À l'instant";
+  if (mins < 60) return `Il y a ${mins} min`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `Il y a ${hours}h`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `Il y a ${days}j`;
+  return new Date(iso).toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "short",
+  });
+}
+
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState(initialNotifications);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "unread">("all");
+  const [markingAll, setMarkingAll] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await fetch("/api/notifications");
+      if (!res.ok) throw new Error("Impossible de charger les notifications.");
+      const data: Notification[] = await res.json();
+      setNotifications(data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erreur inconnue.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
-  const filtered = filter === "unread" ? notifications.filter((n) => !n.read) : notifications;
+  const filtered =
+    filter === "unread"
+      ? notifications.filter((n) => !n.read)
+      : notifications;
 
-  const markAllRead = () => setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  const toggleRead = (id: number) => setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: !n.read } : n));
+  const markAllRead = async () => {
+    setMarkingAll(true);
+    try {
+      await fetch("/api/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    } catch {
+      /* silent */
+    } finally {
+      setMarkingAll(false);
+    }
+  };
+
+  const markOneRead = async (id: string) => {
+    try {
+      await fetch("/api/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: [id] }),
+      });
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+      );
+    } catch {
+      /* silent */
+    }
+  };
 
   return (
-    <>
-      <AppHeader title="Notifications" subtitle="NEXORA CAPITAL" showBack />
-
-      <main className="flex-1 w-full bg-surface pt-16 pb-24 min-h-screen">
-        <div className="flex flex-col w-full px-space-md py-space-md space-y-space-md">
-
-          {/* Filter Bar */}
-          <div className="flex items-center justify-between animate-fade-in-up">
-            <div className="flex gap-2">
-              <button onClick={() => setFilter("all")} className={`px-4 h-9 rounded-full font-label-sm text-label-sm transition-all ${filter === "all" ? "bg-on-surface text-surface-container-lowest font-semibold" : "bg-surface-container-lowest text-secondary hover:text-on-surface"}`}>
-                Toutes ({notifications.length})
-              </button>
-              <button onClick={() => setFilter("unread")} className={`px-4 h-9 rounded-full font-label-sm text-label-sm transition-all flex items-center gap-1.5 ${filter === "unread" ? "bg-on-surface text-surface-container-lowest font-semibold" : "bg-surface-container-lowest text-secondary hover:text-on-surface"}`}>
-                Non lues
-                {unreadCount > 0 && <span className={`w-5 h-5 rounded-full text-[11px] font-bold flex items-center justify-center ${filter === "unread" ? "bg-primary-container text-on-surface" : "bg-primary-container text-on-surface"}`}>{unreadCount}</span>}
-              </button>
+    <div className="min-h-screen bg-[#F5F5F3]">
+      {/* Header */}
+      <header className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-[#101010]/5">
+        <div className="max-w-2xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link href="/" className="shrink-0">
+              <NexoraLogo size={32} />
+            </Link>
+            <div>
+              <h1 className="text-lg font-bold text-[#101010]">Notifications</h1>
+              <p className="text-xs text-[#101010]/50">
+                {unreadCount > 0
+                  ? `${unreadCount} non lue${unreadCount > 1 ? "s" : ""}`
+                  : "Tout est à jour"}
+              </p>
             </div>
-            {unreadCount > 0 && (
-              <button onClick={markAllRead} className="font-label-sm text-label-sm text-primary font-semibold hover:underline">
-                Tout marquer lu
-              </button>
-            )}
           </div>
+          {unreadCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              loading={markingAll}
+              icon={<CheckCheck className="h-4 w-4" />}
+              onClick={markAllRead}
+            >
+              Tout marquer lu
+            </Button>
+          )}
+        </div>
+      </header>
 
-          {/* Notification List */}
+      <main className="max-w-2xl mx-auto px-6 py-6 space-y-6">
+        {/* Où en suis-je ? */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setFilter("all")}
+            className={`px-4 h-9 rounded-full text-sm font-medium transition-colors ${
+              filter === "all"
+                ? "bg-[#101010] text-white"
+                : "bg-white text-[#101010]/60 hover:text-[#101010]"
+            }`}
+          >
+            Toutes ({notifications.length})
+          </button>
+          <button
+            onClick={() => setFilter("unread")}
+            className={`px-4 h-9 rounded-full text-sm font-medium transition-colors flex items-center gap-1.5 ${
+              filter === "unread"
+                ? "bg-[#101010] text-white"
+                : "bg-white text-[#101010]/60 hover:text-[#101010]"
+            }`}
+          >
+            Non lues
+            {unreadCount > 0 && (
+              <span
+                className={`min-w-[20px] h-5 px-1.5 rounded-full text-[11px] font-bold flex items-center justify-center ${
+                  filter === "unread"
+                    ? "bg-[#B6FF00] text-[#101010]"
+                    : "bg-[#C62828] text-white"
+                }`}
+              >
+                {unreadCount}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Content */}
+        {loading ? (
+          <div className="flex items-center justify-center py-24 text-[#101010]/40">
+            <LoaderCircle className="h-8 w-8 animate-spin" />
+          </div>
+        ) : error ? (
+          <Card className="border-[#C62828]/20 bg-[#C62828]/5">
+            <div className="flex items-center gap-2">
+              <CircleAlert className="h-4 w-4 text-[#C62828]" />
+              <p className="text-sm text-[#C62828]">{error}</p>
+            </div>
+          </Card>
+        ) : filtered.length === 0 ? (
+          <Card padding="lg" className="text-center">
+            <div className="mx-auto h-14 w-14 rounded-2xl bg-[#F5F5F3] flex items-center justify-center">
+              <BellOff className="h-7 w-7 text-[#101010]/30" />
+            </div>
+            <h2 className="text-lg font-bold text-[#101010] mt-4">
+              Aucune notification
+            </h2>
+            <p className="text-sm text-[#101010]/60 mt-2">
+              {filter === "unread"
+                ? "Vous êtes à jour ! Toutes vos notifications ont été lues."
+                : "Aucune notification pour le moment. Vous serez notifié des événements importants."}
+            </p>
+          </Card>
+        ) : (
           <div className="space-y-2">
-            {filtered.map((n, i) => {
-              const colors = typeColors[n.type];
+            {filtered.map((n) => {
+              const cfg = typeConfig[n.type] ?? defaultType;
+              const Icon = cfg.icon;
+
               return (
                 <button
                   key={n.id}
-                  onClick={() => toggleRead(n.id)}
-                  className={`w-full text-left bg-surface-container-lowest rounded-xl p-4 shadow-sm flex items-start gap-3 transition-all hover-lift animate-fade-in-up ${!n.read ? "card-hover-glow" : "opacity-80"}`}
-                  style={{ animationDelay: `${0.04 * i}s` }}
+                  onClick={() => !n.read && markOneRead(n.id)}
+                  className={`w-full text-left rounded-xl p-4 flex items-start gap-3 transition-all ${
+                    !n.read
+                      ? "bg-white shadow-sm hover:shadow-md"
+                      : "bg-white/60 opacity-75 hover:opacity-100"
+                  }`}
                 >
-                  <div className={`w-10 h-10 rounded-lg ${colors.bg} flex items-center justify-center shrink-0`}>
-                    <span className={`material-symbols-outlined text-[20px] ${colors.text}`}>{n.icon}</span>
+                  <div
+                    className={`p-2.5 rounded-lg shrink-0 ${cfg.color}`}
+                  >
+                    <Icon className="h-4 w-4" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <span className={`font-body-sm text-body-sm text-on-surface truncate ${!n.read ? "font-semibold" : "font-medium"}`}>{n.title}</span>
-                      {!n.read && <span className="w-2 h-2 rounded-full bg-primary-container shrink-0"></span>}
+                      <span
+                        className={`text-sm truncate ${
+                          !n.read
+                            ? "font-bold text-[#101010]"
+                            : "font-medium text-[#101010]"
+                        }`}
+                      >
+                        {n.title}
+                      </span>
+                      {!n.read && (
+                        <span className="w-2 h-2 rounded-full bg-[#B6FF00] shrink-0" />
+                      )}
                     </div>
-                    <p className="font-body-sm text-body-sm text-secondary mt-0.5 line-clamp-2">{n.message}</p>
-                    <span className="font-data-mono text-label-sm text-secondary mt-1 block">{n.time}</span>
+                    <p className="text-sm text-[#101010]/60 mt-0.5 line-clamp-2">
+                      {n.message}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <Badge variant="default">{cfg.label}</Badge>
+                      <span className="text-[11px] text-[#101010]/40 flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {timeAgo(n.createdAt)}
+                      </span>
+                    </div>
                   </div>
                 </button>
               );
             })}
           </div>
+        )}
 
-          {filtered.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 animate-fade-in-up">
-              <span className="material-symbols-outlined text-[48px] text-surface-container-high mb-3">notifications_off</span>
-              <span className="font-headline-sm text-headline-sm text-on-surface font-semibold">Aucune notification</span>
-              <span className="font-body-sm text-body-sm text-secondary mt-1">Vous êtes à jour !</span>
-            </div>
-          )}
-        </div>
+        {/* Que se passera-t-il ensuite ? */}
+        <Card>
+          <p className="text-sm text-[#101010]/60">
+            Vous recevez des notifications pour chaque événement important :
+            inscription, vérification KYC, décision sur vos dossiers, publication
+            d&apos;offres, paiements, décaissements et échéances. Cliquez sur une
+            notification pour la marquer comme lue.
+          </p>
+        </Card>
       </main>
-
-      <BottomNav active="portefeuille" />
-    </>
+    </div>
   );
 }

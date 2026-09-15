@@ -3,6 +3,18 @@
 import { useState } from "react";
 import { NexoraLogo } from "@/components/NexoraLogo";
 import { BottomNav } from "@/components/BottomNav";
+import {
+  ArrowRight,
+  BellRing,
+  CalendarClock,
+  CircleCheck,
+  CirclePlus,
+  ChevronRight,
+  FileUp,
+  Hourglass,
+  SlidersHorizontal,
+  User,
+} from "lucide-react";
 
 export default function EntreprisePage() {
   const [uploadedFile, setUploadedFile] = useState<string | null>(null);
@@ -32,10 +44,10 @@ export default function EntreprisePage() {
           </div>
           <div className="flex items-center gap-space-sm">
             <button className="w-11 h-11 flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors">
-              <span className="material-symbols-outlined text-[20px]">tune</span>
+              <SlidersHorizontal className="w-[20px] h-[20px]" strokeWidth={1.5} />
             </button>
             <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-              <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
+              <User className="text-on-primary w-[18px] h-[18px]" strokeWidth={1.5} />
             </div>
           </div>
         </div>
@@ -59,10 +71,10 @@ export default function EntreprisePage() {
           <div className="animate-fade-in-up animate-fade-in-up-delay-1">
             <button className="glow-primary w-full bg-primary-container active:scale-[0.99] transition-transform text-on-primary-fixed font-headline-sm text-headline-sm py-space-md px-space-lg rounded flex items-center justify-between shadow-sm group" type="button">
               <div className="flex items-center gap-space-sm">
-                <span className="material-symbols-outlined text-[24px]">add_circle</span>
+                <CirclePlus className="w-[24px] h-[24px]" strokeWidth={1.5} />
                 <span className="font-semibold tracking-tight">Déposer un nouveau projet</span>
               </div>
-              <span className="material-symbols-outlined text-[20px] transition-transform group-hover:translate-x-1">arrow_forward</span>
+              <ArrowRight className="w-[20px] h-[20px] transition-transform group-hover:translate-x-1" strokeWidth={1.5} />
             </button>
           </div>
 
@@ -94,7 +106,7 @@ export default function EntreprisePage() {
                 <span className="font-data-mono text-body-sm text-secondary">FCFA</span>
               </div>
               <div className="flex items-center gap-space-xs text-secondary mt-space-xs">
-                <span className="material-symbols-outlined text-[16px] text-primary">event_upcoming</span>
+                <CalendarClock className="w-[16px] h-[16px] text-primary" strokeWidth={1.5} />
                 <span className="font-body-sm text-body-sm">15 Nov. 2024 &bull; Coupon #1 + Amortissement</span>
               </div>
             </div>
@@ -154,7 +166,7 @@ export default function EntreprisePage() {
                 <span className="font-body-sm text-body-sm text-secondary">Calendrier conforme aux stipulations</span>
                 <button className="font-label-caps text-label-caps text-primary hover:underline uppercase tracking-wider font-semibold flex items-center gap-1" type="button">
                   Échéancier
-                  <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+                  <ChevronRight className="w-[14px] h-[14px]" strokeWidth={1.5} />
                 </button>
               </div>
             </div>
@@ -171,7 +183,7 @@ export default function EntreprisePage() {
               </div>
               <div className="bg-surface-container-low p-space-md rounded flex items-center justify-between">
                 <div className="flex items-center gap-space-sm">
-                  <span className="material-symbols-outlined text-secondary text-[20px]">hourglass_top</span>
+                  <Hourglass className="text-secondary w-[20px] h-[20px]" strokeWidth={1.5} />
                   <div className="flex flex-col">
                     <span className="font-body-md text-body-md text-on-surface">Comité des risques en délibération</span>
                     <span className="font-data-mono text-label-sm text-secondary">Soumis le 02 Oct. 2024</span>
@@ -195,7 +207,7 @@ export default function EntreprisePage() {
           {/* Action Requise */}
           <div className="animate-fade-in-up bg-surface-container-lowest p-space-lg rounded shadow-sm flex flex-col space-y-space-sm">
             <div className="flex items-center gap-space-xs text-on-surface">
-              <span className="material-symbols-outlined text-error text-[20px]">notifications_active</span>
+              <BellRing className="text-error w-[20px] h-[20px]" strokeWidth={1.5} />
               <span className="font-label-caps text-label-caps uppercase tracking-wider text-error font-semibold">Action Requise</span>
             </div>
             <div className="flex flex-col space-y-1">
@@ -212,12 +224,12 @@ export default function EntreprisePage() {
               >
                 {uploadedFile ? (
                   <>
-                    <span className="material-symbols-outlined text-[18px] text-tertiary">check_circle</span>
+                    <CircleCheck className="w-[18px] h-[18px] text-tertiary" strokeWidth={1.5} />
                     <span className="truncate max-w-[200px] text-tertiary">{uploadedFile}</span>
                   </>
                 ) : (
                   <>
-                    <span className="material-symbols-outlined text-[18px]">upload_file</span>
+                    <FileUp className="w-[18px] h-[18px]" strokeWidth={1.5} />
                     <span>Téléverser le document</span>
                   </>
                 )}

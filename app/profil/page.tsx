@@ -4,20 +4,47 @@ import { useState } from "react";
 import Link from "next/link";
 import { AppHeader } from "@/components/AppHeader";
 import { BottomNav } from "@/components/BottomNav";
+import {
+  Award,
+  BadgeCheck,
+  Banknote,
+  CalendarDays,
+  ChevronRight,
+  CircleCheck,
+  CircleCheckBig,
+  Copy,
+  Fingerprint,
+  GraduationCap,
+  Home,
+  IdCard,
+  KeyRound,
+  Lock,
+  LogIn,
+  Mail,
+  MonitorSmartphone,
+  Pencil,
+  Phone,
+  PieChart,
+  PiggyBank,
+  Settings,
+  ShieldCheck,
+  ShieldUser,
+  TrendingUp,
+} from "lucide-react";
 
 /* ─── tiny helpers ─── */
 const kycSteps = [
-  { label: "Identité", icon: "verified_user", done: true },
-  { label: "Adresse", icon: "home", done: true },
-  { label: "Revenus", icon: "payments", done: true },
-  { label: "Expérience", icon: "school", done: false, progress: 75 },
+  { label: "Identité", icon: ShieldCheck, done: true },
+  { label: "Adresse", icon: Home, done: true },
+  { label: "Revenus", icon: Banknote, done: true },
+  { label: "Expérience", icon: GraduationCap, done: false, progress: 75 },
 ];
 
 const activityLog = [
-  { icon: "login", label: "Connexion réussie", time: "Aujourd'hui, 09:15", color: "text-tertiary" },
-  { icon: "task_alt", label: "Investissement confirmé", time: "Hier, 14:30", color: "text-on-primary-container" },
-  { icon: "badge", label: "Document KYC approuvé", time: "12 Sept. 2024", color: "text-tertiary" },
-  { icon: "lock_reset", label: "Mot de passe mis à jour", time: "01 Sept. 2024", color: "text-secondary" },
+  { icon: LogIn, label: "Connexion réussie", time: "Aujourd'hui, 09:15", color: "text-tertiary" },
+  { icon: CircleCheckBig, label: "Investissement confirmé", time: "Hier, 14:30", color: "text-on-primary-container" },
+  { icon: IdCard, label: "Document KYC approuvé", time: "12 Sept. 2024", color: "text-tertiary" },
+  { icon: KeyRound, label: "Mot de passe mis à jour", time: "01 Sept. 2024", color: "text-secondary" },
 ];
 
 export default function ProfilPage() {
@@ -41,7 +68,7 @@ export default function ProfilPage() {
             </div>
             {/* verified badge */}
             <span className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-tertiary-container flex items-center justify-center shadow-sm">
-              <span className="material-symbols-outlined text-tertiary text-[16px]">verified</span>
+              <BadgeCheck className="text-tertiary w-[16px] h-[16px]" strokeWidth={1.5} />
             </span>
           </div>
 
@@ -52,7 +79,7 @@ export default function ProfilPage() {
             Dakar, Sénégal
           </p>
           <span className="mt-space-xs inline-flex items-center gap-1 px-3 py-1 rounded-full bg-surface-container-high">
-            <span className="material-symbols-outlined text-[14px] text-secondary">calendar_month</span>
+            <CalendarDays className="w-[14px] h-[14px] text-secondary" strokeWidth={1.5} />
             <span className="font-label-sm text-label-sm text-secondary">Membre depuis Janvier 2024</span>
           </span>
         </section>
@@ -61,17 +88,17 @@ export default function ProfilPage() {
         <section className="animate-fade-in-up animate-fade-in-up-delay-1">
           <div className="grid grid-cols-2 gap-space-sm">
             {[
-              { label: "Total investi", value: "950 000", unit: "FCFA", icon: "savings" },
-              { label: "Intérêts gagnés", value: "+76 400", unit: "FCFA", icon: "trending_up" },
-              { label: "Projets actifs", value: "3", unit: "", icon: "pie_chart" },
-              { label: "Niveau", value: "Privilège", unit: "", icon: "workspace_premium" },
+              { label: "Total investi", value: "950 000", unit: "FCFA", icon: PiggyBank },
+              { label: "Intérêts gagnés", value: "+76 400", unit: "FCFA", icon: TrendingUp },
+              { label: "Projets actifs", value: "3", unit: "", icon: PieChart },
+              { label: "Niveau", value: "Privilège", unit: "", icon: Award },
             ].map((s) => (
               <div
                 key={s.label}
                 className="hover-lift card-hover-glow bg-surface-container-lowest rounded-xl p-space-md flex flex-col gap-space-xs"
               >
                 <div className="flex items-center gap-space-xs">
-                  <span className="material-symbols-outlined text-[18px] text-on-primary-container">{s.icon}</span>
+                  <s.icon className="w-[18px] h-[18px] text-on-primary-container" strokeWidth={1.5} />
                   <span className="font-label-caps text-label-caps uppercase tracking-wider text-secondary">{s.label}</span>
                 </div>
                 <div className="flex items-baseline gap-1">
@@ -84,13 +111,13 @@ export default function ProfilPage() {
           {/* member level banner */}
           <div className="mt-space-sm bg-on-surface rounded-xl px-space-md py-space-sm flex items-center justify-between">
             <div className="flex items-center gap-space-sm">
-              <span className="material-symbols-outlined text-primary-container text-[22px]">workspace_premium</span>
+              <Award className="text-primary-container w-[22px] h-[22px]" strokeWidth={1.5} />
               <div>
                 <p className="font-label-caps text-label-caps uppercase tracking-wider text-secondary">Niveau membre</p>
                 <p className="font-headline-sm text-headline-sm font-semibold text-primary-container">Investisseur Privilège</p>
               </div>
             </div>
-            <span className="material-symbols-outlined text-secondary text-[20px]">chevron_right</span>
+            <ChevronRight className="text-secondary w-[20px] h-[20px]" strokeWidth={1.5} />
           </div>
         </section>
 
@@ -103,53 +130,53 @@ export default function ProfilPage() {
             {/* email */}
             <div className="flex items-center justify-between px-space-md py-space-sm">
               <div className="flex items-center gap-space-sm">
-                <span className="material-symbols-outlined text-[20px] text-secondary">mail</span>
+                <Mail className="w-[20px] h-[20px] text-secondary" strokeWidth={1.5} />
                 <div>
                   <p className="font-label-sm text-label-sm text-secondary">Email</p>
                   <p className="font-body-md text-body-md text-on-surface">amadou.kone@email.com</p>
                 </div>
               </div>
               <button className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg hover:bg-surface-container-low transition-colors">
-                <span className="material-symbols-outlined text-[18px] text-secondary">edit</span>
+                <Pencil className="w-[18px] h-[18px] text-secondary" strokeWidth={1.5} />
               </button>
             </div>
             {/* phone */}
             <div className="flex items-center justify-between px-space-md py-space-sm">
               <div className="flex items-center gap-space-sm">
-                <span className="material-symbols-outlined text-[20px] text-secondary">phone</span>
+                <Phone className="w-[20px] h-[20px] text-secondary" strokeWidth={1.5} />
                 <div>
                   <p className="font-label-sm text-label-sm text-secondary">Téléphone</p>
                   <p className="font-body-md text-body-md text-on-surface">+221 77 *** ** 89</p>
                 </div>
               </div>
               <button className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg hover:bg-surface-container-low transition-colors">
-                <span className="material-symbols-outlined text-[18px] text-secondary">edit</span>
+                <Pencil className="w-[18px] h-[18px] text-secondary" strokeWidth={1.5} />
               </button>
             </div>
             {/* investor id */}
             <div className="flex items-center justify-between px-space-md py-space-sm">
               <div className="flex items-center gap-space-sm">
-                <span className="material-symbols-outlined text-[20px] text-secondary">fingerprint</span>
+                <Fingerprint className="w-[20px] h-[20px] text-secondary" strokeWidth={1.5} />
                 <div>
                   <p className="font-label-sm text-label-sm text-secondary">ID Investisseur</p>
                   <p className="font-data-mono text-data-mono text-on-surface">INV-2024-0842</p>
                 </div>
               </div>
               <button className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg hover:bg-surface-container-low transition-colors">
-                <span className="material-symbols-outlined text-[18px] text-secondary">content_copy</span>
+                <Copy className="w-[18px] h-[18px] text-secondary" strokeWidth={1.5} />
               </button>
             </div>
             {/* kyc status */}
             <div className="flex items-center justify-between px-space-md py-space-sm">
               <div className="flex items-center gap-space-sm">
-                <span className="material-symbols-outlined text-[20px] text-secondary">shield_person</span>
+                <ShieldUser className="w-[20px] h-[20px] text-secondary" strokeWidth={1.5} />
                 <div>
                   <p className="font-label-sm text-label-sm text-secondary">Statut KYC</p>
                   <p className="font-body-md text-body-md text-on-surface">Niveau 2 — Vérifié</p>
                 </div>
               </div>
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-tertiary-container text-tertiary font-label-sm text-label-sm">
-                <span className="material-symbols-outlined text-[14px]">verified</span>
+                <BadgeCheck className="w-[14px] h-[14px]" strokeWidth={1.5} />
                 Vérifié
               </span>
             </div>
@@ -174,9 +201,9 @@ export default function ProfilPage() {
                     }`}
                   >
                     {step.done ? (
-                      <span className="material-symbols-outlined text-tertiary text-[18px]">check_circle</span>
+                      <CircleCheck className="text-tertiary w-[18px] h-[18px]" strokeWidth={1.5} />
                     ) : (
-                      <span className="material-symbols-outlined text-secondary text-[18px]">{step.icon}</span>
+                      <step.icon className="text-secondary w-[18px] h-[18px]" strokeWidth={1.5} />
                     )}
                   </div>
                   {/* label + optional bar */}
@@ -227,7 +254,7 @@ export default function ProfilPage() {
             {/* 2FA toggle */}
             <div className="flex items-center justify-between px-space-md py-space-sm">
               <div className="flex items-center gap-space-sm">
-                <span className="material-symbols-outlined text-[20px] text-secondary">security</span>
+                <ShieldCheck className="w-[20px] h-[20px] text-secondary" strokeWidth={1.5} />
                 <div>
                   <p className="font-body-md text-body-md text-on-surface">Authentification 2FA</p>
                   <p className="font-label-sm text-label-sm text-secondary">Protection renforcée</p>
@@ -250,18 +277,18 @@ export default function ProfilPage() {
             {/* password */}
             <div className="flex items-center justify-between px-space-md py-space-sm">
               <div className="flex items-center gap-space-sm">
-                <span className="material-symbols-outlined text-[20px] text-secondary">lock</span>
+                <Lock className="w-[20px] h-[20px] text-secondary" strokeWidth={1.5} />
                 <div>
                   <p className="font-body-md text-body-md text-on-surface">Mot de passe</p>
                   <p className="font-label-sm text-label-sm text-secondary">Modifié il y a 45 jours</p>
                 </div>
               </div>
-              <span className="material-symbols-outlined text-secondary text-[20px]">chevron_right</span>
+              <ChevronRight className="text-secondary w-[20px] h-[20px]" strokeWidth={1.5} />
             </div>
             {/* sessions */}
             <div className="flex items-center justify-between px-space-md py-space-sm">
               <div className="flex items-center gap-space-sm">
-                <span className="material-symbols-outlined text-[20px] text-secondary">devices</span>
+                <MonitorSmartphone className="w-[20px] h-[20px] text-secondary" strokeWidth={1.5} />
                 <div>
                   <p className="font-body-md text-body-md text-on-surface">Sessions actives</p>
                   <p className="font-label-sm text-label-sm text-secondary">2 appareils connectés</p>
@@ -277,14 +304,12 @@ export default function ProfilPage() {
               className="flex items-center justify-between px-space-md py-space-sm group"
             >
               <div className="flex items-center gap-space-sm">
-                <span className="material-symbols-outlined text-[20px] text-secondary group-hover:text-on-primary-container transition-colors">settings</span>
+                <Settings className="w-[20px] h-[20px] text-secondary group-hover:text-on-primary-container transition-colors" strokeWidth={1.5} />
                 <p className="font-body-md text-body-md text-on-surface group-hover:text-on-primary-container transition-colors">
                   Paramètres du compte
                 </p>
               </div>
-              <span className="material-symbols-outlined text-secondary text-[20px] group-hover:text-on-primary-container group-hover:translate-x-0.5 transition-all">
-                chevron_right
-              </span>
+              <ChevronRight className="text-secondary w-[20px] h-[20px] group-hover:text-on-primary-container group-hover:translate-x-0.5 transition-all" strokeWidth={1.5} />
             </Link>
           </div>
         </section>
@@ -298,7 +323,7 @@ export default function ProfilPage() {
             {activityLog.map((item) => (
               <div key={item.label} className="flex items-center gap-space-sm px-space-md py-space-sm">
                 <div className="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center shrink-0">
-                  <span className={`material-symbols-outlined text-[18px] ${item.color}`}>{item.icon}</span>
+                  <item.icon className={`w-[18px] h-[18px] ${item.color}`} strokeWidth={1.5} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-body-md text-body-md text-on-surface truncate">{item.label}</p>
