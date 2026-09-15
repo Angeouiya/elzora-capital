@@ -10,6 +10,13 @@ const screens = [
   { title: "Espace Entreprise", description: "Dashboard entreprise et financements", path: "/entreprise", icon: "apartment" },
   { title: "Dépôt de projet - Conditions", description: "Formulaire de financement (étape 3)", path: "/entreprise/conditions", icon: "fact_check" },
   { title: "Portail Admin Décaissements", description: "Console audit & risques", path: "/admin", icon: "shield_person" },
+  { title: "Mon Profil", description: "Profil investisseur et activité", path: "/profil", icon: "person" },
+  { title: "Paramètres", description: "Notifications, sécurité, préférences", path: "/parametres", icon: "settings" },
+  { title: "Connexion", description: "Page de connexion au compte", path: "/connexion", icon: "login" },
+  { title: "Inscription", description: "Création de compte investisseur", path: "/inscription", icon: "person_add" },
+  { title: "Vérification KYC", description: "Documents et conformité identité", path: "/verification", icon: "verified_user" },
+  { title: "Notifications", description: "Alertes et activités récentes", path: "/notifications", icon: "notifications" },
+  { title: "Historique", description: "Transactions et mouvements", path: "/historique", icon: "history" },
 ];
 
 export default function Home() {
