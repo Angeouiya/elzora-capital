@@ -39,10 +39,8 @@ export function Sidebar({
     >
       {header && (
         <div
-          className={`border-[#101010]/7 ${
-            drawer
-              ? "border-b px-5 py-5"
-              : "hidden border-b px-5 py-5 lg:block"
+          className={`border-b border-[#101010]/7 ${
+            drawer ? "px-5 py-5" : "px-4 py-3.5 lg:px-5 lg:py-5"
           }`}
         >
           {header}
@@ -92,11 +90,7 @@ export function Sidebar({
       </nav>
 
       {footer && (
-        <div
-          className={`border-t border-[#101010]/7 ${
-            drawer ? "px-5 py-4" : "hidden px-5 py-4 lg:block"
-          }`}
-        >
+        <div className={`border-t border-[#101010]/7 ${drawer ? "px-5 py-4" : "hidden px-5 py-4 lg:block"}`}>
           {footer}
         </div>
       )}
