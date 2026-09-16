@@ -31,8 +31,8 @@ async function login(
       async () => {
         const response = await context.request.get(`${baseURL}/api/auth/session`);
         if (!response.ok()) return "";
-        const session = (await response.json()) as { user?: { email?: string } };
-        return session.user?.email ?? "";
+        const session = (await response.json()) as { user?: { email?: string } } | null;
+        return session?.user?.email ?? "";
       },
       { timeout: 25_000, intervals: [250, 500, 1000] }
     )
