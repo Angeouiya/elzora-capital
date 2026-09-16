@@ -252,6 +252,10 @@ export function OperationsModule({ module }: { module: Module }) {
     }
   }, [data, module]);
 
+  const generatedAtLabel = data?.generatedAt
+    ? new Date(data.generatedAt).toLocaleString("fr-FR")
+    : "—";
+
   return (
     <AdminShell title={meta.title} subtitle={meta.subtitle}>
       {error ? (
@@ -313,7 +317,7 @@ export function OperationsModule({ module }: { module: Module }) {
               <p className="mt-3 text-sm leading-relaxed text-[#101010]/60">{view.note}</p>
               <div className="mt-5 rounded-[14px] bg-[#F5F5F3] p-4">
                 <p className="text-xs font-semibold uppercase tracking-[.08em] text-[#101010]/45">Dernière consolidation</p>
-                <p className="mt-1 text-sm font-semibold">{new Date(data.generatedAt).toLocaleString("fr-FR")}</p>
+                <p className="mt-1 text-sm font-semibold">{generatedAtLabel}</p>
               </div>
             </Card>
           </div>
