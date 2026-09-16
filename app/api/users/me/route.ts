@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 
-const editable = new Set(["firstName", "lastName", "phone", "language"]);
+type ProfileUpdate = {
+  firstName?: string;
+  lastName?: string;
+  phone?: string | null;
+  language?: string;
+};
 
 export async function GET() {
   try {
@@ -41,30 +46,38 @@ export async function PATCH(req: NextRequest) {
     const session = await auth();
     if (!session) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
-    const body = await req.json();
-    const data: Record<string, string | null> = {};
+    const body = (await req.json()) as Record<string, unknown>;
+    const data: ProfileUpdate = {};
 
-    for (const [key, value] of Object.entries(body ?? {})) {
-      if (!editable.has(key)) continue;
-      if (key === "phone") {
-        const phone = typeof value === "string" ? value.trim() : "";
-        if (phone && phone.replace(/\D/g, "").length < 8) {
-          return NextResponse.json({ error: "Numéro de téléphone invalide." }, { status: 400 });
-        }
-        data.phone = phone || null;
-        continue;
+    if ("firstName" in body) {
+      const firstName = typeof body.firstName === "string" ? body.firstName.trim() : "";
+      if (firstName.length < 2 || firstName.length > 80) {
+        return NextResponse.json({ error: "Prénom invalide." }, { status: 400 });
       }
-      if (key === "language") {
-        const language = value === "en" ? "en" : value === "fr" ? "fr" : "";
-        if (!language) return NextResponse.json({ error: "Langue non prise en charge." }, { status: 400 });
-        data.language = language;
-        continue;
+      data.firstName = firstName;
+    }
+
+    if ("lastName" in body) {
+      const lastName = typeof body.lastName === "string" ? body.lastName.trim() : "";
+      if (lastName.length < 2 || lastName.length > 80) {
+        return NextResponse.json({ error: "Nom invalide." }, { status: 400 });
       }
-      const text = typeof value === "string" ? value.trim() : "";
-      if (text.length < 2 || text.length > 80) {
-        return NextResponse.json({ error: `${key} invalide.` }, { status: 400 });
+      data.lastName = lastName;
+    }
+
+    if ("phone" in body) {
+      const phone = typeof body.phone === "string" ? body.phone.trim() : "";
+      if (phone && phone.replace(/\D/g, "").length < 8) {
+        return NextResponse.json({ error: "Numéro de téléphone invalide." }, { status: 400 });
       }
-      data[key] = text;
+      data.phone = phone || null;
+    }
+
+    if ("language" in body) {
+      if (body.language !== "fr" && body.language !== "en") {
+        return NextResponse.json({ error: "Langue non prise en charge." }, { status: 400 });
+      }
+      data.language = body.language;
     }
 
     if (!Object.keys(data).length) {
