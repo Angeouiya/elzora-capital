@@ -7,8 +7,8 @@ interface BottomNavProps {
 
 const navItems = [
   { href: "/offres", id: "offres" as const, icon: LayoutGrid, label: "Offres" },
-  { href: "/projet", id: "investir" as const, icon: TrendingUp, label: "Investir" },
-  { href: "/portefeuille", id: "portefeuille" as const, icon: Wallet, label: "Portefeuille" },
+  { href: "/offres", id: "investir" as const, icon: TrendingUp, label: "Investir" },
+  { href: "/dashboard", id: "portefeuille" as const, icon: Wallet, label: "Portefeuille" },
   { href: "/entreprise", id: "entreprise" as const, icon: Building2, label: "Entreprise" },
 ];
 
