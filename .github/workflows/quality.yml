@@ -52,9 +52,11 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Prepare local Cloudflare D1 data
-        run: npm run db:d1:local
+        run: |
+          npm run db:d1:local
+          npx wrangler d1 execute elzora-capital-production --local --file prisma/d1/ci-extra-seed.sql -y
 
-      - name: Desktop and mobile visual audit
+      - name: End-to-end financial and visual audit
         run: |
           mkdir -p artifacts
           npm run dev -- --hostname 127.0.0.1 > /tmp/nexora-dev.log 2>&1 &
@@ -73,7 +75,7 @@ jobs:
             exit 1
           fi
           set +e
-          npx playwright test tests/visual-audit.spec.ts --reporter=line --workers=1
+          npx playwright test tests/financial-flow.spec.ts tests/visual-audit.spec.ts --reporter=line --workers=1
           STATUS=$?
           set -e
           cp /tmp/nexora-dev.log artifacts/dev-server.log || true
