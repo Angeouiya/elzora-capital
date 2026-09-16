@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, FormEvent } from "react";
-import { signIn } from "next-auth/react";
+import { FormEvent, useState } from "react";
+import { signIn, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { AlertCircle, ShieldCheck } from "lucide-react";
 import { NexoraLogoDark } from "@/components/NexoraLogo";
+import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { Badge } from "@/components/ui/Badge";
-import { ShieldCheck, AlertCircle } from "lucide-react";
 
 export default function AdminConnexionPage() {
   const router = useRouter();
@@ -16,8 +16,8 @@ export default function AdminConnexionPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault();
     setError("");
     setLoading(true);
 
@@ -29,11 +29,26 @@ export default function AdminConnexionPage() {
       });
 
       if (result?.error) {
-        setError("Identifiants incorrects. Accès réservé à l'équipe Nexora.");
-      } else {
-        router.push("/admin/dashboard");
+        setError("Identifiants incorrects. Accès réservé aux membres autorisés.");
+        return;
       }
+
+      const sessionResponse = await fetch("/api/auth/session", {
+        cache: "no-store",
+      });
+      const session = await sessionResponse.json();
+      const role = session?.user?.role as string | undefined;
+
+      if (role !== "ADMIN") {
+        await signOut({ redirect: false });
+        setError("Ce compte n'est pas autorisé à accéder à ce portail.");
+        return;
+      }
+
+      router.replace("/admin/dashboard");
+      router.refresh();
     } catch {
+      await signOut({ redirect: false }).catch(() => undefined);
       setError("Erreur de connexion. Veuillez réessayer.");
     } finally {
       setLoading(false);
@@ -41,32 +56,36 @@ export default function AdminConnexionPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#101010] flex items-center justify-center p-4">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#101010] p-4 sm:p-6">
+      <div className="absolute left-0 top-0 h-1 w-32 bg-[#B6FF00]" aria-hidden="true" />
+
       <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="flex flex-col items-center mb-10">
-          <NexoraLogoDark size={56} />
-          <h1 className="text-white text-2xl font-bold mt-4">Nexora Capital</h1>
-          <Badge variant="default" className="mt-3 bg-white/10 text-white/60 border border-white/10">
-            <ShieldCheck className="h-3.5 w-3.5 mr-1.5" />
-            Espace Équipe Nexora
+        <div className="mb-8 flex flex-col items-center sm:mb-10">
+          <NexoraLogoDark size={54} />
+          <h1 className="mt-4 text-2xl font-bold tracking-[-0.03em] text-white">Nexora Capital</h1>
+          <Badge variant="default" className="mt-3 border-white/10 bg-white/8 text-white/60">
+            <ShieldCheck className="mr-1.5 h-3.5 w-3.5" />
+            Espace équipe
           </Badge>
         </div>
 
-        {/* Form Card */}
-        <div className="bg-white rounded-2xl p-8 shadow-xl">
-          <h2 className="text-lg font-semibold text-[#101010] mb-1">Connexion administrateur</h2>
-          <p className="text-sm text-[#101010]/60 mb-6">
-            Portail réservé aux membres autorisés de l&apos;équipe Nexora Capital.
-          </p>
+        <div className="rounded-[24px] border border-white/8 bg-white p-5 shadow-[0_26px_70px_rgba(0,0,0,0.28)] sm:p-8">
+          <div className="mb-6">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.11em] text-[#101010]/36">Accès interne</p>
+            <h2 className="mt-2 text-xl font-bold tracking-[-0.025em] text-[#101010]">Connexion sécurisée</h2>
+            <p className="mt-2 text-sm leading-relaxed text-[#101010]/54">
+              Portail réservé aux membres explicitement autorisés de l&apos;équipe.
+            </p>
+          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <Input
               label="Adresse email"
               type="email"
               placeholder="prenom.nom@nexora.capital"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(event) => setEmail(event.target.value)}
+              autoComplete="email"
               required
             />
             <Input
@@ -74,35 +93,30 @@ export default function AdminConnexionPage() {
               type="password"
               placeholder="••••••••••"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(event) => setPassword(event.target.value)}
+              autoComplete="current-password"
               required
             />
 
             {error && (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-[#C62828]/10 text-[#C62828] text-sm">
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                {error}
+              <div role="alert" className="flex items-start gap-2.5 rounded-[14px] border border-[#C62828]/12 bg-[#C62828]/7 p-3.5 text-[#C62828]">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span className="text-sm leading-relaxed">{error}</span>
               </div>
             )}
 
-            <Button
-              type="submit"
-              variant="primary"
-              size="lg"
-              loading={loading}
-              className="w-full"
-            >
+            <Button type="submit" variant="primary" size="lg" loading={loading} fullWidth>
               Se connecter
             </Button>
           </form>
 
-          <p className="text-xs text-[#101010]/40 text-center mt-6">
-            Connexion sécurisée · Accès journalisé · Session chiffrée
+          <p className="mt-6 text-center text-xs leading-relaxed text-[#101010]/40">
+            Accès contrôlé · Actions sensibles journalisées
           </p>
         </div>
 
-        <p className="text-center text-white/30 text-xs mt-6">
-          © {new Date().getFullYear()} Nexora Capital — Tous droits réservés
+        <p className="mt-6 text-center text-xs text-white/28">
+          © {new Date().getFullYear()} Nexora Capital
         </p>
       </div>
     </div>
