@@ -36,6 +36,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install visual audit test types
+        run: npm install --no-save --package-lock=false @playwright/test@1.55.0
+
       - name: Generate Prisma client
         run: npm run db:generate
 
@@ -45,10 +48,8 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Install visual audit runner
-        run: |
-          npm install --no-save --package-lock=false @playwright/test@1.55.0
-          npx playwright install --with-deps chromium
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
 
       - name: Prepare local Cloudflare D1 data
         run: npm run db:d1:local
