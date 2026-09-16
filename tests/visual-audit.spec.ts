@@ -1,4 +1,4 @@
-import { test, expect, type Browser, type BrowserContext, type Page } from "@playwright/test";
+import { test, expect, type Browser, type BrowserContext } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -24,6 +24,8 @@ const publicRoutes = [
   "/inscription",
   "/mot-de-passe-oublie",
   "/entreprise",
+  "/projet",
+  "/souscription",
 ];
 
 const investorRoutes = [
@@ -40,6 +42,9 @@ const investorRoutes = [
   "/parametres",
   "/verification",
   "/historique",
+  "/favoris",
+  "/portefeuille",
+  "/retrait",
   `/offres/${OFFER_OPEN}/souscrire`,
 ];
 
@@ -143,7 +148,6 @@ async function auditRoute(
 
     if (!response || status >= 400) failures.push(`${viewportName} ${label} ${route}: HTTP ${status || "none"}`);
     if (finalURL.origin !== baseURL) failures.push(`${viewportName} ${label} ${route}: external redirect ${page.url()}`);
-    if (/404|page not found/i.test(bodyText) && status === 404) failures.push(`${viewportName} ${label} ${route}: 404 rendered`);
     if (/Application error|Internal Server Error|Unhandled Runtime Error/i.test(bodyText)) failures.push(`${viewportName} ${label} ${route}: Next/runtime error rendered`);
     if (overflow) failures.push(`${viewportName} ${label} ${route}: document horizontal overflow`);
     if (browserErrors.length) failures.push(`${viewportName} ${label} ${route}: ${browserErrors.join(" | ")}`);
