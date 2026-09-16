@@ -1,40 +1,40 @@
 import Link from "next/link";
+import { Building2, LayoutGrid, TrendingUp, Wallet } from "lucide-react";
 
 interface BottomNavProps {
   active: "offres" | "investir" | "portefeuille" | "entreprise";
 }
 
 const navItems = [
-  { href: "/offres", id: "offres" as const, icon: "grid_view", label: "Offres" },
-  { href: "/projet", id: "investir" as const, icon: "trending_up", label: "Investir" },
-  { href: "/portefeuille", id: "portefeuille" as const, icon: "account_balance_wallet", label: "Portefeuille" },
-  { href: "/entreprise", id: "entreprise" as const, icon: "apartment", label: "Entreprise" },
+  { href: "/offres", id: "offres" as const, icon: LayoutGrid, label: "Offres" },
+  { href: "/projet", id: "investir" as const, icon: TrendingUp, label: "Investir" },
+  { href: "/portefeuille", id: "portefeuille" as const, icon: Wallet, label: "Portefeuille" },
+  { href: "/entreprise", id: "entreprise" as const, icon: Building2, label: "Entreprise" },
 ];
 
 export function BottomNav({ active }: BottomNavProps) {
   return (
-    <nav className="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl border-t border-surface-container/60">
-      <div className="flex justify-around items-center h-16 px-space-xs">
+    <nav className="fixed inset-x-3 bottom-3 z-50 pb-safe md:hidden" aria-label="Navigation principale mobile">
+      <div className="mx-auto flex h-[68px] max-w-md items-center gap-1 rounded-[22px] border border-white/10 bg-[#101010] p-1.5 shadow-[0_22px_58px_rgba(16,16,16,0.30)]">
         {navItems.map((item) => {
           const isActive = active === item.id;
+          const Icon = item.icon;
+
           return (
             <Link
               key={item.id}
               href={item.href}
-              className={`flex-1 flex flex-col items-center justify-center min-h-[44px] py-space-xs transition-all duration-200 ${
+              aria-current={isActive ? "page" : undefined}
+              className={`relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[16px] px-1 py-2 transition-[background,color,transform] duration-150 active:scale-[0.97] ${
                 isActive
-                  ? "text-on-surface font-semibold"
-                  : "text-secondary hover:text-on-surface"
+                  ? "bg-[#B6FF00] text-[#101010]"
+                  : "text-white/55 hover:bg-white/7 hover:text-white"
               }`}
-              {...(isActive ? { "aria-current": "page" } : {})}
             >
-              <div className={`relative transition-transform duration-200 ${isActive ? "scale-110" : ""}`}>
-                <span className="material-symbols-outlined text-[22px]">{item.icon}</span>
-                {isActive && (
-                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary-container"></span>
-                )}
-              </div>
-              <span className="font-label-sm text-label-sm tracking-tight mt-0.5">{item.label}</span>
+              <Icon className="h-[19px] w-[19px]" strokeWidth={isActive ? 2.3 : 1.9} aria-hidden="true" />
+              <span className="max-w-full truncate text-[10px] font-semibold leading-none tracking-[-0.01em]">
+                {item.label}
+              </span>
             </Link>
           );
         })}
