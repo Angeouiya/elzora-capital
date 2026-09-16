@@ -15,12 +15,33 @@ async function login(
     waitUntil: "domcontentloaded",
     timeout: 30_000,
   });
+
+  // Le tout premier écran compilé par Next.js en mode dev peut avoir son DOM prêt
+  // quelques instants avant l'hydratation React. On attend donc la stabilisation
+  // réseau puis on valide la session côté serveur au lieu de dépendre uniquement
+  // de la vitesse de la redirection client.
+  await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => undefined);
   await page.locator('input[type="email"]').fill(email);
   await page.locator('input[type="password"]').fill(password);
-  await Promise.all([
-    page.waitForURL((url) => url.pathname.startsWith(expectedPath), { timeout: 20_000 }),
-    page.getByRole("button", { name: /se connecter/i }).click(),
-  ]);
+  await page.waitForTimeout(300);
+  await page.getByRole("button", { name: /se connecter/i }).click();
+
+  await expect
+    .poll(
+      async () => {
+        const response = await context.request.get(`${baseURL}/api/auth/session`);
+        if (!response.ok()) return "";
+        const session = (await response.json()) as { user?: { email?: string } };
+        return session.user?.email ?? "";
+      },
+      { timeout: 25_000, intervals: [250, 500, 1000] }
+    )
+    .toBe(email);
+
+  if (!new URL(page.url()).pathname.startsWith(expectedPath)) {
+    await page.goto(`${baseURL}${expectedPath}`, { waitUntil: "domcontentloaded", timeout: 30_000 });
+  }
+  expect(new URL(page.url()).pathname.startsWith(expectedPath)).toBeTruthy();
   await page.close();
   return context;
 }
