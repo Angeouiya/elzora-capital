@@ -276,6 +276,56 @@ textarea:focus-visible {
   50% { opacity: 1; }
 }
 
+/* Legacy page harmonisation: lets older screens inherit the premium system. */
+header.fixed.top-0,
+header.sticky.top-0 {
+  border-color: var(--nx-border);
+  box-shadow: 0 1px 0 rgba(16, 16, 16, 0.025);
+}
+
+:is(a, button)[class*="bg-[#B6FF00]"] {
+  border: 1px solid var(--nx-accent);
+  border-radius: 14px;
+  box-shadow: 0 8px 22px rgba(16, 16, 16, 0.12);
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease,
+    border-color 160ms ease;
+}
+
+:is(a, button)[class*="bg-[#B6FF00]"]:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(16, 16, 16, 0.16);
+}
+
+:is(a, button)[class*="bg-[#B6FF00]"]:active {
+  transform: scale(0.985);
+}
+
+:is(a, button)[class*="bg-[#101010]"] {
+  border-radius: 14px;
+  box-shadow: 0 8px 22px rgba(16, 16, 16, 0.12);
+}
+
+input[class*="rounded-xl"],
+select[class*="rounded-xl"],
+textarea[class*="rounded-xl"] {
+  border-radius: 14px;
+  box-shadow: var(--nx-shadow-xs);
+}
+
+input[class*="rounded-xl"]:focus,
+select[class*="rounded-xl"]:focus,
+textarea[class*="rounded-xl"]:focus {
+  border-color: var(--nx-accent);
+  box-shadow: 0 0 0 4px rgba(182, 255, 0, 0.14);
+}
+
+/* Numeric information stays stable while loading / updating. */
+[class*="font-mono"],
+[class*="text-data"],
+[class*="font-data"] {
+  font-variant-numeric: tabular-nums;
+}
+
 /* Responsive behavior */
 @media (max-width: 767px) {
   .nx-page {
@@ -300,6 +350,10 @@ textarea:focus-visible {
   .nx-mobile-full {
     width: 100% !important;
   }
+
+  :is(a, button)[class*="bg-[#B6FF00]"] {
+    min-height: 44px;
+  }
 }
 
 @media (min-width: 1024px) {
@@ -312,7 +366,8 @@ textarea:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .nx-card-interactive,
   .nx-icon-button,
-  .nx-nav-link {
+  .nx-nav-link,
+  :is(a, button)[class*="bg-[#B6FF00]"] {
     transition: none;
   }
 }
