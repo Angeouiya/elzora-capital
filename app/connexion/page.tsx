@@ -74,13 +74,15 @@ export default function ConnexionPage() {
         "redirectTo"
       );
 
-      const safeRedirect =
+      if (
         requestedTarget &&
         requestedTarget.startsWith("/") &&
         !requestedTarget.startsWith("//") &&
-        !requestedTarget.startsWith("/admin");
+        !requestedTarget.startsWith("/admin")
+      ) {
+        target = requestedTarget;
+      }
 
-      if (safeRedirect) target = requestedTarget;
       window.location.assign(target);
     } catch {
       setError("Erreur de connexion. Veuillez réessayer.");
