@@ -2,27 +2,13 @@
 
 import { ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  LayoutDashboard,
-  Building,
-  FolderOpen,
-  Landmark,
-  Banknote,
-  CalendarClock,
-  ChartColumn,
-  FileText,
-  Users,
-  UserRound,
-  Menu,
-  Bell,
-  X,
-} from "lucide-react";
-import { Sidebar, SidebarItem } from "@/components/ui/Sidebar";
+import { usePathname } from "next/navigation";
+import { Banknote, Bell, Building2, CalendarClock, ChartColumn, FileText, FolderOpen, Landmark, LayoutDashboard, Menu, MessageSquare, UserRound, Users, X } from "lucide-react";
 import { NexoraLogo } from "@/components/NexoraLogo";
 
-const NAV_ITEMS: Array<Omit<SidebarItem, "icon"> & { icon: typeof LayoutDashboard }> = [
+const NAV = [
   { label: "Vue d'ensemble", href: "/entreprise/dashboard", icon: LayoutDashboard },
-  { label: "Société", href: "/entreprise", icon: Building, exact: true },
+  { label: "Société", href: "/entreprise", icon: Building2, exact: true },
   { label: "Dossiers", href: "/entreprise/projet/nouveau", icon: FolderOpen },
   { label: "Financements", href: "/entreprise/financements", icon: Landmark },
   { label: "Décaissements", href: "/entreprise/financements#decaissements", icon: Banknote },
@@ -30,130 +16,12 @@ const NAV_ITEMS: Array<Omit<SidebarItem, "icon"> & { icon: typeof LayoutDashboar
   { label: "Rapports", href: "/entreprise/rapports", icon: ChartColumn },
   { label: "Documents", href: "/entreprise/documents", icon: FileText },
   { label: "Équipe", href: "/entreprise/equipe", icon: Users },
+  { label: "Messages", href: "/entreprise/messages", icon: MessageSquare },
 ];
 
-interface EntrepriseShellProps {
-  title: string;
-  subtitle?: string;
-  actions?: ReactNode;
-  companyName?: string | null;
-  children: ReactNode;
-}
-
-export function EntrepriseShell({ title, subtitle, actions, companyName, children }: EntrepriseShellProps) {
-  const [mobileOpen, setMobileOpen] = useState(false);
-
-  useEffect(() => {
-    document.body.style.overflow = mobileOpen ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [mobileOpen]);
-
-  const items: SidebarItem[] = NAV_ITEMS.map(({ icon: Icon, ...item }) => ({
-    ...item,
-    icon: <Icon className="h-4 w-4" />,
-  }));
-
-  const sidebarHeader = (
-    <Link href="/entreprise/dashboard" className="group flex items-center gap-3">
-      <NexoraLogo size={34} className="transition-transform duration-200 group-hover:scale-[1.03]" />
-      <div className="min-w-0 leading-tight">
-        <span className="block truncate text-sm font-bold tracking-[-0.015em] text-[#101010]">Nexora Capital</span>
-        <span className="mt-0.5 block text-[11px] font-medium text-[#101010]/45">Espace entreprise</span>
-      </div>
-    </Link>
-  );
-
-  const sidebarFooter = (
-    <div className="flex items-center gap-3 rounded-[14px] bg-[#F5F5F3] p-2.5">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[#101010]">
-        <UserRound className="h-4 w-4 text-[#B6FF00]" />
-      </div>
-      <div className="min-w-0 leading-tight">
-        <span className="block truncate text-sm font-semibold text-[#101010]">{companyName || "Mon entreprise"}</span>
-        <span className="mt-0.5 block text-[11px] text-[#101010]/45">Porteur de projet</span>
-      </div>
-    </div>
-  );
-
-  return (
-    <div className="min-h-screen bg-[#F5F5F3]">
-      <header className="sticky top-0 z-30 border-b border-[#101010]/7 bg-white/94 backdrop-blur-xl lg:hidden">
-        <div className="flex h-16 items-center justify-between gap-3 px-4">
-          <button
-            type="button"
-            onClick={() => setMobileOpen(true)}
-            aria-label="Ouvrir le menu"
-            className="nx-icon-button !h-10 !w-10"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-          <Link href="/entreprise/dashboard" className="flex min-w-0 items-center gap-2.5">
-            <NexoraLogo size={28} />
-            <div className="min-w-0 text-center">
-              <p className="truncate text-[11px] font-semibold uppercase tracking-[0.07em] text-[#101010]/40">Entreprise</p>
-              <p className="truncate text-sm font-bold tracking-[-0.015em] text-[#101010]">{title}</p>
-            </div>
-          </Link>
-          <Link href="/notifications" aria-label="Notifications" className="nx-icon-button !h-10 !w-10">
-            <Bell className="h-4.5 w-4.5" />
-          </Link>
-        </div>
-      </header>
-
-      <div className="flex min-w-0">
-        <div className="sticky top-0 hidden h-screen shrink-0 lg:block">
-          <Sidebar items={items} header={sidebarHeader} footer={sidebarFooter} />
-        </div>
-
-        {mobileOpen && (
-          <div className="fixed inset-0 z-[60] lg:hidden">
-            <button
-              type="button"
-              aria-label="Fermer le menu"
-              className="absolute inset-0 h-full w-full bg-[#101010]/58 backdrop-blur-[2px]"
-              onClick={() => setMobileOpen(false)}
-            />
-            <div className="absolute inset-y-0 left-0 animate-slide-in-right shadow-[24px_0_70px_rgba(16,16,16,0.20)]">
-              <Sidebar
-                items={items}
-                header={sidebarHeader}
-                footer={sidebarFooter}
-                mobileMode="drawer"
-              />
-              <button
-                type="button"
-                onClick={() => setMobileOpen(false)}
-                aria-label="Fermer le menu"
-                className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-[11px] bg-[#F5F5F3] text-[#101010]/55 transition-colors hover:text-[#101010]"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        <main className="min-w-0 flex-1">
-          <div className="mx-auto w-full max-w-[1280px] px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10 xl:px-12">
-            <div className="mb-7 flex flex-col gap-4 border-b border-[#101010]/7 pb-6 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
-              <div className="min-w-0">
-                <p className="mb-2 hidden text-[10px] font-semibold uppercase tracking-[0.11em] text-[#101010]/38 lg:block">
-                  Espace entreprise
-                </p>
-                <h1 className="nx-page-title">{title}</h1>
-                {subtitle && <p className="nx-page-subtitle">{subtitle}</p>}
-              </div>
-              {actions && (
-                <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
-                  {actions}
-                </div>
-              )}
-            </div>
-            {children}
-          </div>
-        </main>
-      </div>
-    </div>
-  );
+export function EntrepriseShell({ title, subtitle, actions, companyName, children }: { title: string; subtitle?: string; actions?: ReactNode; companyName?: string | null; children: ReactNode }) {
+  const path = usePathname(); const [open,setOpen]=useState(false);
+  useEffect(()=>{ document.body.style.overflow=open?"hidden":""; return()=>{document.body.style.overflow=""};},[open]);
+  const nav = <nav className="flex flex-col gap-1.5">{NAV.map(({href,label,icon:Icon,exact})=>{ const base=href.split("#")[0]; const active=exact?path===base:path===base||path.startsWith(`${base}/`); return <Link key={href} href={href} onClick={()=>setOpen(false)} className={`flex min-h-11 items-center gap-3 rounded-[13px] px-3 text-[13px] font-semibold transition-all ${active?"bg-[#101010] text-white":"text-[#101010]/58 hover:bg-[#F5F5F3] hover:text-[#101010]"}`}><span className={`grid h-8 w-8 place-items-center rounded-[10px] ${active?"bg-[#B6FF00] text-[#101010]":"bg-[#F5F5F3]"}`}><Icon className="h-4 w-4"/></span>{label}</Link>})}</nav>;
+  return <div className="min-h-screen bg-[#F5F5F3] lg:grid lg:grid-cols-[264px_minmax(0,1fr)]"><aside className="hidden h-screen flex-col border-r border-[#101010]/7 bg-white lg:sticky lg:top-0 lg:flex"><Link href="/entreprise/dashboard" className="flex h-[78px] items-center gap-3 border-b border-[#101010]/7 px-5"><NexoraLogo size={35}/><div><p className="text-[15px] font-bold">Nexora Capital</p><p className="text-[10px] uppercase tracking-[.1em] text-[#101010]/38">Espace entreprise</p></div></Link><div className="flex-1 overflow-y-auto p-3">{nav}</div><div className="border-t border-[#101010]/7 p-4"><div className="flex items-center gap-3 rounded-[14px] bg-[#F5F5F3] p-3"><span className="grid h-9 w-9 place-items-center rounded-[11px] bg-[#B6FF00]"><UserRound className="h-4 w-4"/></span><div className="min-w-0"><p className="truncate text-sm font-semibold">{companyName||"Mon entreprise"}</p><p className="text-[11px] text-[#101010]/45">Contexte entreprise</p></div></div></div></aside><div className="min-w-0"><header className="sticky top-0 z-40 border-b border-[#101010]/7 bg-white/94 backdrop-blur-xl lg:hidden"><div className="flex h-16 items-center justify-between px-4"><button className="nx-icon-button !h-10 !w-10" onClick={()=>setOpen(true)} aria-label="Menu"><Menu className="h-5 w-5"/></button><Link href="/entreprise/dashboard" className="flex items-center gap-2"><NexoraLogo size={28}/><span className="max-w-[180px] truncate text-sm font-bold">{companyName||"Entreprise"}</span></Link><Link href="/notifications" className="nx-icon-button !h-10 !w-10"><Bell className="h-4 w-4"/></Link></div></header>{open&&<div className="fixed inset-0 z-[80] lg:hidden"><button className="absolute inset-0 bg-[#101010]/60" onClick={()=>setOpen(false)} aria-label="Fermer"/><aside className="absolute inset-y-0 left-0 flex w-[min(88vw,340px)] flex-col bg-white"><div className="flex h-16 items-center justify-between border-b border-[#101010]/7 px-4"><div className="flex items-center gap-2"><NexoraLogo size={30}/><b>Nexora Capital</b></div><button className="nx-icon-button !h-9 !w-9" onClick={()=>setOpen(false)}><X className="h-4 w-4"/></button></div><div className="flex-1 overflow-y-auto p-3">{nav}</div></aside></div>}<main className="mx-auto w-full max-w-[1280px] px-4 py-6 sm:px-6 lg:px-9 lg:py-9"><div className="mb-7 flex flex-col gap-4 border-b border-[#101010]/7 pb-6 sm:flex-row sm:items-end sm:justify-between"><div><p className="mb-2 text-[10px] font-semibold uppercase tracking-[.11em] text-[#101010]/38">Espace entreprise</p><h1 className="nx-page-title">{title}</h1>{subtitle&&<p className="nx-page-subtitle">{subtitle}</p>}</div>{actions&&<div className="flex flex-wrap gap-2">{actions}</div>}</div>{children}</main></div></div>;
 }
