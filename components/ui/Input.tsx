@@ -1,4 +1,5 @@
 "use client";
+
 import { InputHTMLAttributes, forwardRef } from "react";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -10,24 +11,28 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ label, error, hint, className = "", id, ...props }, ref) => {
     const inputId = id || label?.toLowerCase().replace(/\s+/g, "-");
+    const helpId = inputId ? `${inputId}-help` : undefined;
+
     return (
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         {label && (
-          <label
-            htmlFor={inputId}
-            className="text-sm font-medium text-[#101010]"
-          >
+          <label htmlFor={inputId} className="text-[13px] font-semibold text-[#101010]/82">
             {label}
           </label>
         )}
         <input
           ref={ref}
           id={inputId}
-          className={`h-12 md:h-11 px-4 rounded-xl border bg-white text-base md:text-sm text-[#101010] placeholder:text-[#101010]/40 outline-none transition-all focus:ring-2 focus:ring-[#B6FF00]/40 focus:border-[#B6FF00] ${error ? "border-[#C62828] focus:ring-[#C62828]/30 focus:border-[#C62828]" : "border-[#101010]/10"} ${className}`}
+          aria-invalid={Boolean(error) || undefined}
+          aria-describedby={(error || hint) && helpId ? helpId : undefined}
+          className={`nx-field h-[52px] sm:h-12 px-4 text-base sm:text-sm placeholder:text-[#101010]/36 disabled:cursor-not-allowed disabled:bg-[#F5F5F3] disabled:text-[#101010]/40 ${error ? "!border-[#C62828] focus:!shadow-[0_0_0_4px_rgba(198,40,40,0.10)]" : ""} ${className}`}
           {...props}
         />
-        {error && <p className="text-xs text-[#C62828]">{error}</p>}
-        {hint && !error && <p className="text-xs text-[#101010]/50">{hint}</p>}
+        {(error || hint) && (
+          <p id={helpId} className={`text-xs leading-relaxed ${error ? "text-[#C62828]" : "text-[#101010]/48"}`}>
+            {error || hint}
+          </p>
+        )}
       </div>
     );
   }
