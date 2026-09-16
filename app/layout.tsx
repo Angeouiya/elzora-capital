@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import "./premium.css";
+import "./brand-guardrails.css";
 
 const hankenGrotesk = Hanken_Grotesk({
   variable: "--font-hanken",
@@ -23,7 +25,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#f9f9f7",
+  themeColor: "#F5F5F3",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

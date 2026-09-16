@@ -4,15 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Bell } from "lucide-react";
 
-interface NotifCount {
-  unread: number;
-}
-
-/**
- * NotificationBell — compteur de notifications non lues.
- * Affiche un badge rouge si unread > 0.
- * Se place dans n'importe quel header/navigateur.
- */
 export function NotificationBell({ className = "" }: { className?: string }) {
   const [unread, setUnread] = useState(0);
 
@@ -30,7 +21,7 @@ export function NotificationBell({ className = "" }: { className?: string }) {
         /* silent */
       }
     };
-    load();
+    void load();
     return () => {
       cancelled = true;
     };
@@ -39,12 +30,12 @@ export function NotificationBell({ className = "" }: { className?: string }) {
   return (
     <Link
       href="/notifications"
-      className={`relative inline-flex items-center justify-center ${className}`}
+      className={`relative inline-flex h-11 w-11 items-center justify-center rounded-[14px] border border-[#101010]/8 bg-white text-[#101010]/58 shadow-[0_2px_8px_rgba(16,16,16,0.04)] transition-[transform,color,background,border-color,box-shadow] hover:border-[#101010]/16 hover:bg-[#F5F5F3] hover:text-[#101010] hover:shadow-[0_8px_18px_rgba(16,16,16,0.07)] active:scale-[0.97] ${className}`}
       aria-label={`${unread} notification${unread > 1 ? "s" : ""} non lue${unread > 1 ? "s" : ""}`}
     >
-      <Bell className="h-5 w-5" />
+      <Bell className="h-[19px] w-[19px]" aria-hidden="true" />
       {unread > 0 && (
-        <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#C62828] text-white text-[10px] font-bold flex items-center justify-center leading-none">
+        <span className="absolute -right-1 -top-1 flex h-[19px] min-w-[19px] items-center justify-center rounded-full border-2 border-white bg-[#C62828] px-1 text-[9px] font-bold leading-none text-white">
           {unread > 99 ? "99+" : unread}
         </span>
       )}

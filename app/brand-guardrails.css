@@ -1,0 +1,37 @@
+/* Visual guardrails from the product specification.
+   This layer neutralises legacy decorative effects that conflict with the brand. */
+
+.glow-primary {
+  box-shadow: 0 8px 24px rgba(16, 16, 16, 0.08) !important;
+}
+
+.text-gradient-primary {
+  background: none !important;
+  color: #486800 !important;
+  -webkit-background-clip: initial !important;
+  -webkit-text-fill-color: currentColor !important;
+  background-clip: initial !important;
+}
+
+.gradient-border::before {
+  padding: 0 !important;
+  background: none !important;
+  border: 1px solid rgba(182, 255, 0, 0.4) !important;
+  -webkit-mask: none !important;
+  mask: none !important;
+}
+
+.card-hover-glow:hover {
+  box-shadow: 0 12px 32px rgba(16, 16, 16, 0.08) !important;
+}
+
+.animate-shimmer {
+  background: #ececea !important;
+  background-size: auto !important;
+  animation: nx-guardrail-pulse 1.6s ease-in-out infinite !important;
+}
+
+@keyframes nx-guardrail-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}

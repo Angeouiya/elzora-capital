@@ -1,153 +1,22 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import { CheckCircle2, CircleAlert, FileUp, LoaderCircle, RefreshCw, ShieldCheck } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
-import { BottomNav } from "@/components/BottomNav";
-import {
-  ChevronDown,
-  CircleCheck,
-  CircleHelp,
-  FileUp,
-  Home,
-  IdCard,
-  Info,
-  Landmark,
-  ReceiptText,
-  Send,
-  ShieldCheck,
-} from "lucide-react";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
+import { ProgressBar } from "@/components/ui/ProgressBar";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 
-const kycSteps = [
-  { id: "identite", label: "Identité", icon: IdCard, status: "completed", date: "15 Jan. 2024" },
-  { id: "adresse", label: "Justificatif de domicile", icon: Home, status: "completed", date: "15 Jan. 2024" },
-  { id: "revenus", label: "Justificatif de revenus", icon: ReceiptText, status: "completed", date: "16 Jan. 2024" },
-  { id: "experience", label: "Expérience en investissement", icon: CircleHelp, status: "in_progress", date: null },
-  { id: "origine", label: "Origine des fonds", icon: Landmark, status: "pending", date: null },
-];
+type DocumentRow={id:string;type:string;fileName:string;fileSize:number|null;status:string;note:string|null;uploadedAt:string;verifiedAt:string|null};
+type KycData={kycStatus:string;accountType:string;kycDocuments:DocumentRow[]};
+const individualDocs=[["IDENTITY","Pièce d'identité","CNI ou passeport valide"],["PROOF_ADDRESS","Justificatif de domicile","Document récent"],["BANK_STATEMENT","Justificatif bancaire","RIB ou relevé permettant d'identifier le titulaire"],["SELFIE","Contrôle de présence","Photo de contrôle pour rapprochement d'identité"]] as const;
+const companyDocs=[["IDENTITY","Identité du représentant","CNI ou passeport du représentant légal"],["REGISTRATION","Registre de commerce","RCCM ou document d'immatriculation"],["TAX_ID","Identifiant fiscal","Document fiscal de l'entreprise"],["BANK_STATEMENT","Compte bancaire","RIB au nom de l'entreprise"],["FINANCIAL","États financiers","Derniers états disponibles"],["BUSINESS_PLAN","Business plan","Plan d'affaires ou note stratégique"]] as const;
 
-export default function VerificationPage() {
-  const [expandedDoc, setExpandedDoc] = useState<string | null>(null);
-
-  return (
-    <>
-      <AppHeader title="Vérification KYC" subtitle="NEXORA CAPITAL" showBack />
-
-      <main className="flex-1 w-full bg-surface pt-16 pb-24 min-h-screen">
-        <div className="flex flex-col w-full px-space-md py-space-md space-y-space-md">
-
-          {/* Status Banner */}
-          <div className="bg-tertiary-container/30 rounded-xl p-4 flex items-center gap-3 animate-fade-in-up">
-            <div className="w-12 h-12 rounded-full bg-tertiary-container flex items-center justify-center shrink-0">
-              <ShieldCheck className="text-on-tertiary-container w-[24px] h-[24px]" strokeWidth={1.5} />
-            </div>
-            <div>
-              <span className="font-headline-sm text-headline-sm text-on-surface font-semibold block">Niveau 2 sur 3</span>
-              <span className="font-body-sm text-body-sm text-on-tertiary-container">Investisseur vérifié — Plafond : 5 000 000 FCFA</span>
-            </div>
-          </div>
-
-          {/* Overall Progress */}
-          <div className="bg-surface-container-lowest rounded-xl p-4 shadow-sm animate-fade-in-up animate-fade-in-up-delay-1">
-            <div className="flex items-center justify-between mb-2">
-              <span className="font-label-caps text-label-caps uppercase text-secondary">Progression globale</span>
-              <span className="font-data-mono text-data-mono text-on-surface font-semibold">60%</span>
-            </div>
-            <div className="w-full h-2.5 bg-surface-container-high rounded-full overflow-hidden">
-              <div className="h-full bg-tertiary rounded-full animate-progress-fill" style={{ width: "60%" }}></div>
-            </div>
-            <p className="font-body-sm text-body-sm text-secondary mt-2">3 documents sur 5 validés. Complétez votre dossier pour augmenter votre plafond.</p>
-          </div>
-
-          {/* KYC Steps */}
-          <div className="space-y-2 animate-fade-in-up animate-fade-in-up-delay-2">
-            <h2 className="font-headline-sm text-headline-sm text-on-surface font-semibold">Documents requis</h2>
-            {kycSteps.map((step) => (
-              <div key={step.id} className="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden hover-lift">
-                <button
-                  onClick={() => setExpandedDoc(expandedDoc === step.id ? null : step.id)}
-                  className="w-full p-4 flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                      step.status === "completed" ? "bg-tertiary-container" : step.status === "in_progress" ? "bg-primary-container" : "bg-surface-container"
-                    }`}>
-                      <step.icon className={`w-[20px] h-[20px] ${
-                        step.status === "completed" ? "text-on-tertiary-container" : step.status === "in_progress" ? "text-on-surface" : "text-secondary"
-                      }`} strokeWidth={1.5} />
-                    </div>
-                    <div className="text-left">
-                      <span className="font-body-md text-body-md text-on-surface font-medium block">{step.label}</span>
-                      {step.date && <span className="font-data-mono text-body-sm text-secondary">Validé le {step.date}</span>}
-                      {step.status === "in_progress" && <span className="font-body-sm text-body-sm text-primary">En attente de soumission</span>}
-                      {step.status === "pending" && <span className="font-body-sm text-body-sm text-secondary">Non commencé</span>}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {step.status === "completed" && (
-                      <span className="px-2 py-0.5 rounded-full bg-tertiary-container/60 text-on-tertiary-container font-label-caps text-label-caps font-semibold">Validé</span>
-                    )}
-                    {step.status === "in_progress" && (
-                      <span className="px-2 py-0.5 rounded-full bg-primary-container text-on-surface font-label-caps text-label-caps font-semibold">En cours</span>
-                    )}
-                    <ChevronDown className={`w-[20px] h-[20px] text-secondary transition-transform ${expandedDoc === step.id ? "rotate-180" : ""}`} strokeWidth={1.5} />
-                  </div>
-                </button>
-
-                {expandedDoc === step.id && (
-                  <div className="px-4 pb-4 border-t border-surface-container animate-scale-in">
-                    {step.status === "completed" && (
-                      <div className="pt-3 flex items-center gap-3">
-                        <CircleCheck className="text-tertiary w-[18px] h-[18px]" strokeWidth={1.5} />
-                        <div>
-                          <span className="font-body-sm text-body-sm text-on-surface block">Document vérifié par notre équipe conformité</span>
-                          <span className="font-data-mono text-label-sm text-secondary">Réf: KYC-{step.id.toUpperCase()}-2024-0842</span>
-                        </div>
-                      </div>
-                    )}
-                    {step.status === "in_progress" && (
-                      <div className="pt-3 space-y-3">
-                        <p className="font-body-sm text-body-sm text-secondary">
-                          Veuillez téléverser un document attestant de votre expérience en investissement (relevé de compte-titres, attestation de courtier, etc.)
-                        </p>
-                        <label className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-surface-container-high rounded-lg cursor-pointer hover:border-primary transition-colors">
-                          <FileUp className="w-[20px] h-[20px] text-secondary" strokeWidth={1.5} />
-                          <span className="font-body-sm text-body-sm text-on-surface font-medium">Choisir un fichier</span>
-                          <input type="file" accept=".pdf,.jpg,.png" className="hidden" />
-                        </label>
-                        <button className="w-full h-10 bg-primary-container text-on-surface font-label-sm text-label-sm font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-all hover:opacity-90">
-                          <span>Soumettre</span>
-                          <Send className="w-[16px] h-[16px]" strokeWidth={1.5} />
-                        </button>
-                      </div>
-                    )}
-                    {step.status === "pending" && (
-                      <div className="pt-3">
-                        <p className="font-body-sm text-body-sm text-secondary">
-                          Cette étape sera débloquée une fois l&apos;étape précédente validée.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* Info Box */}
-          <div className="flex items-start gap-3 p-4 bg-surface-container-low rounded-xl animate-fade-in-up animate-fade-in-up-delay-3">
-            <Info className="w-[20px] h-[20px] text-secondary shrink-0 mt-0.5" strokeWidth={1.5} />
-            <div>
-              <span className="font-body-sm text-body-sm text-on-surface font-medium block">Conformité réglementaire</span>
-              <p className="font-body-sm text-body-sm text-secondary leading-relaxed">
-                La vérification KYC est obligatoire sur la plateforme Nexora Capital. Vos données sont chiffrées et stockées de manière sécurisée. (Mode démonstration)
-              </p>
-            </div>
-          </div>
-        </div>
-      </main>
-
-      <BottomNav active="portefeuille" />
-    </>
-  );
+export default function VerificationPage(){const[data,setData]=useState<KycData|null>(null);const[loading,setLoading]=useState(true);const[uploading,setUploading]=useState<string|null>(null);const[feedback,setFeedback]=useState<string|null>(null);
+const load=async()=>{setLoading(true);try{const res=await fetch("/api/kyc");if(!res.ok)throw new Error();setData(await res.json() as KycData)}catch{setFeedback("Impossible de charger le dossier de vérification.")}finally{setLoading(false)}};useEffect(()=>{void load()},[]);
+const required=data?.accountType==="COMPANY"?companyDocs:individualDocs;const latest=useMemo(()=>{const map=new Map<string,DocumentRow>();for(const doc of data?.kycDocuments??[]){if(!map.has(doc.type))map.set(doc.type,doc)}return map},[data]);const completed=required.filter(([type])=>latest.get(type)?.status==="VERIFIED").length;const submitted=required.filter(([type])=>latest.has(type)).length;
+const upload=async(type:string,event:ChangeEvent<HTMLInputElement>)=>{const file=event.target.files?.[0];if(!file)return;setUploading(type);setFeedback(null);try{const res=await fetch("/api/kyc",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type,fileName:file.name,fileSize:file.size})});const body=await res.json();if(!res.ok)throw new Error(body.error||"Envoi impossible.");setFeedback("Document enregistré pour contrôle.");await load()}catch(e){setFeedback(e instanceof Error?e.message:"Envoi impossible.")}finally{setUploading(null);event.target.value=""}};
+return <div className="min-h-screen bg-[#F5F5F3]"><AppHeader title="Vérification" subtitle="NEXORA CAPITAL" showBack/><main className="mx-auto w-full max-w-5xl px-4 pb-16 pt-24 sm:px-6 lg:px-10"><div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><h1 className="nx-page-title">Dossier KYC / KYB</h1><p className="nx-page-subtitle">Soumettez les pièces requises. Chaque document reste en attente jusqu'à vérification par l'équipe conformité.</p></div>{data&&<StatusBadge status={data.kycStatus} className="self-start sm:self-auto"/>}</div>{feedback&&<div className="mb-5 rounded-[14px] border border-[#101010]/8 bg-white px-4 py-3 text-sm text-[#101010]/65">{feedback}</div>}{loading?<div className="flex justify-center py-24 text-[#101010]/35"><LoaderCircle className="h-8 w-8 animate-spin"/></div>:data?<div className="grid gap-6 lg:grid-cols-[0.7fr_1.3fr]"><div className="space-y-6"><Card><div className="flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-[15px] bg-[#EFFBDD]"><ShieldCheck className="h-5 w-5 text-[#166534]"/></div><div><p className="text-sm font-bold text-[#101010]">{data.accountType==="COMPANY"?"Vérification entreprise":"Vérification investisseur"}</p><p className="text-xs text-[#101010]/48">{submitted}/{required.length} pièces déposées</p></div></div><ProgressBar value={completed} max={required.length} label={`${completed} pièce${completed>1?"s":""} vérifiée${completed>1?"s":""}`} className="mt-5"/></Card><Card><div className="flex items-start gap-3"><CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-600"/><p className="text-xs leading-relaxed text-[#101010]/58">Mode démonstration : le workflow enregistre le nom et la taille du fichier pour permettre le contrôle fonctionnel. Un stockage documentaire chiffré externe doit être branché avant usage réel.</p></div></Card><Button variant="secondary" className="w-full" icon={<RefreshCw className="h-4 w-4"/>} onClick={()=>void load()}>Actualiser</Button></div><Card padding="lg"><CardHeader><CardTitle>Pièces requises</CardTitle></CardHeader><div className="space-y-3">{required.map(([type,label,description])=>{const doc=latest.get(type);const verified=doc?.status==="VERIFIED";const rejected=doc?.status==="REJECTED";return <div key={type} className="rounded-[18px] border border-[#101010]/7 bg-white p-4"><div className="flex flex-col gap-3 sm:flex-row sm:items-center"><div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] ${verified?"bg-[#EFFBDD] text-[#166534]":rejected?"bg-[#C62828]/8 text-[#C62828]":"bg-[#F5F5F3] text-[#101010]/50"}`}>{verified?<CheckCircle2 className="h-5 w-5"/>:<FileUp className="h-5 w-5"/>}</div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="text-sm font-bold text-[#101010]">{label}</p>{doc&&<Badge variant={verified?"success":rejected?"danger":"warning"}>{doc.status==="PENDING"?"En contrôle":doc.status==="VERIFIED"?"Vérifié":doc.status==="REJECTED"?"À reprendre":doc.status}</Badge>}</div><p className="mt-1 text-xs text-[#101010]/48">{description}</p>{doc&&<p className="mt-1 truncate text-xs font-medium text-[#101010]/65">{doc.fileName}</p>}{doc?.note&&<p className="mt-1 text-xs text-[#C62828]">{doc.note}</p>}</div>{!verified&&<label className="inline-flex h-10 cursor-pointer items-center justify-center rounded-[12px] border border-[#101010]/10 bg-[#F5F5F3] px-4 text-xs font-semibold text-[#101010] hover:bg-[#EFFBDD]">{uploading===type?"Enregistrement…":doc?"Remplacer":"Choisir un fichier"}<input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" disabled={uploading===type} onChange={e=>void upload(type,e)}/></label>}</div></div>})}</div></Card></div>:null}</main></div>;
 }

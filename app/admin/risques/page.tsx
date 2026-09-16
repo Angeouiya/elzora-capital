@@ -1,0 +1,1 @@
+import { OperationsModule } from "@/components/admin/OperationsModule"; export default function Page(){return <OperationsModule module="risk"/>}

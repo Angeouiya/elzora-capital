@@ -1,140 +1,15 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { FormEvent, useState } from "react";
 import Link from "next/link";
-import { Mail, ArrowRight, AlertCircle, CheckCircle2, ChevronLeft, ShieldCheck } from "lucide-react";
+import { AlertCircle, ArrowRight, CheckCircle2, ChevronLeft, KeyRound, ShieldCheck } from "lucide-react";
 import { NexoraLogo } from "@/components/NexoraLogo";
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 
-export default function MotDePasseOubliePage() {
-  const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [sent, setSent] = useState(false);
-
-  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setError("");
-    if (!emailValid) {
-      setError("Veuillez saisir une adresse email valide.");
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await fetch("/api/auth/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || "Erreur lors de la demande.");
-        return;
-      }
-      setSent(true);
-    } catch {
-      setError("Erreur réseau. Veuillez réessayer.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-[#f9f9f7] flex flex-col items-center justify-center px-4 py-10">
-      <div className="w-full max-w-[420px] animate-fade-in-up">
-        <div className="flex flex-col items-center mb-8">
-          <NexoraLogo size={48} />
-          <h1 className="text-xl font-semibold text-[#101010] mt-3 tracking-tight">
-            Nexora Capital
-          </h1>
-          <p className="text-sm text-[#101010]/50 mt-0.5">Récupération de compte</p>
-        </div>
-
-        <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_12px_40px_rgba(0,0,0,0.06)] border border-[#101010]/5">
-          {sent ? (
-            <div className="text-center py-2">
-              <div className="w-14 h-14 rounded-full bg-[#EFFBDD] flex items-center justify-center mx-auto mb-4">
-                <CheckCircle2 className="h-7 w-7 text-[#166534]" />
-              </div>
-              <h2 className="text-lg font-bold text-[#101010]">Demande enregistrée</h2>
-              <p className="text-sm text-[#101010]/60 mt-2 leading-relaxed">
-                Si un compte est associé à <strong>{email}</strong>, des instructions de
-                récupération ont été envoyées à cette adresse.
-              </p>
-              <p className="text-xs text-[#101010]/45 mt-3 leading-relaxed">
-                Pour des raisons de sécurité, la réponse ne révèle pas si le compte existe.
-                Les demandes de récupération font l&apos;objet de contrôles adaptés.
-              </p>
-              <div className="mt-6">
-                <Link href="/connexion">
-                  <Button variant="primary" size="lg" className="w-full">
-                    Retour à la connexion
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          ) : (
-            <>
-              <h2 className="text-lg font-bold text-[#101010] mb-1">Mot de passe oublié</h2>
-              <p className="text-sm text-[#101010]/50 mb-6 leading-relaxed">
-                Indiquez l&apos;adresse email de votre compte. Nous vous enverrons la marche à
-                suivre pour définir un nouveau mot de passe.
-              </p>
-
-              <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-[#101010]/50">
-                    Adresse email
-                  </label>
-                  <div className="flex items-center gap-2.5 bg-white rounded-xl px-4 shadow-[0_1px_2px_rgba(16,16,16,0.03)] ring-1 ring-[#101010]/10 focus-within:ring-2 focus-within:ring-[#B6FF00] focus-within:shadow-[0_0_0_4px_rgba(182,255,0,0.15)] transition-all">
-                    <Mail className="h-4.5 w-4.5 text-[#101010]/40 shrink-0" />
-                    <input
-                      id="email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="votre@email.com"
-                      autoComplete="email"
-                      className="flex-1 h-12 bg-transparent text-base md:text-sm text-[#101010] placeholder:text-[#101010]/35 outline-none"
-                    />
-                  </div>
-                </div>
-
-                {error && (
-                  <div className="flex items-start gap-2.5 p-3 rounded-lg bg-[#C62828]/10">
-                    <AlertCircle className="h-4.5 w-4.5 text-[#C62828] shrink-0 mt-0.5" />
-                    <p className="text-sm text-[#C62828]">{error}</p>
-                  </div>
-                )}
-
-                <Button type="submit" variant="primary" size="lg" className="w-full" loading={loading}>
-                  {loading ? "Envoi en cours…" : "Envoyer les instructions"}
-                </Button>
-              </form>
-
-              <div className="mt-5 text-center">
-                <Link
-                  href="/connexion"
-                  className="inline-flex items-center gap-1.5 text-sm font-medium text-[#507300] hover:underline underline-offset-2"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  Retour à la connexion
-                </Link>
-              </div>
-            </>
-          )}
-        </div>
-
-        <div className="mt-4 bg-white/70 rounded-xl px-5 py-4 flex items-center justify-center gap-2 border border-[#101010]/5">
-          <ShieldCheck className="h-4 w-4 text-[#166534]" />
-          <span className="text-xs text-[#101010]/45">
-            Plateforme de démonstration — aucun email réel n&apos;est envoyé
-          </span>
-        </div>
-      </div>
-    </div>
-  );
+type Stage="request"|"reset"|"done";
+export default function MotDePasseOubliePage(){const[stage,setStage]=useState<Stage>("request");const[email,setEmail]=useState("");const[code,setCode]=useState("");const[password,setPassword]=useState("");const[confirm,setConfirm]=useState("");const[demoCode,setDemoCode]=useState("");const[loading,setLoading]=useState(false);const[error,setError]=useState("");
+const requestCode=async(e:FormEvent)=>{e.preventDefault();setError("");if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){setError("Veuillez saisir une adresse email valide.");return;}setLoading(true);try{const res=await fetch("/api/auth/forgot-password",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email})});const body=await res.json();if(!res.ok)throw new Error(body.error||"Demande impossible.");setDemoCode(body.demoCode||"");setStage("reset");}catch(e){setError(e instanceof Error?e.message:"Erreur réseau.")}finally{setLoading(false)}};
+const resetPassword=async(e:FormEvent)=>{e.preventDefault();setError("");if(!/^\d{6}$/.test(code)){setError("Saisissez le code à 6 chiffres.");return;}if(password.length<8||!/[A-Za-z]/.test(password)||! /\d/.test(password)){setError("Le nouveau mot de passe doit contenir au moins 8 caractères, avec lettres et chiffres.");return;}if(password!==confirm){setError("Les deux mots de passe ne correspondent pas.");return;}setLoading(true);try{const res=await fetch("/api/auth/reset-password",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,code,password})});const body=await res.json();if(!res.ok)throw new Error(body.error||"Réinitialisation impossible.");setStage("done");}catch(e){setError(e instanceof Error?e.message:"Erreur réseau.")}finally{setLoading(false)}};
+return <div className="min-h-screen bg-[#F5F5F3] flex items-center justify-center px-4 py-10"><div className="w-full max-w-[440px]"><div className="mb-8 flex flex-col items-center"><NexoraLogo size={48}/><h1 className="mt-3 text-xl font-bold tracking-tight text-[#101010]">Nexora Capital</h1><p className="mt-1 text-sm text-[#101010]/48">Récupération sécurisée du compte</p></div><div className="nx-panel p-6 sm:p-8">{stage==="request"&&<><h2 className="text-xl font-bold text-[#101010]">Recevoir un code</h2><p className="mt-2 text-sm leading-relaxed text-[#101010]/55">Indiquez l'adresse du compte. La réponse reste identique que le compte existe ou non.</p><form onSubmit={requestCode} className="mt-6 space-y-4"><Input label="Adresse email" type="email" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)}/>{error&&<p className="rounded-[12px] bg-[#C62828]/7 px-3 py-2 text-sm text-[#C62828]">{error}</p>}<Button type="submit" size="lg" className="w-full" loading={loading}>Continuer</Button></form></>}{stage==="reset"&&<><div className="flex h-12 w-12 items-center justify-center rounded-[15px] bg-[#EFFBDD]"><KeyRound className="h-5 w-5 text-[#166534]"/></div><h2 className="mt-4 text-xl font-bold text-[#101010]">Définir un nouveau mot de passe</h2><p className="mt-2 text-sm leading-relaxed text-[#101010]/55">Saisissez le code reçu et choisissez un nouveau mot de passe.</p>{demoCode&&<div className="mt-4 rounded-[14px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">Mode démonstration — code : <strong className="font-mono">{demoCode}</strong></div>}<form onSubmit={resetPassword} className="mt-5 space-y-4"><Input label="Code à 6 chiffres" inputMode="numeric" maxLength={6} value={code} onChange={e=>setCode(e.target.value.replace(/\D/g,"").slice(0,6))}/><Input label="Nouveau mot de passe" type="password" autoComplete="new-password" value={password} onChange={e=>setPassword(e.target.value)}/><Input label="Confirmer le mot de passe" type="password" autoComplete="new-password" value={confirm} onChange={e=>setConfirm(e.target.value)}/>{error&&<div className="flex items-start gap-2 rounded-[12px] bg-[#C62828]/7 px-3 py-2 text-sm text-[#C62828]"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0"/>{error}</div>}<Button type="submit" size="lg" className="w-full" loading={loading}>Réinitialiser</Button></form></>}{stage==="done"&&<div className="text-center"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#EFFBDD]"><CheckCircle2 className="h-7 w-7 text-[#166534]"/></div><h2 className="mt-4 text-xl font-bold text-[#101010]">Mot de passe modifié</h2><p className="mt-2 text-sm text-[#101010]/55">Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.</p><Link href="/connexion" className="mt-6 block"><Button size="lg" className="w-full">Se connecter <ArrowRight className="h-4 w-4"/></Button></Link></div>}</div><div className="mt-4 flex items-center justify-center gap-2 text-xs text-[#101010]/42"><ShieldCheck className="h-4 w-4 text-[#166534]"/>Le code est à usage unique dans ce démonstrateur.</div>{stage!=="done"&&<div className="mt-5 text-center"><Link href="/connexion" className="inline-flex items-center gap-1 text-sm font-semibold text-[#507300]"><ChevronLeft className="h-4 w-4"/>Retour à la connexion</Link></div>}</div></div>;
 }

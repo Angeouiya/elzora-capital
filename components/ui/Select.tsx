@@ -1,4 +1,5 @@
 "use client";
+
 import { SelectHTMLAttributes, forwardRef } from "react";
 import { ChevronDown } from "lucide-react";
 
@@ -10,20 +11,20 @@ interface SelectOption {
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
   error?: string;
+  hint?: string;
   options: SelectOption[];
   placeholder?: string;
 }
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  ({ label, error, options, placeholder, className = "", id, ...props }, ref) => {
+  ({ label, error, hint, options, placeholder, className = "", id, ...props }, ref) => {
     const selectId = id || label?.toLowerCase().replace(/\s+/g, "-");
+    const helpId = selectId ? `${selectId}-help` : undefined;
+
     return (
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         {label && (
-          <label
-            htmlFor={selectId}
-            className="text-sm font-medium text-[#101010]"
-          >
+          <label htmlFor={selectId} className="text-[13px] font-semibold text-[#101010]/82">
             {label}
           </label>
         )}
@@ -31,7 +32,9 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           <select
             ref={ref}
             id={selectId}
-            className={`h-12 md:h-11 w-full px-4 pr-10 rounded-xl border bg-white text-base md:text-sm text-[#101010] outline-none appearance-none transition-all focus:ring-2 focus:ring-[#B6FF00]/40 focus:border-[#B6FF00] ${error ? "border-[#C62828]" : "border-[#101010]/10"} ${className}`}
+            aria-invalid={Boolean(error) || undefined}
+            aria-describedby={(error || hint) && helpId ? helpId : undefined}
+            className={`nx-field h-[52px] sm:h-12 w-full appearance-none px-4 pr-11 text-base sm:text-sm disabled:cursor-not-allowed disabled:bg-[#F5F5F3] disabled:text-[#101010]/40 ${error ? "!border-[#C62828] focus:!shadow-[0_0_0_4px_rgba(198,40,40,0.10)]" : ""} ${className}`}
             {...props}
           >
             {placeholder && (
@@ -45,9 +48,15 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
               </option>
             ))}
           </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#101010]/40 pointer-events-none" />
+          <span className="pointer-events-none absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-[10px] bg-[#F5F5F3] text-[#101010]/50">
+            <ChevronDown className="h-4 w-4" aria-hidden="true" />
+          </span>
         </div>
-        {error && <p className="text-xs text-[#C62828]">{error}</p>}
+        {(error || hint) && (
+          <p id={helpId} className={`text-xs leading-relaxed ${error ? "text-[#C62828]" : "text-[#101010]/48"}`}>
+            {error || hint}
+          </p>
+        )}
       </div>
     );
   }

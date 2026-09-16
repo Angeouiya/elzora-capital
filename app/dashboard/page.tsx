@@ -1,31 +1,23 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  LayoutGrid,
+  ArrowRight,
+  Building2,
+  ChevronRight,
+  PieChart,
+  Search,
+  ShieldCheck,
   TrendingUp,
   Wallet,
-  PieChart,
-  CalendarDays,
-  ArrowRight,
-  Menu,
-  X,
-  FileText,
-  CreditCard,
-  Bell,
-  LogOut,
-  ChevronRight,
 } from "lucide-react";
-import { NexoraLogo } from "@/components/NexoraLogo";
+import { InvestorShell } from "@/components/investor/InvestorShell";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { KPI } from "@/components/ui/KPI";
-import { Badge } from "@/components/ui/Badge";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Button } from "@/components/ui/Button";
 import { formatFCFA, formatRate } from "@/lib/calculations";
-
-/* ---------------------------------- Types --------------------------------- */
 
 interface Investment {
   id: string;
@@ -46,15 +38,14 @@ interface Investment {
   payments: Array<{ amount: number; status: string }>;
 }
 
-/* -------------------------------- Component ------------------------------- */
-
 export default function DashboardPage() {
   const [investments, setInvestments] = useState<Investment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
+
     fetch("/api/investments")
       .then(async (res) => {
         if (!res.ok) throw new Error("fetch failed");
@@ -62,351 +53,320 @@ export default function DashboardPage() {
         if (!cancelled) setInvestments(data);
       })
       .catch(() => {
-        /* silently ignore */
+        if (!cancelled) setLoadError(true);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
+
     return () => {
       cancelled = true;
     };
   }, []);
 
-  /* ---------- KPI calculations ---------- */
-  const capitalEngage = useMemo(
+  const activeInvestments = useMemo(
     () =>
-      investments
-        .filter((inv) => inv.status === "CONFIRMED" || inv.status === "PENDING")
-        .reduce((sum, inv) => sum + inv.amount, 0),
+      investments.filter(
+        (investment) =>
+          investment.status === "CONFIRMED" || investment.status === "PENDING"
+      ),
     [investments]
+  );
+
+  const capitalEngage = useMemo(
+    () => activeInvestments.reduce((sum, investment) => sum + investment.amount, 0),
+    [activeInvestments]
   );
 
   const revenusRecus = useMemo(
     () =>
-      investments.reduce((sum, inv) => {
-        const paidPayments = inv.payments.filter((p) => p.status === "CONFIRMED");
-        return sum + paidPayments.reduce((s, p) => s + p.amount, 0);
+      investments.reduce((sum, investment) => {
+        const confirmedPayments = investment.payments.filter(
+          (payment) => payment.status === "CONFIRMED"
+        );
+        return (
+          sum +
+          confirmedPayments.reduce(
+            (paymentSum, payment) => paymentSum + payment.amount,
+            0
+          )
+        );
       }, 0),
     [investments]
   );
 
-  const disponible = useMemo(() => revenusRecus, [revenusRecus]);
+  /*
+   * Le backend actuel ne distingue pas encore les sommes reçues des sommes
+   * réellement disponibles au retrait. On conserve donc la valeur existante,
+   * sans inventer un solde supplémentaire dans l'interface.
+   */
+  const disponible = revenusRecus;
 
-  /* ---------- Sector breakdown ---------- */
   const sectorBreakdown = useMemo(() => {
-    const map: Record<string, number> = {};
-    investments.forEach((inv) => {
-      const sector = inv.offer?.project?.sector || "Autre";
-      map[sector] = (map[sector] || 0) + inv.amount;
+    const bySector: Record<string, number> = {};
+
+    activeInvestments.forEach((investment) => {
+      const sector = investment.offer?.project?.sector || "Autre";
+      bySector[sector] = (bySector[sector] || 0) + investment.amount;
     });
-    const total = Object.values(map).reduce((s, v) => s + v, 0) || 1;
-    return Object.entries(map)
-      .map(([name, amount]) => ({ name, amount, pct: Math.round((amount / total) * 100) }))
+
+    const total = Object.values(bySector).reduce((sum, value) => sum + value, 0) || 1;
+
+    return Object.entries(bySector)
+      .map(([name, amount]) => ({
+        name,
+        amount,
+        pct: Math.round((amount / total) * 100),
+      }))
       .sort((a, b) => b.amount - a.amount);
-  }, [investments]);
+  }, [activeInvestments]);
 
-  /* ---------- Upcoming échéances (mock from investments) ---------- */
-  const upcomingEcheances = useMemo(() => {
-    return investments
-      .filter((inv) => inv.status === "CONFIRMED")
-      .slice(0, 3)
-      .map((inv) => {
-        const start = new Date(inv.createdAt);
-        const nextDate = new Date(start);
-        nextDate.setMonth(nextDate.getMonth() + 1);
-        const monthlyAmount = Math.round(
-          (inv.amount + (inv.amount * inv.offer.rate) / 10000) / inv.offer.duration
-        );
-        return {
-          id: inv.id,
-          projectName: inv.offer.project.title,
-          companyName: inv.offer.project.company.name,
-          date: nextDate,
-          amount: monthlyAmount,
-        };
-      });
-  }, [investments]);
+  const confirmedToFollow = useMemo(
+    () =>
+      investments
+        .filter((investment) => investment.status === "CONFIRMED")
+        .slice(0, 4),
+    [investments]
+  );
 
-  const navLinks = [
-    { href: "/dashboard", label: "Tableau de bord", icon: LayoutGrid, active: true },
-    { href: "/dashboard/investissements", label: "Investissements", icon: TrendingUp },
-    { href: "/dashboard/paiements", label: "Paiements", icon: CreditCard },
-    { href: "/dashboard/documents", label: "Documents", icon: FileText },
-    { href: "/dashboard/retrait", label: "Retrait", icon: Wallet },
-    { href: "/notifications", label: "Notifications", icon: Bell },
-  ];
+  const primaryAction = (
+    <Link href="/offres" className="w-full sm:w-auto">
+      <Button
+        size="md"
+        fullWidth
+        icon={<Search className="h-4 w-4" aria-hidden="true" />}
+        className="sm:w-auto"
+      >
+        Explorer les offres
+      </Button>
+    </Link>
+  );
 
   return (
-    <div className="min-h-screen bg-[#f9f9f7]">
-      {/* Header */}
-      <header className="fixed top-0 inset-x-0 z-50 bg-white/85 backdrop-blur-md border-b border-[#101010]/8">
-        <div className="max-w-6xl mx-auto h-16 px-4 sm:px-6 flex items-center justify-between gap-4">
-          <Link href="/dashboard" className="flex items-center gap-2.5 shrink-0">
-            <NexoraLogo size={32} />
-            <span className="text-[#101010] font-semibold tracking-tight text-lg leading-none">
-              Nexora Capital
-            </span>
-          </Link>
+    <InvestorShell
+      title="Vue d'ensemble"
+      subtitle="Suivez votre capital engagé, vos encaissements confirmés et vos investissements en cours."
+      actions={primaryAction}
+    >
+      {loadError && (
+        <div className="mb-6 flex flex-col gap-3 rounded-[18px] border border-[#C62828]/14 bg-[#C62828]/6 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-[#101010]">
+              Certaines données n&apos;ont pas pu être chargées.
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-[#101010]/52">
+              Vérifiez votre connexion avant de prendre une décision à partir de ce tableau de bord.
+            </p>
+          </div>
+          <Button variant="secondary" size="sm" onClick={() => window.location.reload()}>
+            Réessayer
+          </Button>
+        </div>
+      )}
 
-          <nav className="hidden md:flex items-center gap-1">
-            {navLinks.slice(0, 5).map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  link.active
-                    ? "bg-[#EFFBDD] text-[#101010]"
-                    : "text-[#101010]/70 hover:text-[#101010] hover:bg-[#F5F5F3]"
-                }`}
-              >
-                <link.icon className="h-4 w-4" />
-                {link.label}
-              </Link>
-            ))}
-          </nav>
+      <section aria-label="Indicateurs principaux" className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <KPI
+          label="Capital engagé"
+          value={loading ? "—" : formatFCFA(capitalEngage)}
+          icon={<Wallet className="h-5 w-5 text-[#101010]" />}
+        />
+        <KPI
+          label="Revenus reçus"
+          value={loading ? "—" : formatFCFA(revenusRecus)}
+          icon={<TrendingUp className="h-5 w-5 text-[#101010]" />}
+        />
+        <KPI
+          label="Disponible"
+          value={loading ? "—" : formatFCFA(disponible)}
+          icon={<ShieldCheck className="h-5 w-5 text-[#101010]" />}
+        />
+      </section>
 
-          <div className="hidden md:flex items-center gap-2">
-            <Link
-              href="/notifications"
-              className="h-11 w-11 rounded-lg flex items-center justify-center text-[#101010]/60 hover:bg-[#F5F5F3] transition-colors"
-            >
-              <Bell className="h-4 w-4" />
+      {loading ? (
+        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2 rounded-[20px] border border-[#101010]/8 bg-white p-5 sm:p-6">
+            <div className="nx-skeleton h-5 w-48" />
+            <div className="mt-6 space-y-3">
+              {[1, 2, 3].map((item) => (
+                <div key={item} className="nx-skeleton h-[78px] w-full" />
+              ))}
+            </div>
+          </div>
+          <div className="rounded-[20px] border border-[#101010]/8 bg-white p-5 sm:p-6">
+            <div className="nx-skeleton h-5 w-36" />
+            <div className="mt-6 space-y-4">
+              {[1, 2, 3].map((item) => (
+                <div key={item} className="nx-skeleton h-9 w-full" />
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : investments.length === 0 ? (
+        <Card className="mt-6" padding="lg">
+          <div className="mx-auto flex max-w-lg flex-col items-center py-6 text-center sm:py-10">
+            <div className="flex h-14 w-14 items-center justify-center rounded-[18px] border border-[#B6FF00]/35 bg-[#EFFBDD]">
+              <TrendingUp className="h-6 w-6 text-[#101010]" />
+            </div>
+            <h2 className="mt-5 text-xl font-bold tracking-[-0.025em] text-[#101010]">
+              Votre portefeuille commence ici
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-[#101010]/55">
+              Consultez les offres disponibles et leurs risques avant de choisir un investissement adapté à votre situation.
+            </p>
+            <Link href="/offres" className="mt-5 w-full sm:w-auto">
+              <Button fullWidth className="sm:w-auto">
+                Voir les offres
+              </Button>
             </Link>
-            <Link
-              href="/profil"
-              className="h-11 w-11 rounded-full bg-[#B6FF00] flex items-center justify-center text-[#101010] font-semibold text-sm"
-            >
-              ME
-            </Link>
           </div>
+        </Card>
+      ) : (
+        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.75fr)]">
+          <section className="min-w-0 space-y-6">
+            <Card>
+              <CardHeader className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.09em] text-[#101010]/38">
+                    Portefeuille
+                  </p>
+                  <CardTitle className="mt-1">Investissements récents</CardTitle>
+                </div>
+                <Link
+                  href="/dashboard/investissements"
+                  className="inline-flex min-h-10 shrink-0 items-center gap-1 rounded-[12px] px-3 text-xs font-semibold text-[#101010]/56 transition-colors hover:bg-[#F5F5F3] hover:text-[#101010]"
+                >
+                  Tout voir
+                  <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+                </Link>
+              </CardHeader>
 
-          <button
-            type="button"
-            onClick={() => setMenuOpen((v) => !v)}
-            className="md:hidden h-11 w-11 rounded-lg flex items-center justify-center text-[#101010] hover:bg-[#F5F5F3] transition-colors"
-          >
-            {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
-        </div>
-
-        {menuOpen && (
-          <div className="md:hidden border-t border-[#101010]/8 bg-white px-4 py-3 flex flex-col gap-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setMenuOpen(false)}
-                className={`flex items-center gap-2.5 px-3 py-3 rounded-lg text-sm font-medium ${
-                  link.active ? "bg-[#EFFBDD] text-[#101010]" : "text-[#101010]/70 hover:bg-[#F5F5F3]"
-                }`}
-              >
-                <link.icon className="h-4 w-4 text-[#101010]/60" />
-                {link.label}
-              </Link>
-            ))}
-            <div className="flex gap-2 pt-2 border-t border-[#101010]/8 mt-2">
-              <Link
-                href="/profil"
-                onClick={() => setMenuOpen(false)}
-                className="flex-1 h-11 rounded-lg bg-[#F5F5F3] flex items-center justify-center text-sm font-medium text-[#101010]"
-              >
-                Mon profil
-              </Link>
-              <Link
-                href="/connexion"
-                onClick={() => setMenuOpen(false)}
-                className="h-11 w-11 rounded-lg bg-[#F5F5F3] flex items-center justify-center text-[#101010]/60"
-              >
-                <LogOut className="h-4 w-4" />
-              </Link>
-            </div>
-          </div>
-        )}
-      </header>
-
-      <main className="pt-20 pb-16 max-w-6xl mx-auto px-4 sm:px-6">
-        {/* Page title */}
-        <div className="mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#101010] tracking-tight">
-            Tableau de bord
-          </h1>
-          <p className="text-sm text-[#101010]/60 mt-1">
-            Vue d&apos;ensemble de vos investissements
-          </p>
-        </div>
-
-        {/* KPIs */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <KPI
-            label="Capital engagé"
-            value={loading ? "—" : formatFCFA(capitalEngage)}
-            icon={<Wallet className="h-5 w-5 text-[#507300]" />}
-          />
-          <KPI
-            label="Revenus reçus"
-            value={loading ? "—" : formatFCFA(revenusRecus)}
-            icon={<TrendingUp className="h-5 w-5 text-[#507300]" />}
-            trend="up"
-            trendValue="+12.4% ce trimestre"
-          />
-          <KPI
-            label="Disponible"
-            value={loading ? "—" : formatFCFA(disponible)}
-            icon={<PieChart className="h-5 w-5 text-[#507300]" />}
-          />
-        </div>
-
-        {loading ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 bg-white rounded-xl border border-[#101010]/5 p-6 animate-pulse">
-              <div className="h-5 w-48 rounded bg-[#F5F5F3] mb-6" />
-              <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-20 rounded-lg bg-[#F5F5F3]" />
-                ))}
-              </div>
-            </div>
-            <div className="bg-white rounded-xl border border-[#101010]/5 p-6 animate-pulse">
-              <div className="h-5 w-32 rounded bg-[#F5F5F3] mb-6" />
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-8 rounded bg-[#F5F5F3]" />
-                ))}
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Investissements récents */}
-            <div className="lg:col-span-2">
-              <Card>
-                <CardHeader className="flex items-center justify-between">
-                  <CardTitle>Investissements récents</CardTitle>
-                  <Link
-                    href="/dashboard/investissements"
-                    className="text-sm text-[#507300] font-medium flex items-center gap-1 hover:underline"
+              <div className="space-y-2.5">
+                {investments.slice(0, 5).map((investment) => (
+                  <div
+                    key={investment.id}
+                    className="flex flex-col gap-3 rounded-[16px] border border-[#101010]/6 bg-[#F5F5F3]/65 p-4 transition-colors hover:bg-[#EFFBDD]/55 sm:flex-row sm:items-center sm:justify-between"
                   >
-                    Tout voir <ChevronRight className="h-3.5 w-3.5" />
-                  </Link>
-                </CardHeader>
-
-                {investments.length === 0 ? (
-                  <div className="text-center py-10">
-                    <TrendingUp className="h-8 w-8 text-[#101010]/20 mx-auto mb-3" />
-                    <p className="text-[#101010] font-medium mb-1">Aucun investissement</p>
-                    <p className="text-sm text-[#101010]/50 mb-4">
-                      Explorez les offres pour commencer à investir.
-                    </p>
-                    <Link href="/offres">
-                      <Button size="sm">Explorer les offres</Button>
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {investments.slice(0, 5).map((inv) => (
-                      <div
-                        key={inv.id}
-                        className="flex items-center justify-between p-4 rounded-lg bg-[#F5F5F3]/60 hover:bg-[#F5F5F3] transition-colors"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="h-10 w-10 rounded-lg bg-[#EFFBDD] flex items-center justify-center shrink-0">
-                            <TrendingUp className="h-4 w-4 text-[#507300]" />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-sm font-semibold text-[#101010] truncate">
-                              {inv.offer?.project?.company?.name || "Projet"}
-                            </p>
-                            <p className="text-xs text-[#101010]/50 truncate">
-                              {inv.offer?.project?.title} &middot; {formatRate(inv.offer?.rate || 0)}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3 shrink-0 ml-3">
-                          <span className="text-sm font-semibold text-[#101010]">
-                            {formatFCFA(inv.amount)}
-                          </span>
-                          <StatusBadge status={inv.status} />
-                        </div>
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] border border-[#B6FF00]/30 bg-[#EFFBDD]">
+                        <Building2 className="h-4.5 w-4.5 text-[#101010]" />
                       </div>
-                    ))}
-                  </div>
-                )}
-              </Card>
-            </div>
-
-            {/* Sidebar: Répartition + Échéances */}
-            <div className="flex flex-col gap-6">
-              {/* Répartition par secteur */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <PieChart className="h-4 w-4 text-[#101010]/40" />
-                    <CardTitle className="text-base">Répartition par secteur</CardTitle>
-                  </div>
-                </CardHeader>
-                {sectorBreakdown.length === 0 ? (
-                  <p className="text-sm text-[#101010]/50">Aucune donnée</p>
-                ) : (
-                  <div className="space-y-3">
-                    {sectorBreakdown.map((s) => (
-                      <div key={s.name}>
-                        <div className="flex items-center justify-between text-sm mb-1">
-                          <span className="text-[#101010]/70">{s.name}</span>
-                          <span className="font-medium text-[#101010]">{s.pct}%</span>
-                        </div>
-                        <div className="w-full h-2 bg-[#F5F5F3] rounded-full overflow-hidden">
-                          <div
-                            className="h-2 bg-[#B6FF00] rounded-full transition-all duration-500"
-                            style={{ width: `${s.pct}%` }}
-                          />
-                        </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-[#101010]">
+                          {investment.offer?.project?.company?.name || "Projet"}
+                        </p>
+                        <p className="mt-0.5 truncate text-xs text-[#101010]/50">
+                          {investment.offer?.project?.title || "—"}
+                        </p>
                       </div>
-                    ))}
+                    </div>
+                    <div className="flex items-center justify-between gap-3 sm:justify-end">
+                      <span className="nx-data text-sm font-bold text-[#101010]">
+                        {formatFCFA(investment.amount)}
+                      </span>
+                      <StatusBadge status={investment.status} />
+                    </div>
                   </div>
-                )}
-              </Card>
+                ))}
+              </div>
+            </Card>
 
-              {/* Prochaines échéances */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <CalendarDays className="h-4 w-4 text-[#101010]/40" />
-                    <CardTitle className="text-base">Prochaines échéances</CardTitle>
+            <Card tone="dark" className="border-[#101010]">
+              <div className="grid gap-5 sm:grid-cols-[1fr_auto] sm:items-center">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/42">
+                    Prochaine action
+                  </p>
+                  <h2 className="mt-2 text-xl font-bold tracking-[-0.025em] text-white sm:text-2xl">
+                    Diversifiez uniquement après avoir lu les conditions de chaque offre.
+                  </h2>
+                  <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/55">
+                    Rendement, durée, remboursement et risques sont propres à chaque financement et restent visibles avant toute souscription.
+                  </p>
+                </div>
+                <Link href="/offres" className="w-full sm:w-auto">
+                  <Button fullWidth className="sm:w-auto">
+                    Explorer
+                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </Button>
+                </Link>
+              </div>
+            </Card>
+          </section>
+
+          <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-[11px] bg-[#F5F5F3]">
+                    <PieChart className="h-4 w-4 text-[#101010]/60" />
                   </div>
-                </CardHeader>
-                {upcomingEcheances.length === 0 ? (
-                  <p className="text-sm text-[#101010]/50">Aucune échéance à venir</p>
-                ) : (
-                  <div className="space-y-3">
-                    {upcomingEcheances.map((ech) => (
-                      <div
-                        key={ech.id}
-                        className="flex items-center justify-between p-3 rounded-lg bg-[#F5F5F3]/60"
-                      >
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-[#101010] truncate">
-                            {ech.companyName}
-                          </p>
-                          <p className="text-xs text-[#101010]/50">
-                            {ech.date.toLocaleDateString("fr-FR", {
-                              day: "numeric",
-                              month: "long",
-                              year: "numeric",
-                            })}
-                          </p>
-                        </div>
-                        <span className="text-sm font-semibold text-[#166534] shrink-0 ml-2">
-                          +{formatFCFA(ech.amount)}
+                  <div>
+                    <CardTitle className="text-base">Répartition</CardTitle>
+                    <p className="mt-0.5 text-xs text-[#101010]/45">Capital actif par secteur</p>
+                  </div>
+                </div>
+              </CardHeader>
+
+              {sectorBreakdown.length === 0 ? (
+                <p className="text-sm text-[#101010]/48">Aucune donnée disponible.</p>
+              ) : (
+                <div className="space-y-4">
+                  {sectorBreakdown.map((sector) => (
+                    <div key={sector.name}>
+                      <div className="mb-1.5 flex items-center justify-between gap-3 text-xs">
+                        <span className="truncate font-medium text-[#101010]/62">{sector.name}</span>
+                        <span className="nx-data font-bold text-[#101010]">{sector.pct}%</span>
+                      </div>
+                      <div className="h-2 overflow-hidden rounded-full bg-[#101010]/8">
+                        <div
+                          className="h-full rounded-full bg-[#B6FF00] transition-[width] duration-500"
+                          style={{ width: `${sector.pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.09em] text-[#101010]/38">
+                    À suivre
+                  </p>
+                  <CardTitle className="mt-1 text-base">Financements confirmés</CardTitle>
+                </div>
+              </CardHeader>
+
+              {confirmedToFollow.length === 0 ? (
+                <p className="text-sm leading-relaxed text-[#101010]/48">
+                  Aucun financement confirmé à suivre actuellement.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {confirmedToFollow.map((investment) => (
+                    <div key={investment.id} className="rounded-[14px] border border-[#101010]/6 bg-[#F5F5F3]/70 p-3.5">
+                      <p className="truncate text-sm font-semibold text-[#101010]">
+                        {investment.offer.project.company.name}
+                      </p>
+                      <p className="mt-1 truncate text-xs text-[#101010]/47">
+                        {investment.offer.project.title}
+                      </p>
+                      <div className="mt-3 flex items-center justify-between gap-2 text-xs">
+                        <span className="font-semibold text-[#101010]/58">
+                          {formatRate(investment.offer.rate)} · {investment.offer.duration} mois
                         </span>
+                        <StatusBadge status={investment.status} />
                       </div>
-                    ))}
-                  </div>
-                )}
-              </Card>
-            </div>
-          </div>
-        )}
-      </main>
-    </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+          </aside>
+        </div>
+      )}
+    </InvestorShell>
   );
 }

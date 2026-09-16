@@ -4,25 +4,34 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
   hover?: boolean;
   padding?: "none" | "sm" | "md" | "lg";
+  tone?: "white" | "soft" | "pale" | "dark";
 }
 
 const paddingClasses = {
   none: "",
-  sm: "p-4",
-  md: "p-4 sm:p-6",
-  lg: "p-5 sm:p-8",
+  sm: "p-4 sm:p-5",
+  md: "p-5 sm:p-6",
+  lg: "p-6 sm:p-8",
+};
+
+const toneClasses = {
+  white: "bg-white text-[#101010] border-[#101010]/8",
+  soft: "bg-[#F5F5F3] text-[#101010] border-[#101010]/7",
+  pale: "bg-[#EFFBDD] text-[#101010] border-[#B6FF00]/25",
+  dark: "bg-[#101010] text-white border-[#101010]",
 };
 
 export function Card({
   children,
   hover = false,
   padding = "md",
+  tone = "white",
   className = "",
   ...props
 }: CardProps) {
   return (
     <div
-      className={`bg-white rounded-2xl shadow-[0_1px_2px_rgba(16,16,16,0.04),0_8px_32px_rgba(16,16,16,0.06)] ring-1 ring-[#101010]/6 ${paddingClasses[padding]} ${hover ? "hover:shadow-[0_2px_4px_rgba(16,16,16,0.06),0_16px_44px_rgba(16,16,16,0.1)] hover:ring-[#B6FF00]/50 hover:-translate-y-1 transition-all duration-300 cursor-pointer" : ""} ${className}`}
+      className={`relative overflow-hidden rounded-[18px] sm:rounded-[20px] border shadow-[0_1px_2px_rgba(16,16,16,0.03),0_12px_34px_rgba(16,16,16,0.055)] ${toneClasses[tone]} ${paddingClasses[padding]} ${hover ? "nx-card-interactive cursor-pointer" : ""} ${className}`}
       {...props}
     >
       {children}
@@ -31,13 +40,17 @@ export function Card({
 }
 
 export function CardHeader({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`mb-4 ${className}`}>{children}</div>;
+  return <div className={`mb-5 ${className}`}>{children}</div>;
 }
 
 export function CardTitle({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <h3 className={`text-base sm:text-lg font-semibold leading-snug text-[#101010] ${className}`}>{children}</h3>;
+  return (
+    <h3 className={`text-[17px] sm:text-lg font-semibold tracking-[-0.015em] leading-snug text-inherit ${className}`}>
+      {children}
+    </h3>
+  );
 }
 
 export function CardDescription({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <p className={`text-sm leading-relaxed text-[#101010]/60 mt-1 ${className}`}>{children}</p>;
+  return <p className={`mt-1.5 text-sm leading-relaxed text-[#101010]/58 ${className}`}>{children}</p>;
 }

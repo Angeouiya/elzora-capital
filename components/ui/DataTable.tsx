@@ -22,20 +22,27 @@ export function DataTable<T extends Record<string, unknown>>({
 }: DataTableProps<T>) {
   return (
     <>
-      {/* Vue carte : informations lisibles et actions accessibles sur mobile. */}
       <div className={`md:hidden space-y-3 ${className}`}>
         {data.length === 0 ? (
-          <div className="rounded-xl border border-[#101010]/5 bg-white px-4 py-10 text-center text-sm text-[#101010]/45">
+          <div className="rounded-[18px] border border-[#101010]/8 bg-white px-5 py-12 text-center text-sm text-[#101010]/45 shadow-[0_8px_24px_rgba(16,16,16,0.04)]">
             {emptyMessage}
           </div>
         ) : (
           data.map((row, rowIndex) => (
-            <article key={rowIndex} className="rounded-xl border border-[#101010]/6 bg-white p-4 shadow-sm">
-              <dl className="space-y-3">
+            <article
+              key={rowIndex}
+              className="overflow-hidden rounded-[18px] border border-[#101010]/8 bg-white p-5 shadow-[0_8px_26px_rgba(16,16,16,0.045)]"
+            >
+              <dl className="divide-y divide-[#101010]/6">
                 {columns.map((col) => (
-                  <div key={col.key} className="grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-3 items-start">
-                    <dt className="text-xs font-semibold uppercase tracking-wide text-[#101010]/45">{col.header}</dt>
-                    <dd className={`min-w-0 text-sm leading-relaxed text-right text-[#101010] ${col.className || ""}`}>
+                  <div
+                    key={col.key}
+                    className="grid grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] items-start gap-4 py-3 first:pt-0 last:pb-0"
+                  >
+                    <dt className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#101010]/42">
+                      {col.header}
+                    </dt>
+                    <dd className={`min-w-0 text-right text-sm font-medium leading-relaxed text-[#101010] ${col.className || ""}`}>
                       {col.render ? col.render(row) : String(row[col.key] ?? "")}
                     </dd>
                   </div>
@@ -46,26 +53,32 @@ export function DataTable<T extends Record<string, unknown>>({
         )}
       </div>
 
-      {/* Vue dense : tableau classique dès la tablette. */}
-      <div className={`hidden md:block overflow-x-auto overscroll-x-contain rounded-xl border border-[#101010]/5 ${className}`}>
+      <div className={`nx-table-shell hidden md:block overflow-x-auto overscroll-x-contain ${className}`}>
         <table className="min-w-full text-sm">
           <thead>
-            <tr className="bg-[#F5F5F3] border-b border-[#101010]/5">
+            <tr className="border-b border-[#101010]/7 bg-[#F5F5F3]">
               {columns.map((col) => (
-                <th key={col.key} className={`px-4 py-3 text-left font-semibold text-[#101010]/70 text-xs uppercase tracking-wide ${col.className || ""}`}>
+                <th
+                  key={col.key}
+                  className={`whitespace-nowrap px-5 py-3.5 text-left text-[10px] font-semibold uppercase tracking-[0.08em] text-[#101010]/48 ${col.className || ""}`}
+                >
                   {col.header}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#101010]/5">
+          <tbody className="divide-y divide-[#101010]/6 bg-white">
             {data.length === 0 ? (
-              <tr><td colSpan={columns.length} className="px-4 py-12 text-center text-[#101010]/40">{emptyMessage}</td></tr>
+              <tr>
+                <td colSpan={columns.length} className="px-5 py-14 text-center text-[#101010]/40">
+                  {emptyMessage}
+                </td>
+              </tr>
             ) : (
               data.map((row, i) => (
-                <tr key={i} className="bg-white hover:bg-[#F5F5F3]/50 transition-colors">
+                <tr key={i} className="transition-colors hover:bg-[#EFFBDD]/45">
                   {columns.map((col) => (
-                    <td key={col.key} className={`px-4 py-3 text-[#101010] ${col.className || ""}`}>
+                    <td key={col.key} className={`px-5 py-4 text-[#101010] ${col.className || ""}`}>
                       {col.render ? col.render(row) : String(row[col.key] ?? "")}
                     </td>
                   ))}
