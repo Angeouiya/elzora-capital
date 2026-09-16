@@ -6,23 +6,26 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   {
-    /*
-     * Several existing data-loading screens call an async loader from useEffect.
-     * React 19's new rule follows that call graph and reports the loader's initial
-     * setState as an error. Keep the rule visible without blocking CI until those
-     * flows are migrated to a dedicated data layer / Suspense pattern.
-     */
     rules: {
+      // French product copy naturally contains apostrophes in JSX text.
+      // This rule is stylistic only and does not affect HTML escaping at runtime.
+      "react/no-unescaped-entities": "off",
+
+      // Keep legacy / integration typing debt visible while still blocking
+      // parsing, type/build and React correctness failures in CI.
+      "@typescript-eslint/no-explicit-any": "warn",
+
+      // Several existing async loaders are intentionally invoked from effects.
+      // Keep the React 19 signal visible without blocking the migration.
       "react-hooks/set-state-in-effect": "warn",
     },
   },
-  // Override default ignores of eslint-config-next.
   globalIgnores([
-    // Default ignores of eslint-config-next:
     ".next/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "visual-artifacts/**",
   ]),
 ]);
 
