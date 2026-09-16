@@ -14,14 +14,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint-and-build:
+  lint-build-visual:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     env:
       NEXTAUTH_URL: http://localhost:3000
       NEXTAUTH_SECRET: ci-only-secret-not-for-production
       AUTH_SECRET: ci-only-secret-not-for-production
       DATABASE_URL: file:./dev.db
+      VISUAL_BASE_URL: http://localhost:3000
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -43,3 +44,46 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Install visual audit runner
+        run: |
+          npm install --no-save --package-lock=false @playwright/test@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Prepare local Cloudflare D1 data
+        run: npm run db:d1:local
+
+      - name: Desktop and mobile visual audit
+        run: |
+          mkdir -p artifacts
+          npm run dev -- --hostname 127.0.0.1 > /tmp/nexora-dev.log 2>&1 &
+          SERVER_PID=$!
+          READY=0
+          for i in $(seq 1 90); do
+            if curl -fsS http://localhost:3000/ > /dev/null; then
+              READY=1
+              break
+            fi
+            sleep 2
+          done
+          if [ "$READY" -ne 1 ]; then
+            cat /tmp/nexora-dev.log
+            kill "$SERVER_PID" || true
+            exit 1
+          fi
+          set +e
+          npx playwright test tests/visual-audit.spec.ts --reporter=line --workers=1
+          STATUS=$?
+          set -e
+          cp /tmp/nexora-dev.log artifacts/dev-server.log || true
+          kill "$SERVER_PID" || true
+          exit "$STATUS"
+
+      - name: Upload visual audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-audit-${{ github.sha }}
+          path: artifacts
+          if-no-files-found: warn
+          retention-days: 14
