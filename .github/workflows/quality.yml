@@ -4,15 +4,13 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches:
-      - main
-      - design/**
+    branches: [main]
 
 permissions:
   contents: read
 
 concurrency:
-  group: quality-${{ github.ref }}
+  group: quality-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
