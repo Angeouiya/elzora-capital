@@ -1,1 +1,0 @@
-import { InvestorFinanceModule } from "@/components/investor/InvestorFinanceModule"; export default function Page(){return <InvestorFinanceModule mode="documents"/>}

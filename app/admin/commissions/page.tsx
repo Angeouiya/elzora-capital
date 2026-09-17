@@ -1,1 +1,0 @@
-import { AdminCoreModule } from "@/components/admin/AdminCoreModule"; export default function Page(){return <AdminCoreModule module="commissions"/>}

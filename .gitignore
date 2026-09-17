@@ -1,7 +1,8 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
+node_modules
+bun.lock
 /.pnp
 .pnp.*
 .yarn/*
@@ -29,36 +30,44 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
-*.log
 
-# Fichiers temporaires de test HTTP (cookies/CSRF login)
-cookies*.txt
-csrf*.json
-login*.json
-
-# env files (can opt-in for committing if needed)
-.env*
+# env files
+.env
+.env.local
+.env.*.local
 
 # vercel
 .vercel
 
+# local databases
+db/*.db
+db/*.db-*
+
+# generated runtime artifacts
+.playwright-cli/
+.vinext/
+.wrangler/
+.zscripts/
+dist/
+output/
+upload/
+tool-results/
+agent-ctx/
+.zscripts/dev.pid
+
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+local-*
+.claude
+.z-ai-config
+*.log
+dev.log
+dev.out.log
+test
+prompt
 
-# database
-prisma/dev.db
-prisma/dev.db-journal
-
-# cloudflare / opennext
-.open-next/
-.wrangler/
-.dev.vars
-worker-configuration.d.ts
-
-# qoder cache
-.qoder/
-screenshots/
-
-# env example kept, real env ignored
-!.env.example
+server.log
+# Skills directory
+/skills/

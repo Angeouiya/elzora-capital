@@ -1,307 +1,406 @@
-import { PrismaClient } from "../lib/generated/prisma/client.js";
-import { PrismaD1 } from "@prisma/adapter-d1";
-import bcrypt from "bcryptjs";
+import { db } from "../src/lib/db";
 
-/**
- * Seed du D1 local (miniflare) via getPlatformProxy — même emplacement
- * que `wrangler d1 execute --local` (.wrangler/state).
- */
-async function createPrismaClient(): Promise<PrismaClient> {
-  const { getPlatformProxy } = await import("wrangler");
-  const { env } = await getPlatformProxy();
-  return new PrismaClient({
-    adapter: new PrismaD1(env.DB as ConstructorParameters<typeof PrismaD1>[0]),
-  });
-}
-
-const prisma = await createPrismaClient();
+// ============================================================================
+// SEED NEXORA CAPITAL — cohérent avec le nouveau schéma (LedgerEntry, etc.)
+// ============================================================================
 
 async function main() {
-  console.log("Nexora Capital — Seed de démonstration");
+  console.log("🌱 Seed NEXORA Capital (v2)…");
 
-  await prisma.distribution.deleteMany();
-  await prisma.repayment.deleteMany();
-  await prisma.disbursement.deleteMany();
-  await prisma.payment.deleteMany();
-  await prisma.investment.deleteMany();
-  await prisma.offer.deleteMany();
-  await prisma.project.deleteMany();
-  await prisma.company.deleteMany();
-  await prisma.kYCDocument.deleteMany();
-  await prisma.notification.deleteMany();
-  await prisma.auditLog.deleteMany();
-  await prisma.user.deleteMany();
+  // Clean
+  await db.ledgerEntry.deleteMany();
+  await db.distribution.deleteMany();
+  await db.companyPayment.deleteMany();
+  await db.payout.deleteMany();
+  await db.investment.deleteMany();
+  await db.offer.deleteMany();
+  await db.projectEvent.deleteMany();
+  await db.projectDocument.deleteMany();
+  await db.disbursement.deleteMany();
+  await db.project.deleteMany();
+  await db.notification.deleteMany();
+  await db.userSession.deleteMany();
+  await db.companyMember.deleteMany();
+  await db.company.deleteMany();
+  await db.user.deleteMany();
+  await db.adminUser.deleteMany();
+  await db.auditLog.deleteMany();
 
-  const hash = await bcrypt.hash("password123", 10);
-
-  const investor = await prisma.user.create({
+  // --- Utilisateur investisseur de démo ---
+  const investor = await db.user.create({
     data: {
-      email: "investisseur@nexora.ci",
-      password: hash,
-      firstName: "Amadou",
-      lastName: "Koné",
-      role: "INVESTOR",
-      accountType: "INDIVIDUAL",
-      country: "CI",
-      kycStatus: "VERIFIED",
-      emailVerified: true,
-    },
-  });
-
-  const entrepreneur = await prisma.user.create({
-    data: {
-      email: "entreprise@nexora.ci",
-      password: hash,
-      firstName: "Fatou",
+      email: "investisseur@demo.nexora",
+      phone: "+22177000001",
+      passwordHash: "demo",
+      firstName: "Aïssatou",
       lastName: "Diallo",
-      role: "ENTERPRISE",
-      accountType: "COMPANY",
-      country: "CI",
-      kycStatus: "VERIFIED",
-      emailVerified: true,
-    },
-  });
-
-  const admin = await prisma.user.create({
-    data: {
-      email: "admin@nexora.ci",
-      password: hash,
-      firstName: "Marie",
-      lastName: "Diop",
-      role: "ADMIN",
-      accountType: "INDIVIDUAL",
       country: "SN",
-      kycStatus: "VERIFIED",
-      emailVerified: true,
+      language: "fr",
+      kycStatus: "verified",
+      kycVerifiedAt: new Date(),
     },
   });
 
-  const company = await prisma.company.create({
+  // --- Entreprise emprunteuse (scénario section 28) ---
+  const company = await db.company.create({
     data: {
-      name: "Agro-Alliance SARL",
+      legalName: "Société Coopérative Téranga Commerce",
+      tradeName: "Téranga Commerce",
       legalForm: "SARL",
-      country: "CI",
-      registrationNumber: "CI-ABJ-2019-B-12345",
-      taxId: "1234567890",
-      sector: "Agriculture",
-      address: "Zone Industrielle, Abidjan",
-      description: "Transformation et export de produits agricoles",
-      status: "VERIFIED",
-      userId: entrepreneur.id,
+      country: "SN",
+      address: "Avenue Léopold Sédar Senghor, Dakar",
+      registrationNo: "SN-DKR-2024-B-12345",
+      taxId: "NINEA-12345678",
+      activity: "Commerce de gros et distribution",
+      foundedYear: 2019,
+      verificationStatus: "verified",
+      verifiedAt: new Date(),
+      verifiedBankAccount: "Bank of Africa - SN01 2345 6789",
+      bankAccountVerifiedAt: new Date(),
     },
   });
 
-  const project1 = await prisma.project.create({
+  await db.companyMember.create({
+    data: {
+      userId: investor.id,
+      companyId: company.id,
+      role: "legal_representative",
+      mandate: "manage",
+    },
+  });
+
+  // --- Projet / Offre de RÉFÉRENCE (scénario section 28) ---
+  const refProject = await db.project.create({
     data: {
       companyId: company.id,
-      title: "Financement campagne anacarde 2025",
-      description: "Financement de la campagne de collecte et transformation de noix de cajou pour la saison 2025.",
-      sector: "Agriculture",
+      submittedBy: investor.id,
+      title: "Extension réseau de distribution — Dakar",
+      description:
+        "Financement du stock de démarrage et de l'extension à 3 nouveaux points de vente dans la presqu'île.",
+      longDescription:
+        "Téranga Commerce, spécialisée dans la distribution de produits de consommation courante, souhaite étendre son réseau à 3 nouveaux points de vente dans la presqu'île de Dakar. Le financement couvre le stock initial, l'aménagement des points de vente et le fonds de roulement sur 6 mois. Source de remboursement : marge sur ventes (20% moyenne) et encaissements quotidiens.",
+      sector: "Commerce",
+      country: "SN",
+      city: "Dakar",
+      imageUrl: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&q=80",
+      instrumentType: "debt",
+      fundingGoal: 1_000_000n,
+      companyContribution: 100_000n,
+      annualRate: 8.0,
+      ratePeriod: "total",
+      durationMonths: 6,
+      repaymentType: "bullet",
+      gracePeriodMonths: 0,
+      minInvestment: 10_000n,
+      maxInvestment: 100_000n,
+      budgetDetail: "Stock 600k, Aménagement 250k, FdR 150k",
+      repaymentSource: "Marge sur ventes (20%)",
+      risksIdentified: "Concentration géographique, dépendance fournisseurs",
+      status: "funding", // en collecte
+      submittedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30),
+      reviewedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 25),
+      publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 20),
+    },
+  });
+
+  // ProjectEvent — workflow complet tracé
+  for (const ev of [
+    { eventType: "submitted", description: "Dossier soumis", days: 30 },
+    { eventType: "under_review", description: "Analyse démarrée", days: 28 },
+    { eventType: "approved", description: "Dossier approuvé par l'analyse", days: 25 },
+    { eventType: "offer_prepared", description: "Offre préparée (conditions figées)", days: 23 },
+    { eventType: "offer_confirmed", description: "Conditions confirmées par l'entreprise", days: 21 },
+    { eventType: "published", description: "Offre publiée", days: 20 },
+  ]) {
+    await db.projectEvent.create({
+      data: {
+        projectId: refProject.id,
+        eventType: ev.eventType,
+        description: ev.description,
+        actor: "system",
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * ev.days),
+      },
+    });
+  }
+
+  const refOffer = await db.offer.create({
+    data: {
+      projectId: refProject.id,
+      version: 1,
+      fundingGoal: 1_000_000n,
+      minInvestment: 10_000n,
+      maxInvestment: 100_000n,
+      annualRate: 8.0,
+      ratePeriod: "total",
+      durationMonths: 6,
+      repaymentType: "bullet",
+      upfrontCommissionPct: 6,
+      annualFollowUpPct: 2,
+      raisedAmount: 600_000n,
+      committedAmount: 600_000n,
+      backersCount: 60,
+      publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 20),
+      closingDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 10),
+      visibility: "public",
+      status: "open",
+    },
+  });
+
+  // --- Investissement existant de l'investisseur de démo (confirmé) ---
+  const inv1 = await db.investment.create({
+    data: {
+      offerId: refOffer.id,
+      projectId: refProject.id,
+      investorType: "individual",
+      investorId: investor.id,
+      investorName: "Aïssatou Diallo",
+      investorEmail: "investisseur@demo.nexora",
+      amount: 50_000n,
+      sharePct: 5,
+      status: "confirmed",
+      signedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 15),
+      paymentConfirmedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 15),
+    },
+  });
+
+  // Ledger entries pour cet investissement confirmé (escrow)
+  await db.ledgerEntry.create({
+    data: {
+      idemKey: `inv:${inv1.id}:debit`,
+      accountType: "investor_external",
+      accountId: investor.id,
+      counterpartyType: "investor_locked",
+      counterpartyId: investor.id,
+      amount: -50_000n,
+      sourceType: "investment",
+      sourceId: inv1.id,
+      description: "Investissement confirmé sur offre Extension réseau Dakar",
+    },
+  });
+  await db.ledgerEntry.create({
+    data: {
+      idemKey: `inv:${inv1.id}:credit`,
+      accountType: "escrow",
+      accountId: refOffer.id,
+      counterpartyType: "investor_external",
+      counterpartyId: investor.id,
+      amount: 50_000n,
+      sourceType: "investment",
+      sourceId: inv1.id,
+      description: "Fonds reçus en séquestre — investissement Aïssatou Diallo",
+    },
+  });
+
+  // --- 3 autres offres (equity, immobilier, énergie) ---
+  const company2 = await db.company.create({
+    data: {
+      legalName: "AgriTech Solutions Afrique",
+      tradeName: "AgriTech Afrique",
+      legalForm: "SAS",
+      country: "CI",
+      address: "Cocody, Abidjan",
+      registrationNo: "CI-ABJ-2023-C-9876",
+      activity: "Technologie agricole",
+      foundedYear: 2021,
+      verificationStatus: "verified",
+      verifiedAt: new Date(),
+    },
+  });
+  const eqProject = await db.project.create({
+    data: {
+      companyId: company2.id,
+      submittedBy: investor.id,
+      title: "Plateforme SaaS pour coopératives agricoles",
+      description: "Levée en capital pour accélérer le déploiement dans 5 pays UEMOA.",
+      longDescription:
+        "AgriTech Afrique édite une plateforme SaaS de gestion des coopératives agricoles. 18 000 producteurs déjà utilisateurs. Levée en capital pour étendre à 5 pays. Pas d'échéancier de remboursement : sortie envisagée à 5 ans par cession secondaire ou rachat.",
+      sector: "Technologie",
       country: "CI",
       city: "Abidjan",
-      totalAmount: 60000000,
-      ownContribution: 10000000,
-      requestedAmount: 50000000,
-      budget: JSON.stringify({ achat_matieres: 35000000, fonctionnement: 10000000, equipement: 5000000 }),
-      usageDescription: "Achat de noix de cajou brutes et fonctionnement de l'unité de transformation",
-      status: "PUBLISHED",
-      submittedAt: new Date("2025-03-01"),
-      approvedAt: new Date("2025-03-15"),
+      imageUrl: "https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=1200&q=80",
+      instrumentType: "equity",
+      fundingGoal: 500_000_000n,
+      companyContribution: 0n,
+      equityOfferedPct: 15,
+      valuationPre: 2_500_000_000n,
+      minInvestment: 1_000_000n,
+      maxInvestment: 50_000_000n,
+      budgetDetail: "R&D 200M, Commercial 150M, Expansion 150M",
+      repaymentSource: "Sortie cession à 5 ans (non garantie)",
+      risksIdentified: "Risque de dilution, pas de garantie de rendement",
+      status: "funding",
+      submittedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 40),
+      publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 15),
     },
   });
-
-  const offer1 = await prisma.offer.create({
+  await db.offer.create({
     data: {
-      projectId: project1.id,
-      type: "DEBT",
-      rate: 750,
-      ratePeriod: "TOTAL",
-      duration: 12,
-      minTicket: 25000,
-      maxTicket: 5000000,
-      targetAmount: 50000000,
-      collectedAmount: 42000000,
-      investorCount: 84,
-      status: "PUBLISHED",
-      startDate: new Date("2025-04-01"),
-      endDate: new Date("2025-07-01"),
-      publishedAt: new Date("2025-03-20"),
+      projectId: eqProject.id,
+      version: 1,
+      fundingGoal: 500_000_000n,
+      minInvestment: 1_000_000n,
+      maxInvestment: 50_000_000n,
+      equityOfferedPct: 15,
+      valuationPre: 2_500_000_000n,
+      upfrontCommissionPct: 6,
+      annualFollowUpPct: 0,
+      raisedAmount: 180_000_000n,
+      committedAmount: 180_000_000n,
+      backersCount: 12,
+      publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 15),
+      closingDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 20),
+      visibility: "public",
+      status: "open",
     },
   });
 
-  const inv1 = await prisma.investment.create({
+  const company3 = await db.company.create({
     data: {
-      userId: investor.id,
-      offerId: offer1.id,
-      amount: 500000,
-      status: "CONFIRMED",
-      signedAt: new Date("2025-03-25"),
-      paidAt: new Date("2025-03-26"),
+      legalName: "Immobilière Plateau",
+      tradeName: "Immobilier Plateau",
+      legalForm: "SA",
+      country: "CI",
+      address: "Plateau, Abidjan",
+      registrationNo: "CI-ABJ-2018-A-2222",
+      activity: "Promotion immobilière",
+      foundedYear: 2018,
+      verificationStatus: "verified",
+      verifiedAt: new Date(),
     },
   });
-
-  await prisma.payment.create({
+  const imProject = await db.project.create({
     data: {
-      investmentId: inv1.id,
-      reference: "NX-INV-2025-001",
-      amount: 500000,
-      method: "TRANSFER",
-      status: "CONFIRMED",
-      providerRef: "SGCI-RTGS-2025032601",
-      confirmedAt: new Date("2025-03-26"),
+      companyId: company3.id,
+      submittedBy: investor.id,
+      title: "Résidence Les Baobabs — 24 logements",
+      description: "Programme immobilier abordable à Bingerville, Côte d'Ivoire.",
+      longDescription:
+        "Construction de 24 logements T2/T3 à Bingerville. Ventes sur plan à 80%. Financement pour terminer la phase 1 (12 logements). Garantie hypothécaire sur le terrain.",
+      sector: "Immobilier",
+      country: "CI",
+      city: "Bingerville",
+      imageUrl: "https://images.unsplash.com/photo-1560518883-ce090597ffa9?w=1200&q=80",
+      instrumentType: "debt",
+      fundingGoal: 200_000_000n,
+      companyContribution: 50_000_000n,
+      annualRate: 10,
+      ratePeriod: "annual",
+      durationMonths: 18,
+      repaymentType: "bullet",
+      minInvestment: 500_000n,
+      maxInvestment: 20_000_000n,
+      budgetDetail: "Travaux 150M, Foncier 30M, Frais 20M",
+      repaymentSource: "Ventes sur plan",
+      risksIdentified: "Retard travaux, variation coûts matériaux",
+      status: "funding",
+      submittedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 50),
+      publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10),
+    },
+  });
+  await db.offer.create({
+    data: {
+      projectId: imProject.id,
+      version: 1,
+      fundingGoal: 200_000_000n,
+      minInvestment: 500_000n,
+      maxInvestment: 20_000_000n,
+      annualRate: 10,
+      ratePeriod: "annual",
+      durationMonths: 18,
+      repaymentType: "bullet",
+      upfrontCommissionPct: 6,
+      annualFollowUpPct: 2,
+      raisedAmount: 80_000_000n,
+      committedAmount: 80_000_000n,
+      backersCount: 28,
+      publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10),
+      closingDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 25),
+      visibility: "public",
+      status: "open",
     },
   });
 
-  for (let i = 1; i <= 12; i++) {
-    const date = new Date("2025-05-01");
-    date.setMonth(date.getMonth() + i - 1);
-    const isLast = i === 12;
-    const interest = isLast ? 37500 - Math.round(37500 / 12) * 11 : Math.round(37500 / 12);
-    const capital = isLast ? 500000 : 0;
-    const status = i <= 2 ? "PAID" : i === 3 ? "DUE" : "UPCOMING";
-    await prisma.repayment.create({
-      data: {
-        offerId: offer1.id,
-        scheduleDate: date,
-        capitalAmount: capital,
-        interestAmount: interest,
-        feeAmount: 0,
-        status,
-        paidAmount: status === "PAID" ? capital + interest : 0,
-        paidAt: status === "PAID" ? date : null,
-        reference: "NX-AGR04-E" + String(i).padStart(2, "0"),
-      },
-    });
-  }
-
-  /* Deuxième dossier : collecte réussie → décaissements + échéancier actif */
-  const project2 = await prisma.project.create({
+  // --- Un projet EN ANALYSE (pour montrer le workflow admin) ---
+  const pendingProject = await db.project.create({
     data: {
       companyId: company.id,
-      title: "Modernisation de l'unité d'export cacao",
-      description:
-        "Acquisition d'équipements de conditionnement et certification pour l'export direct de fèves de cacao vers l'Europe.",
-      sector: "Agriculture",
-      country: "CI",
-      city: "San-Pédro",
-      totalAmount: 30000000,
-      ownContribution: 10000000,
-      requestedAmount: 20000000,
-      budget: JSON.stringify({
-        equipement: 15000000,
-        certification: 5000000,
-        fonds_roulement: 10000000,
-      }),
-      usageDescription:
-        "Équipements de conditionnement, certification UTZ et fonds de roulement de campagne",
-      status: "PUBLISHED",
-      submittedAt: new Date("2025-04-01"),
-      approvedAt: new Date("2025-04-20"),
+      submittedBy: investor.id,
+      title: "Extension ligne de production — Touba",
+      description: "Achat d'équipements pour doubler la capacité de conditionnement.",
+      longDescription:
+        "Téranga Commerce souhaite ouvrir une unité de conditionnement à Touba. Le financement couvre l'acquisition de 2 lignes de production et le fonds de roulement.",
+      sector: "Commerce",
+      country: "SN",
+      city: "Touba",
+      imageUrl: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1200&q=80",
+      instrumentType: "debt",
+      fundingGoal: 2_500_000n,
+      companyContribution: 500_000n,
+      annualRate: 9,
+      ratePeriod: "annual",
+      durationMonths: 12,
+      repaymentType: "amortized",
+      minInvestment: 50_000n,
+      maxInvestment: 500_000n,
+      budgetDetail: "Équipements 1.8M, FdR 700k",
+      repaymentSource: "Marge commerciale",
+      risksIdentified: "Concurrence, dépendance transport",
+      status: "under_review",
+      submittedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5),
+    },
+  });
+  await db.projectEvent.create({
+    data: {
+      projectId: pendingProject.id,
+      eventType: "submitted",
+      description: "Dossier soumis par l'entreprise",
+      actor: investor.id,
+      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5),
+    },
+  });
+  await db.projectEvent.create({
+    data: {
+      projectId: pendingProject.id,
+      eventType: "under_review",
+      description: "Analyse démarrée par l'équipe",
+      actor: "system",
+      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3),
     },
   });
 
-  const offer2 = await prisma.offer.create({
+  // --- Admin de démo ---
+  await db.adminUser.create({
     data: {
-      projectId: project2.id,
-      type: "DEBT",
-      rate: 800,
-      ratePeriod: "TOTAL",
-      duration: 6,
-      minTicket: 25000,
-      maxTicket: 5000000,
-      targetAmount: 20000000,
-      collectedAmount: 20000000,
-      investorCount: 42,
-      status: "CLOSED_SUCCESS",
-      startDate: new Date("2025-05-01"),
-      endDate: new Date("2025-05-31"),
-      publishedAt: new Date("2025-04-25"),
+      email: "admin@nexora",
+      passwordHash: "demo",
+      firstName: "Ousmane",
+      lastName: "Fall",
+      role: "superadmin",
+      permissions: JSON.stringify(["all"]),
     },
   });
 
-  /* Échéancier offre 2 : 8 % au total sur 6 mois, capital remboursé in fine */
-  for (let i = 1; i <= 6; i++) {
-    const date = new Date("2025-06-01");
-    date.setMonth(date.getMonth() + i - 1);
-    const isLast = i === 6;
-    const interest = isLast
-      ? 1600000 - Math.round(1600000 / 6) * 5
-      : Math.round(1600000 / 6);
-    const capital = isLast ? 20000000 : 0;
-    const status = i === 1 ? "PAID" : i === 2 ? "DUE" : "UPCOMING";
-    await prisma.repayment.create({
-      data: {
-        offerId: offer2.id,
-        scheduleDate: date,
-        capitalAmount: capital,
-        interestAmount: interest,
-        feeAmount: 0,
-        status,
-        paidAmount: status === "PAID" ? capital + interest : 0,
-        paidAt: status === "PAID" ? date : null,
-        reference: "NX-CAC25-E" + String(i).padStart(2, "0"),
-      },
-    });
-  }
-
-  /* Décaissements offre 2 : net reçu = 18 800 000 FCFA (commission 6 % déduite) */
-  await prisma.disbursement.create({
-    data: {
-      offerId: offer2.id,
-      amount: 10000000,
-      tranche: 1,
-      status: "EXECUTED",
-      approvedBy: admin.id,
-      executedAt: new Date("2025-06-10"),
-      createdAt: new Date("2025-06-02"),
-    },
-  });
-  await prisma.disbursement.create({
-    data: {
-      offerId: offer2.id,
-      amount: 5000000,
-      tranche: 2,
-      status: "APPROVED",
-      approvedBy: admin.id,
-      createdAt: new Date("2025-06-20"),
-    },
-  });
-  await prisma.disbursement.create({
-    data: {
-      offerId: offer2.id,
-      amount: 2000000,
-      tranche: 3,
-      status: "PENDING",
-      createdAt: new Date("2025-07-01"),
-    },
-  });
-
-  await prisma.kYCDocument.create({
+  // --- Notifications démo ---
+  await db.notification.create({
     data: {
       userId: investor.id,
-      type: "IDENTITY",
-      fileName: "cni_amadou_kone.pdf",
-      status: "VERIFIED",
-      verifiedAt: new Date("2025-02-15"),
+      type: "verification",
+      title: "Identité vérifiée",
+      message: "Votre identité a été vérifiée. Vous pouvez maintenant investir.",
+      read: true,
     },
   });
-
-  await prisma.notification.create({
+  await db.notification.create({
     data: {
       userId: investor.id,
-      type: "PAYMENT",
-      title: "Echéance reçue",
-      message: "Votre échéance de mars pour Agro-Alliance a été versée : 3 125 FCFA",
+      type: "payment",
+      title: "Investissement confirmé",
+      message: "Votre investissement de 50 000 FCFA sur « Extension réseau Dakar » est confirmé.",
       read: false,
     },
   });
 
-  console.log("Seed terminé");
-  console.log("  Investisseur : investisseur@nexora.ci / password123");
-  console.log("  Entreprise   : entreprise@nexora.ci / password123");
-  console.log("  Admin        : admin@nexora.ci / password123");
+  console.log("✅ Seed v2 terminé : 1 investisseur, 3 entreprises, 3 offres publiées + 1 projet en analyse");
 }
 
-main()
-  .catch((e) => { console.error(e); process.exit(1); })
-  .finally(async () => { await prisma.$disconnect(); });
+main().catch((e) => { console.error(e); process.exit(1); }).finally(async () => { await db.$disconnect(); });
