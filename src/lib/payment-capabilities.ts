@@ -1,4 +1,5 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { getPayDunyaConfig } from "@/lib/payments/paydunya";
 
 type RuntimeEnv = CloudflareEnv & Record<string, string | undefined>;
 
@@ -22,21 +23,21 @@ function enabled(value: string | undefined): boolean {
 export function getPaymentCapabilities(): PaymentCapabilities {
   const env = getCloudflareContext().env as RuntimeEnv;
   const providerName = env.PAYMENT_PROVIDER_NAME?.trim() || null;
-  const providerConfigured = Boolean(providerName && env.PAYMENT_PROVIDER_KEY?.trim());
-  // This flag becomes true only in the same release that ships the signed
-  // provider requests and verified webhooks. Environment variables alone must
-  // never make unfinished payment rails visible to customers.
-  const adapterReady = false;
+  const payDunyaConfigured = Boolean(getPayDunyaConfig());
+  const collectionsReady = payDunyaConfigured;
+  // Disbursements remain closed until the provider's separate payout contract
+  // and callback flow are implemented and approved.
+  const payoutsReady = false;
 
   return {
     providerName,
     collectionsEnabled:
-      adapterReady && providerConfigured && enabled(env.COLLECTIONS_ENABLED),
+      collectionsReady && enabled(env.COLLECTIONS_ENABLED),
     payoutsEnabled:
-      adapterReady && providerConfigured && enabled(env.PAYOUTS_ENABLED),
+      payoutsReady && payDunyaConfigured && enabled(env.PAYOUTS_ENABLED),
     collectionMethods:
-      adapterReady && providerConfigured ? ["card", "mobile_money"] : [],
+      collectionsReady ? ["card", "mobile_money"] : [],
     payoutMethods:
-      adapterReady && providerConfigured ? ["bank_account", "mobile_money"] : [],
+      payoutsReady ? ["bank_account", "mobile_money"] : [],
   };
 }

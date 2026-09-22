@@ -247,6 +247,7 @@ model Investment {
   // Paiement
   paymentRef         String? // référence unique
   paymentConfirmedAt DateTime?
+  paymentEventId     String?   @unique // verrou d'idempotence du webhook
   // Délai de rétractation
   reflectionEndsAt   DateTime?
   refundableUntil    DateTime?

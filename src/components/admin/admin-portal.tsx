@@ -15,13 +15,10 @@ export function AdminPortal() {
   const view = useAppStore((state) => state.view);
   const adminEmail = useAppStore((state) => state.adminEmail);
   const restoreAdmin = useAppStore((state) => state.restoreAdmin);
-  const [sessionPending, setSessionPending] = useState(true);
+  const [sessionPending, setSessionPending] = useState(() => !adminEmail);
 
   useEffect(() => {
-    if (adminEmail) {
-      setSessionPending(false);
-      return;
-    }
+    if (adminEmail) return;
 
     const controller = new AbortController();
     fetch("/api/admin/me", {

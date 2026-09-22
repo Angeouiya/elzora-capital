@@ -42,10 +42,10 @@ export function OfferDetail() {
   const money = (value: bigint | number, compact = false) =>
     formatDisplayMoney(value, displayCurrency, locale, compact);
   const text = locale === "fr" ? {
-    missing: "Offre introuvable.", back: "Retour aux offres", low: "Montant insuffisant", login: "Connexion requise", loginText: "Connectez-vous pour enregistrer votre engagement.", failed: "Souscription échouée", saved: "Souscription enregistrée", savedText: "Votre engagement est réservé. Les instructions de paiement seront affichées dans votre espace.", error: "Erreur", unknown: "Erreur inconnue",
+    missing: "Offre introuvable.", back: "Retour aux offres", low: "Montant insuffisant", login: "Connexion requise", loginText: "Connectez-vous pour enregistrer votre engagement.", failed: "Souscription échouée", saved: "Souscription enregistrée", savedText: "Votre engagement est réservé. Les instructions de paiement seront affichées dans votre espace.", paymentReady: "Ouverture du paiement sécurisé…", error: "Erreur", unknown: "Erreur inconnue",
     equity: "Prise de participation", debt: "Dette", bullet: "in fine", amortized: "amortissable", conditions: "Conditions financières", goal: "Objectif", raised: "Levé", offered: "Capital offert", return: "Rémunération", duration: "Durée", long: "Long terme", months: "mois", of: "sur", investors: "souscripteurs", from: "Dès", cap: "Plafond", close: "Clôture prévue", project: "Présentation du projet", company: "Entreprise", verified: "Entreprise vérifiée", legalForm: "Forme juridique", country: "Pays", activity: "Activité", founded: "Fondée en", budget: "Budget & remboursement", allocation: "Affectation du budget", source: "Source de remboursement", exit: " / sortie", risks: "Risques identifiés", simulator: "Simulateur d’investissement", amount: "Montant de règlement (XOF)", minimum: "Minimum", maximum: "maximum", share: "Part de", expected: "Remboursement attendu", interest: "Dont intérêts", projected: "Projeté, non garanti. Soumis aux risques du projet.", enter: "Saisissez un montant pour simuler", secure: "Souscription nominative et sécurisée", secureText: "Votre identité vérifiée et votre adresse de contact sont reprises automatiquement depuis votre espace personnel.", submitting: "Enregistrement…", submit: "Enregistrer mon engagement", payment: "Le paiement par carte ou Mobile Money sera proposé uniquement via un prestataire autorisé, avec confirmation avant débit.", riskText: "L’investissement présente un risque de perte en capital. Les performances passées ne préjugent pas des performances futures.",
   } : {
-    missing: "Offer not found.", back: "Back to opportunities", low: "Amount too low", login: "Sign-in required", loginText: "Sign in to save your commitment.", failed: "Subscription failed", saved: "Subscription saved", savedText: "Your commitment is reserved. Payment instructions will appear in your account.", error: "Error", unknown: "Unknown error",
+    missing: "Offer not found.", back: "Back to opportunities", low: "Amount too low", login: "Sign-in required", loginText: "Sign in to save your commitment.", failed: "Subscription failed", saved: "Subscription saved", savedText: "Your commitment is reserved. Payment instructions will appear in your account.", paymentReady: "Opening secure payment…", error: "Error", unknown: "Unknown error",
     equity: "Equity investment", debt: "Debt", bullet: "bullet", amortized: "amortizing", conditions: "Financial terms", goal: "Target", raised: "Raised", offered: "Equity offered", return: "Return", duration: "Duration", long: "Long term", months: "months", of: "of", investors: "investors", from: "From", cap: "Maximum", close: "Expected closing", project: "Project overview", company: "Company", verified: "Verified company", legalForm: "Legal form", country: "Country", activity: "Activity", founded: "Founded", budget: "Budget & repayment", allocation: "Use of funds", source: "Repayment source", exit: " / exit", risks: "Identified risks", simulator: "Investment simulator", amount: "Settlement amount (XOF)", minimum: "Minimum", maximum: "maximum", share: "Share of", expected: "Expected repayment", interest: "Including interest", projected: "Projected, not guaranteed. Subject to project risks.", enter: "Enter an amount to simulate", secure: "Named and secure subscription", secureText: "Your verified identity and contact address are automatically retrieved from your personal account.", submitting: "Saving…", submit: "Save my commitment", payment: "Card or Mobile Money payment will only be offered through an authorized provider, with confirmation before debit.", riskText: "Investing involves a risk of capital loss. Past performance does not predict future performance.",
   };
 
@@ -124,7 +124,10 @@ export function OfferDetail() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ amount }),
       });
-      const json = (await res.json()) as { error?: string };
+      const json = (await res.json()) as {
+        error?: string;
+        payment?: { checkoutUrl?: string; status?: string };
+      };
       if (res.status === 401) {
         toast({
           title: text.login,
@@ -135,6 +138,15 @@ export function OfferDetail() {
       }
       if (!res.ok) {
         throw new Error(json.error || text.failed);
+      }
+      if (json.payment?.status === "ready" && json.payment.checkoutUrl) {
+        const checkout = new URL(json.payment.checkoutUrl);
+        if (checkout.protocol !== "https:" || checkout.hostname !== "app.paydunya.com") {
+          throw new Error(text.failed);
+        }
+        toast({ title: text.paymentReady });
+        window.location.assign(checkout.toString());
+        return;
       }
       toast({
         title: text.saved,

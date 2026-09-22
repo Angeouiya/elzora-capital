@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { getD1, isoNow, requestIp } from "@/lib/d1";
 import { computeInvestorInterest } from "@/lib/finance";
+import { getPaymentCapabilities } from "@/lib/payment-capabilities";
+import {
+  createPayDunyaCheckout,
+  getPayDunyaCheckoutUrl,
+  getPayDunyaConfig,
+} from "@/lib/payments/paydunya";
 
 interface OfferTermsRow {
   id: string;
@@ -25,6 +31,7 @@ interface InvestorRow {
   lastName: string;
   email: string;
   kycStatus: string;
+  phone: string | null;
 }
 
 interface InvestmentRow extends Record<string, unknown> {
@@ -44,6 +51,7 @@ interface InvestmentRow extends Record<string, unknown> {
   refundableUntil: string | null;
   createdAt: string;
   updatedAt: string;
+  paymentRef: string | null;
 }
 
 async function findOffer(id: string): Promise<OfferTermsRow | null> {
@@ -126,7 +134,7 @@ export async function POST(
   const [offer, investor] = await Promise.all([
     findOffer(id),
     database
-      .prepare(`SELECT firstName, lastName, email, kycStatus FROM User WHERE id = ? LIMIT 1`)
+      .prepare(`SELECT firstName, lastName, email, phone, kycStatus FROM User WHERE id = ? LIMIT 1`)
       .bind(session.userId)
       .first<InvestorRow>(),
   ]);
@@ -165,12 +173,12 @@ export async function POST(
   const existing = await database
     .prepare(
       `SELECT * FROM Investment
-       WHERE offerId = ? AND investorId = ? AND status = 'pending_payment'
+       WHERE offerId = ? AND investorId = ? AND status IN ('pending_payment', 'payment_pending')
        LIMIT 1`
     )
     .bind(id, session.userId)
     .first<InvestmentRow>();
-  if (existing) return pendingResponse(existing, true);
+  if (existing) return paymentResponse(existing, offer, investor, true);
 
   const investmentId = crypto.randomUUID();
   const now = isoNow();
@@ -252,12 +260,12 @@ export async function POST(
     const concurrent = await database
       .prepare(
         `SELECT * FROM Investment
-         WHERE offerId = ? AND investorId = ? AND status = 'pending_payment'
+         WHERE offerId = ? AND investorId = ? AND status IN ('pending_payment', 'payment_pending')
          LIMIT 1`
       )
       .bind(id, session.userId)
       .first<InvestmentRow>();
-    if (concurrent) return pendingResponse(concurrent, true);
+    if (concurrent) return paymentResponse(concurrent, offer, investor, true);
     console.error("investment_subscribe_failed", error);
     return NextResponse.json({ error: "Souscription temporairement indisponible" }, { status: 503 });
   }
@@ -269,10 +277,100 @@ export async function POST(
   if (!investment) {
     return NextResponse.json({ error: "Souscription non enregistrée" }, { status: 503 });
   }
-  return pendingResponse(investment, false);
+  return paymentResponse(investment, offer, investor, false);
 }
 
-function pendingResponse(investment: InvestmentRow, idempotent: boolean) {
+async function paymentResponse(
+  investment: InvestmentRow,
+  offer: OfferTermsRow,
+  investor: InvestorRow,
+  idempotent: boolean
+) {
+  const capabilities = getPaymentCapabilities();
+  const config = getPayDunyaConfig();
+
+  if (capabilities.collectionsEnabled && config) {
+    try {
+      let paymentRef = investment.paymentRef;
+      let checkoutUrl: string;
+
+      if (paymentRef) {
+        checkoutUrl = getPayDunyaCheckoutUrl(paymentRef, config.mode);
+      } else {
+        const origin = config.publicAppUrl;
+        const checkout = await createPayDunyaCheckout(config, {
+        amount: Number(investment.amount),
+        description: `Souscription à l'offre « ${offer.title} »`,
+        itemName: "Souscription d'investissement privé",
+        customer: {
+          name: investment.investorName,
+          email: investment.investorEmail,
+          phone: investor.phone,
+        },
+        customData: {
+          flow: "investment",
+          investmentId: investment.id,
+          offerId: investment.offerId,
+        },
+        callbackUrl: `${origin}/api/payments/paydunya/webhook`,
+        returnUrl: `${origin}/?payment=return`,
+        cancelUrl: `${origin}/?payment=cancelled`,
+        });
+
+        const now = isoNow();
+        await getD1()
+        .prepare(
+          `UPDATE Investment
+           SET paymentRef = ?, status = 'payment_pending', updatedAt = ?
+           WHERE id = ? AND paymentRef IS NULL AND status = 'pending_payment'`
+        )
+        .bind(checkout.token, now, investment.id)
+        .run();
+
+        const stored = await getD1()
+        .prepare(`SELECT paymentRef FROM Investment WHERE id = ? LIMIT 1`)
+        .bind(investment.id)
+        .first<{ paymentRef: string | null }>();
+        if (!stored?.paymentRef) {
+          throw new Error("La transaction n'a pas pu être enregistrée");
+        }
+        paymentRef = stored.paymentRef;
+        checkoutUrl =
+          paymentRef === checkout.token
+            ? checkout.checkoutUrl
+            : getPayDunyaCheckoutUrl(paymentRef, config.mode);
+      }
+
+      return NextResponse.json(
+        {
+          investment: normalizeInvestment({ ...investment, paymentRef, status: "payment_pending" }),
+          idempotent,
+          payment: {
+            status: "ready",
+            availableMethods: capabilities.collectionMethods,
+            checkoutUrl,
+            provider: "PayDunya",
+            message: "Choisissez la carte bancaire ou le Mobile Money sur la page de paiement sécurisée.",
+          },
+        },
+        { status: idempotent ? 200 : 201, headers: { "Cache-Control": "no-store" } }
+      );
+    } catch (error) {
+      console.error(
+        "payment_checkout_create_failed",
+        error instanceof Error ? error.message : "unknown_error"
+      );
+      return NextResponse.json(
+        {
+          error: "Le paiement sécurisé est momentanément indisponible. Votre engagement reste enregistré.",
+          code: "PAYMENT_PROVIDER_UNAVAILABLE",
+          investment: normalizeInvestment(investment),
+        },
+        { status: 503, headers: { "Cache-Control": "no-store" } }
+      );
+    }
+  }
+
   return NextResponse.json(
     {
       investment: normalizeInvestment(investment),
