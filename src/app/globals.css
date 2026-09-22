@@ -151,16 +151,16 @@ body {
 
 /* Action button: signature grape-purple gradient */
 .btn-nexora {
-  background: linear-gradient(135deg, #6f1f62 0%, #541249 42%, #250820 100%);
+  background: linear-gradient(145deg, #7b286d 0%, #5d1752 46%, #380c31 100%);
   color: #FFFFFF;
-  font-weight: 700;
-  border-color: rgba(84, 18, 73, .8);
-  box-shadow: 0 1px 0 rgba(255,255,255,.18) inset, 0 10px 26px rgba(56, 12, 49, 0.22);
+  font-weight: 650;
+  border-color: #6f1f62;
+  box-shadow: 0 1px 0 rgba(255,255,255,.22) inset, 0 -1px 0 rgba(19,4,16,.26) inset, 0 9px 22px rgba(56, 12, 49, 0.23);
 }
 .btn-nexora:hover {
-  background: linear-gradient(135deg, #7b286d 0%, #5f1753 42%, #310a2a 100%);
+  background: linear-gradient(145deg, #8b367c 0%, #6c195e 46%, #410e39 100%);
   transform: translateY(-1px);
-  box-shadow: 0 1px 0 rgba(255,255,255,.18) inset, 0 16px 34px rgba(56, 12, 49, 0.28);
+  box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 -1px 0 rgba(19,4,16,.24) inset, 0 14px 30px rgba(56, 12, 49, 0.3);
 }
 
 /* Every native control gets the same tactile and keyboard behaviour, including
@@ -174,19 +174,94 @@ button:disabled {
   cursor: not-allowed;
 }
 
-button:not([data-slot="button"]) {
+button:not([data-slot="button"]):not([data-control="overlay"]) {
   transition-property: color, background-color, border-color, box-shadow, transform, opacity;
   transition-duration: 180ms;
   transition-timing-function: cubic-bezier(.2,.8,.2,1);
 }
 
-button:not([data-slot="button"]):focus-visible {
+button:not([data-slot="button"]):not([data-control="overlay"]):focus-visible {
   outline: none;
   box-shadow: 0 0 0 4px rgba(123, 40, 109, .18);
 }
 
-button:not([data-slot="button"]):active:not(:disabled) {
+button:not([data-slot="button"]):not([data-control="overlay"]):active:not(:disabled) {
   transform: translateY(1px) scale(.985);
+}
+
+/* Interactive controls that are intentionally not conventional CTA buttons. */
+button[data-control="brand"] {
+  border-radius: .9rem;
+}
+
+button[data-control="nav"],
+button[data-control="tab"] {
+  min-height: 2.5rem;
+  border-radius: .8rem;
+  font-weight: 650;
+}
+
+button[data-control="choice"] {
+  position: relative;
+  isolation: isolate;
+  border-radius: 1rem;
+}
+
+button[data-control="choice"][aria-pressed="true"] {
+  box-shadow: 0 0 0 3px rgba(84,18,73,.09), 0 12px 28px rgba(56,12,49,.10);
+}
+
+button[data-control="chip"] {
+  min-height: 2rem;
+  border-radius: 999px;
+  font-weight: 650;
+}
+
+button[data-control="icon"] {
+  border-radius: .8rem;
+}
+
+button[data-control="bottom-nav"] {
+  position: relative;
+  border-radius: .9rem;
+}
+
+button[data-control="bottom-nav"][aria-current="page"]::after {
+  position: absolute;
+  inset-inline: 28%;
+  bottom: .2rem;
+  height: 2px;
+  border-radius: 999px;
+  background: #6c195e;
+  content: "";
+}
+
+button[data-control="text"] {
+  border-radius: .4rem;
+  text-underline-offset: .2rem;
+}
+
+button[data-control="text"]:hover {
+  text-decoration: underline;
+}
+
+button[data-control="media"]:focus-visible {
+  outline: 4px solid rgba(123,40,109,.18);
+  outline-offset: -4px;
+}
+
+[data-slot="button"] > svg,
+[data-slot="tabs-trigger"] > svg,
+[data-slot="toggle"] > svg {
+  transition: transform 180ms cubic-bezier(.2,.8,.2,1);
+}
+
+[data-slot="button"]:hover > svg:last-child:not(:only-child) {
+  transform: translateX(2px);
+}
+
+[data-slot="button"]:hover > svg:first-child:not(:only-child) {
+  transform: translateX(-1px);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -25,9 +25,7 @@ export function getPaymentCapabilities(): PaymentCapabilities {
   const providerName = env.PAYMENT_PROVIDER_NAME?.trim() || null;
   const payDunyaConfigured = Boolean(getPayDunyaConfig());
   const collectionsReady = payDunyaConfigured;
-  // Disbursements remain closed until the provider's separate payout contract
-  // and callback flow are implemented and approved.
-  const payoutsReady = false;
+  const payoutsReady = getPayDunyaConfig()?.mode === "live";
 
   return {
     providerName,
@@ -38,6 +36,6 @@ export function getPaymentCapabilities(): PaymentCapabilities {
     collectionMethods:
       collectionsReady ? ["card", "mobile_money"] : [],
     payoutMethods:
-      payoutsReady ? ["bank_account", "mobile_money"] : [],
+      payoutsReady ? ["mobile_money"] : [],
   };
 }

@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PayoutDialog } from "@/components/investor/payout-dialog";
 import {
   PieChart,
   Pie,
@@ -20,7 +21,6 @@ import {
 import { formatDisplayMoney } from "@/lib/display-money";
 import { getCountryLabel, getSectorLabel } from "@/lib/countries";
 import type { Locale } from "@/lib/store";
-import { toast } from "@/hooks/use-toast";
 import {
   Wallet,
   Coins,
@@ -239,6 +239,7 @@ export function InvestorDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [payoutOpen, setPayoutOpen] = useState(false);
 
   const reload = useCallback(() => {
     fetch("/api/investor/dashboard")
@@ -412,19 +413,14 @@ export function InvestorDashboard() {
             <Button
               size="sm"
               className="btn-nexora mt-2 h-7 px-3 text-xs"
-              onClick={() =>
-                toast({
-                  title: en ? "Secure payout" : "Versement sécurisé",
-                  description: en ? "Select your verified payout method." : "Sélectionnez votre moyen de versement vérifié.",
-                })
-              }
+              onClick={() => setPayoutOpen(true)}
             >
               <ArrowDownToLine className="mr-1.5 h-3.5 w-3.5" />
               {en ? "Request payout" : "Demander un versement"}
             </Button>
           ) : availableBalance > 0 ? (
             <p className="mt-1 text-[11px] font-medium text-positive">
-              {en ? "Bank and Mobile Money payouts are being activated" : "Versements par banque et Mobile Money en cours d’activation"}
+              {en ? "Mobile Money payouts are being activated" : "Versements Mobile Money en cours d’activation"}
             </p>
           ) : (
             <p className="mt-0.5 text-[11px] text-muted-foreground">
@@ -752,6 +748,14 @@ export function InvestorDashboard() {
           </div>
         </div>
       </div>
+
+      <PayoutDialog
+        open={payoutOpen}
+        onOpenChange={setPayoutOpen}
+        locale={locale}
+        displayCurrency={displayCurrency}
+        onCompleted={() => setReloadKey((current) => current + 1)}
+      />
 
     </section>
   );

@@ -313,6 +313,7 @@ export function ProjectDetail() {
                   10_000_000,
                 ].map((amt) => (
                   <button
+                    data-control="chip"
                     key={amt}
                     onClick={() => setInvestAmount(String(amt))}
                     className="rounded-md border border-border bg-secondary/50 px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-primary hover:text-primary-foreground"

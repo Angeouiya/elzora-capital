@@ -316,7 +316,10 @@ model Payout {
   status             String    @default("pending")
   // pending, ordered, completed, failed, uncertain
   beneficiaryAccount String // compte vérifié
+  withdrawMode       String?
   partnerRef         String?
+  providerEventId    String?   @unique
+  failureReason      String?
   createdAt          DateTime  @default(now())
   completedAt        DateTime?
 }

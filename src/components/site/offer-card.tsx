@@ -45,6 +45,7 @@ export function OfferCard({ offer }: { offer: OfferDTO }) {
     <Card className="group flex flex-col gap-0 overflow-hidden rounded-2xl border border-border bg-white p-0 transition-all duration-300 hover:-translate-y-1 hover:border-black/15 hover:shadow-[0_20px_45px_rgba(18,20,15,.10)]">
       {/* Image */}
       <button
+        data-control="media"
         onClick={() => openOffer(offer.id)}
         className="relative block h-36 w-full overflow-hidden sm:h-40"
         aria-label={`${locale === "fr" ? "Voir l’offre" : "View offer"} ${offer.project.title}`}

@@ -40,6 +40,69 @@ export interface PayDunyaTransaction {
   fail_reason?: string;
 }
 
+export interface PayDunyaDisbursementStatus {
+  response_code?: string;
+  response_text?: string;
+  status?: "created" | "pending" | "success" | "failed" | string;
+  token?: string;
+  hash?: string;
+  amount?: number | string;
+  fees?: number | string;
+  total_amount?: number | string;
+  withdraw_mode?: string;
+  disburse_id?: string;
+  transaction_id?: string;
+  disburse_tx_id?: string;
+  provider_ref?: string;
+}
+
+export interface PayoutOperator {
+  id: string;
+  label: string;
+}
+
+const PAYOUT_OPERATORS: Record<string, PayoutOperator[]> = {
+  SN: [
+    { id: "orange-money-senegal", label: "Orange Money" },
+    { id: "wave-senegal", label: "Wave" },
+    { id: "free-money-senegal", label: "Free Money" },
+    { id: "expresso-senegal", label: "E-Money" },
+    { id: "djamo-sn", label: "Djamo" },
+  ],
+  BJ: [
+    { id: "mtn-benin", label: "MTN MoMo" },
+    { id: "moov-benin", label: "Moov Money" },
+    { id: "celtiis-cash", label: "Celtiis Cash" },
+  ],
+  CI: [
+    { id: "mtn-ci", label: "MTN MoMo" },
+    { id: "orange-money-ci", label: "Orange Money" },
+    { id: "moov-ci", label: "Moov Money" },
+    { id: "wave-ci", label: "Wave" },
+    { id: "djamo-ci", label: "Djamo" },
+  ],
+  TG: [
+    { id: "t-money-togo", label: "T-Money" },
+    { id: "moov-togo", label: "Moov Money" },
+  ],
+  ML: [{ id: "orange-money-mali", label: "Orange Money" }],
+  BF: [
+    { id: "orange-money-burkina", label: "Orange Money" },
+    { id: "moov-burkina-faso", label: "Moov Money" },
+  ],
+  CM: [{ id: "mtn-cameroun", label: "MTN MoMo" }],
+};
+
+const CALLING_CODES: Record<string, string> = {
+  SN: "221",
+  BJ: "229",
+  CI: "225",
+  TG: "228",
+  ML: "223",
+  BF: "226",
+  CM: "237",
+};
+
 const PAYDUNYA_HOST = "app.paydunya.com";
 
 export function getPayDunyaConfig(): PayDunyaConfig | null {
@@ -160,6 +223,94 @@ export async function confirmPayDunyaCheckout(
   return payload;
 }
 
+export function getPayDunyaPayoutOperators(country: string): PayoutOperator[] {
+  return PAYOUT_OPERATORS[country.trim().toUpperCase()] || [];
+}
+
+export function normalizePayDunyaPayoutPhone(phone: string, country: string): string | null {
+  let digits = phone.replace(/\D/g, "");
+  const code = CALLING_CODES[country.trim().toUpperCase()];
+  if (code && digits.startsWith(code)) digits = digits.slice(code.length);
+  if (!/^\d{8,12}$/.test(digits)) return null;
+  return digits;
+}
+
+export function maskPayoutPhone(phone: string): string {
+  const visible = phone.slice(-4);
+  return `${"•".repeat(Math.max(4, phone.length - 4))}${visible}`;
+}
+
+export async function initiatePayDunyaDisbursement(
+  config: PayDunyaConfig,
+  input: {
+    accountAlias: string;
+    amount: number;
+    withdrawMode: string;
+    callbackUrl: string;
+  }
+): Promise<string> {
+  assertLiveDisbursement(config);
+  const response = await fetch(`https://${PAYDUNYA_HOST}/api/v2/disburse/get-invoice`, {
+    method: "POST",
+    headers: payDunyaHeaders(config),
+    body: JSON.stringify({
+      account_alias: input.accountAlias,
+      amount: input.amount,
+      withdraw_mode: input.withdrawMode,
+      callback_url: input.callbackUrl,
+    }),
+    cache: "no-store",
+  });
+  const payload = await readJson<PayDunyaDisbursementStatus & { disburse_token?: string }>(response);
+  const token = typeof payload.disburse_token === "string" ? payload.disburse_token : "";
+  if (!response.ok || payload.response_code !== "00" || !/^[A-Za-z0-9_-]{6,160}$/.test(token)) {
+    throw new Error("Le prestataire n'a pas pu initialiser le versement");
+  }
+  return token;
+}
+
+export async function submitPayDunyaDisbursement(
+  config: PayDunyaConfig,
+  token: string,
+  disburseId: string
+): Promise<PayDunyaDisbursementStatus> {
+  assertLiveDisbursement(config);
+  assertDisbursementToken(token);
+  const response = await fetch(`https://${PAYDUNYA_HOST}/api/v2/disburse/submit-invoice`, {
+    method: "POST",
+    headers: payDunyaHeaders(config),
+    body: JSON.stringify({ disburse_invoice: token, disburse_id: disburseId }),
+    cache: "no-store",
+  });
+  const payload = await readJson<PayDunyaDisbursementStatus>(response);
+  if (!response.ok || payload.response_code !== "00") {
+    throw new Error("Le prestataire n'a pas pu soumettre le versement");
+  }
+  return payload;
+}
+
+export async function checkPayDunyaDisbursement(
+  config: PayDunyaConfig,
+  token: string
+): Promise<PayDunyaDisbursementStatus> {
+  assertLiveDisbursement(config);
+  assertDisbursementToken(token);
+  const response = await fetch(`https://${PAYDUNYA_HOST}/api/v2/disburse/check-status`, {
+    method: "POST",
+    headers: payDunyaHeaders(config),
+    body: JSON.stringify({ disburse_invoice: token }),
+    cache: "no-store",
+  });
+  const payload = await readJson<PayDunyaDisbursementStatus>(response);
+  if (!response.ok || payload.response_code !== "00") {
+    throw new Error("Le statut du versement n'a pas pu être vérifié");
+  }
+  if (payload.hash && !(await verifyPayDunyaHash(payload.hash, config.masterKey))) {
+    throw new Error("La signature du versement est invalide");
+  }
+  return payload;
+}
+
 export async function verifyPayDunyaHash(
   receivedHash: unknown,
   masterKey: string
@@ -188,6 +339,18 @@ function payDunyaHeaders(config: PayDunyaConfig): HeadersInit {
     "PAYDUNYA-PRIVATE-KEY": config.privateKey,
     "PAYDUNYA-TOKEN": config.token,
   };
+}
+
+function assertLiveDisbursement(config: PayDunyaConfig) {
+  if (config.mode !== "live") {
+    throw new Error("Les versements sont indisponibles en environnement de test");
+  }
+}
+
+function assertDisbursementToken(token: string) {
+  if (!/^[A-Za-z0-9_-]{6,160}$/.test(token)) {
+    throw new Error("Référence de versement invalide");
+  }
 }
 
 async function readJson<T>(response: Response): Promise<T> {

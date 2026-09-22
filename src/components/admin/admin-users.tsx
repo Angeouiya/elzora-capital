@@ -143,6 +143,7 @@ export function AdminUsers() {
       {/* Tabs */}
       <div className="mb-4 flex gap-1 rounded-md bg-secondary/60 p-1">
         <button
+          data-control="tab"
           onClick={() => {
             setTab("users");
             setSearch("");
@@ -161,6 +162,7 @@ export function AdminUsers() {
           </span>
         </button>
         <button
+          data-control="tab"
           onClick={() => {
             setTab("companies");
             setSearch("");

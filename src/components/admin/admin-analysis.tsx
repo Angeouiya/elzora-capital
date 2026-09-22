@@ -470,6 +470,7 @@ export function AdminAnalysis() {
               <Card key={p.id} className="overflow-hidden p-0">
                 {/* Row */}
                 <button
+                  data-control="accordion"
                   onClick={() => setExpanded(isOpen ? null : p.id)}
                   className="flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-secondary/40"
                 >

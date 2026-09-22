@@ -477,6 +477,7 @@ export function CompanySubmit() {
                   aria-current={isActive ? "step" : undefined}
                 >
                   <button
+                    data-control="chip"
                     type="button"
                     onClick={() => {
                       if (s.id < step || stepValid()) setStep(s.id);
@@ -519,6 +520,7 @@ export function CompanySubmit() {
                 const isSelected = form.companyId === c.id;
                 return (
                   <button
+                    data-control="choice"
                     key={c.id}
                     type="button"
                     onClick={() => set("companyId", c.id)}

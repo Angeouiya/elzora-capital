@@ -92,6 +92,7 @@ export function BottomNav() {
             return (
               <li key={item.label} className="flex-1">
                 <button
+                  data-control="bottom-nav"
                   onClick={() => handleItemClick(item)}
                   className={`flex h-[3.85rem] w-full flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition-colors ${
                     isActive

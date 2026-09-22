@@ -217,6 +217,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           const active = view === item.view;
           return (
             <button
+              data-control="nav"
               key={item.view}
               onClick={() => {
                 setView(item.view);
@@ -326,6 +327,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               className="absolute left-0 top-0 flex h-full w-[min(19rem,88vw)] flex-col bg-nexora-black shadow-2xl"
             >
               <button
+                data-control="icon"
                 onClick={() => setMobileOpen(false)}
                 className="absolute right-3 top-5 z-10 flex h-8 w-8 items-center justify-center rounded-md text-white/70 hover:bg-white/10"
                 aria-label="Fermer le menu"
@@ -344,6 +346,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-3">
               {/* Hamburger mobile */}
               <button
+                data-control="icon"
                 onClick={() => setMobileOpen(true)}
                 className="flex h-9 w-9 items-center justify-center rounded-md text-white hover:bg-white/10 lg:hidden"
                 aria-label="Menu"

@@ -207,6 +207,7 @@ export function Register() {
               </p>
               <div className="grid gap-3 sm:grid-cols-2">
                 <button
+                  data-control="choice"
                   type="button"
                   onClick={() => setKind("individual")}
                   aria-pressed={kind === "individual"}
@@ -228,6 +229,7 @@ export function Register() {
                 </button>
 
                 <button
+                  data-control="choice"
                   type="button"
                   onClick={() => setKind("company")}
                   aria-pressed={kind === "company"}
@@ -410,6 +412,7 @@ export function Register() {
                   const active = objective === opt.id;
                   return (
                     <button
+                      data-control="choice"
                       key={opt.id}
                       type="button"
                       onClick={() => setObjective(opt.id)}

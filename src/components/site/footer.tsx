@@ -61,6 +61,7 @@ export function Footer() {
               {productItems.map(([label, view]) => (
                 <li key={view}>
                   <button
+                    data-control="text"
                     onClick={() => setView(view)}
                     className="text-left transition-colors hover:text-white"
                   >

@@ -119,6 +119,7 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
     <>
       {open && !userEmail && !sessionPending && (
         <button
+          data-control="overlay"
           type="button"
           aria-label={copy.closeMenu}
           onClick={() => setOpen(false)}
@@ -132,6 +133,7 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
       <div className="mx-auto flex h-[4.25rem] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <button
+          data-control="brand"
           onClick={() => setView("home")}
           className="group flex items-center gap-2.5 rounded-xl outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring"
         >
@@ -146,6 +148,7 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
         <nav className="hidden items-center gap-1 rounded-2xl border border-[#541249]/8 bg-[#FAF4F9]/72 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,.8)] lg:flex">
           {copy.nav.map((item) => (
             <button
+              data-control="nav"
               key={item.view}
               onClick={() => setView(item.view)}
               className={`relative rounded-xl px-3.5 py-2 text-sm font-semibold transition-all ${
@@ -164,6 +167,7 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
+                data-control="preference"
                 type="button"
                 className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[#541249]/14 bg-white/85 px-3 text-[11px] font-extrabold tracking-wide text-[#541249] shadow-[0_4px_14px_rgba(56,12,49,.06)] hover:-translate-y-0.5 hover:border-[#541249]/28 hover:bg-[#FAF4F9] hover:shadow-[0_8px_18px_rgba(56,12,49,.10)]"
                 aria-label={copy.preferences}
@@ -208,7 +212,7 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
           ) : userEmail ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex h-10 items-center gap-2 rounded-xl border border-[#541249]/12 bg-white/88 pl-1.5 pr-3 text-sm font-semibold shadow-[0_4px_14px_rgba(56,12,49,.06)] hover:-translate-y-0.5 hover:border-[#541249]/25 hover:bg-[#FAF4F9]">
+                <button data-control="account" className="flex h-10 items-center gap-2 rounded-xl border border-[#541249]/12 bg-white/88 pl-1.5 pr-3 text-sm font-semibold shadow-[0_4px_14px_rgba(56,12,49,.06)] hover:-translate-y-0.5 hover:border-[#541249]/25 hover:bg-[#FAF4F9]">
                   <Avatar className="h-7 w-7">
                     <AvatarFallback className="bg-nexora-black text-xs font-bold text-nexora-lime">
                       {initials}
@@ -273,6 +277,7 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
           {/* Mobile hamburger (only when not logged in — otherwise bottom-nav takes over) */}
           {!userEmail && !sessionPending && (
             <button
+              data-control="icon"
               onClick={() => setOpen(!open)}
               className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#541249]/10 bg-white/80 text-[#541249] shadow-[0_4px_14px_rgba(56,12,49,.06)] hover:bg-[#F7EAF5] lg:hidden"
               aria-label="Menu"
@@ -295,6 +300,7 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
           <div className="flex flex-col gap-1">
             {copy.nav.map((item) => (
               <button
+                data-control="nav"
                 key={item.view}
                 onClick={() => {
                   setView(item.view);
