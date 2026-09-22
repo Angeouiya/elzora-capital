@@ -39,7 +39,6 @@ import {
   PieChart as PieIcon,
   Building2,
   Calendar,
-  CheckCircle2,
   AlertTriangle,
   RefreshCw,
   Lock,
@@ -212,7 +211,6 @@ export function InvestorDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
-  const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [payoutOpen, setPayoutOpen] = useState(false);
   const [payoutAmount, setPayoutAmount] = useState("");
   const [payoutAccount, setPayoutAccount] = useState("");
@@ -291,7 +289,7 @@ export function InvestorDashboard() {
           <code className="rounded bg-secondary px-1 py-0.5 font-mono">
             investisseur@demo.nexora
           </code>{" "}
-          pour la démonstration.
+          pour cet accès pilote.
         </p>
         <Button
           variant="outline"
@@ -319,39 +317,6 @@ export function InvestorDashboard() {
   const pendingCount = investments.filter(
     (i) => i.status === "pending_payment"
   ).length;
-
-  const handleConfirmPayment = async (investmentId: string) => {
-    setConfirmingId(investmentId);
-    try {
-      const res = await fetch(
-        `/api/investments/${investmentId}/confirm`,
-        { method: "POST" }
-      );
-      const body = (await res.json().catch(() => ({}))) as { error?: string };
-      if (!res.ok) {
-        toast({
-          title: "Confirmation échouée",
-          description: body?.error || "Réessayez ultérieurement.",
-          variant: "destructive",
-        });
-        return;
-      }
-      toast({
-        title: "Paiement confirmé",
-        description:
-          "Votre investissement est désormais confirmé et apparaît dans votre portefeuille.",
-      });
-      setReloadKey((k) => k + 1);
-    } catch {
-      toast({
-        title: "Erreur réseau",
-        description: "Réessayez ultérieurement.",
-        variant: "destructive",
-      });
-    } finally {
-      setConfirmingId(null);
-    }
-  };
 
   const handlePayoutSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -681,7 +646,7 @@ export function InvestorDashboard() {
                       </div>
                     )}
 
-                    {/* Pending payment → confirm CTA */}
+                    {/* Paiement en attente de validation par le prestataire */}
                     {isPending && (
                       <div
                         className="mt-3 flex flex-col items-start gap-2 rounded-md border border-[#FFF0B3] bg-[#FFF8E1] p-3 sm:flex-row sm:items-center sm:justify-between"
@@ -690,29 +655,10 @@ export function InvestorDashboard() {
                         <div className="flex items-start gap-2">
                           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[#8a6d00]" />
                           <p className="text-xs text-[#8a6d00]">
-                            Paiement en attente de confirmation. En mode
-                            démonstration, vous pouvez simuler la réception du
-                            paiement par le prestataire.
+                            Paiement en attente. Sa confirmation apparaîtra
+                            automatiquement après validation par le prestataire.
                           </p>
                         </div>
-                        <Button
-                          size="sm"
-                          className="btn-nexora shrink-0"
-                          disabled={confirmingId === inv.id}
-                          onClick={() => handleConfirmPayment(inv.id)}
-                        >
-                          {confirmingId === inv.id ? (
-                            <>
-                              <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                              Confirmation…
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
-                              Confirmer le paiement
-                            </>
-                          )}
-                        </Button>
                       </div>
                     )}
                   </Card>
@@ -932,11 +878,6 @@ export function InvestorDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Demo notice */}
-      <p className="mt-8 text-center text-[11px] text-muted-foreground">
-        Mode démonstration — données fictives. Les confirmations et versements
-        sont simulés.
-      </p>
     </section>
   );
 }

@@ -149,7 +149,7 @@ export function AdminLogin() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="admin@nexora"
+                    placeholder="nom@entreprise.com"
                     className="pl-9"
                   />
                 </div>
@@ -208,18 +208,6 @@ export function AdminLogin() {
                 </div>
               </div>
             )}
-
-            {/* Demo hint (pas de lien "créer un compte" — spec 02) */}
-            <div className="mt-4 rounded-md border border-border bg-secondary/60 p-3">
-              <p className="text-xs text-muted-foreground">
-                <span className="font-semibold text-foreground">Astuce démo :</span>{" "}
-                utilisez{" "}
-                <code className="rounded bg-background px-1 py-0.5 font-mono text-[11px] text-foreground">
-                  admin@nexora
-                </code>{" "}
-                avec n&rsquo;importe quel mot de passe.
-              </p>
-            </div>
 
             {/* Aucune inscription publique */}
             <div className="mt-4 flex items-start gap-2 rounded-md bg-nexora-pale p-3">

@@ -945,11 +945,6 @@ export function CompanyDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Demo notice */}
-      <p className="mt-8 text-center text-[11px] text-muted-foreground">
-        Mode démonstration — données fictives. Les échéances et paiements sont
-        simulés.
-      </p>
     </section>
   );
 }

@@ -13,6 +13,8 @@ import { Register } from "@/components/sections/register";
 import { InvestorDashboard } from "@/components/sections/investor-dashboard";
 import { CompanyDashboard } from "@/components/sections/company-dashboard";
 import { CompanySubmit } from "@/components/sections/company-submit";
+import { Fees } from "@/components/sections/fees";
+import { Risks } from "@/components/sections/risks";
 import { AdminLogin } from "@/components/admin/admin-login";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminDashboard } from "@/components/admin/admin-dashboard";
@@ -72,13 +74,8 @@ export default function Page() {
         {view === "investor_dashboard" && <InvestorDashboard />}
         {view === "company_dashboard" && <CompanyDashboard />}
         {view === "company_submit" && <CompanySubmit />}
-        {/* Vues non couvertes par cette tâche — placeholders */}
-        {view === "fees" && (
-          <div className="p-8 text-sm text-muted-foreground">Chargement…</div>
-        )}
-        {view === "risks" && (
-          <div className="p-8 text-sm text-muted-foreground">Chargement…</div>
-        )}
+        {view === "fees" && <Fees />}
+        {view === "risks" && <Risks />}
       </main>
       <Footer />
       {showBottomNav && <BottomNav />}

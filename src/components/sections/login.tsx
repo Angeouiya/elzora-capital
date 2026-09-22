@@ -99,7 +99,7 @@ export function Login() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="investisseur@demo.nexora"
+                  placeholder="vous@exemple.com"
                   className="pl-9"
                   disabled={submitting}
                 />
@@ -148,18 +148,6 @@ export function Login() {
             </Button>
           </form>
 
-          {/* Demo hint */}
-          <div className="mt-4 rounded-md border border-border bg-secondary/60 p-3">
-            <p className="text-xs text-muted-foreground">
-              <span className="font-semibold text-foreground">Astuce démo :</span>{" "}
-              essayez{" "}
-              <code className="rounded bg-background px-1 py-0.5 font-mono text-[11px] text-foreground">
-                investisseur@demo.nexora
-              </code>{" "}
-              avec n&apos;importe quel mot de passe.
-            </p>
-          </div>
-
           {/* No-account CTA */}
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Pas encore de compte ?{" "}
@@ -172,13 +160,11 @@ export function Login() {
             </button>
           </p>
 
-          {/* Legal notice */}
           <div className="mt-4 flex items-start gap-2 rounded-md bg-nexora-pale p-3">
             <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-positive" />
             <p className="text-[11px] leading-relaxed text-positive">
-              Mode démonstration — aucune authentification réelle. Aucun mot de
-              passe n&apos;est vérifié. La mise en production utilisera un
-              prestataire d&apos;identité habilité (NextAuth + KYC partenaire).
+              Votre mot de passe n&rsquo;est jamais stocké en clair. La session est
+              conservée dans un cookie sécurisé inaccessible aux scripts de la page.
             </p>
           </div>
         </CardContent>

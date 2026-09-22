@@ -1,41 +1,34 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { getUserSession } from "@/lib/auth";
+import { getD1, isoNow, requestIp } from "@/lib/d1";
+import { getUserSession, readTokenFromRequest } from "@/lib/auth";
 
-// ============================================================================
-// POST /api/auth/logout
-// ----------------------------------------------------------------------------
-// Révoque la session courante (marquée `revoked=true`) + efface le cookie.
-// ============================================================================
 export async function POST(req: Request) {
-  const session = await getUserSession(req);
-  if (session) {
-    // Marquer la session comme révoquée
-    await db.userSession
-      .updateMany({
-        where: { userId: session.userId },
-        data: { revoked: true },
-      })
-      .catch(() => {});
-    await db.auditLog
-      .create({
-        data: {
-          actorType: "user",
-          actorId: session.userId,
-          action: "user_logout",
-          entityType: "user",
-          entityId: session.userId,
-          metadata: "{}",
-        },
-      })
-      .catch(() => {});
+  const token = readTokenFromRequest(req, "x-nexora-token");
+  try {
+    const session = await getUserSession(req);
+    if (session && token) {
+      const database = getD1();
+      await database.batch([
+        database.prepare(`UPDATE UserSession SET revoked = 1, lastActiveAt = ? WHERE id = ?`).bind(isoNow(), token),
+        database
+          .prepare(
+            `INSERT INTO AuditLog (id, actorType, actorId, action, entityType, entityId, metadata, ipAddress, createdAt)
+             VALUES (?, 'user', ?, 'user_logout', 'user', ?, '{}', ?, ?)`
+          )
+          .bind(crypto.randomUUID(), session.userId, session.userId, requestIp(req), isoNow()),
+      ]);
+    }
+  } catch (error) {
+    console.error("auth_logout_failed", error);
   }
-  const res = NextResponse.json({ ok: true });
-  res.cookies.set("x-nexora-token", "", {
+
+  const response = NextResponse.json({ ok: true });
+  response.cookies.set("x-nexora-token", "", {
     httpOnly: true,
     sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: 0,
   });
-  return res;
+  return response;
 }

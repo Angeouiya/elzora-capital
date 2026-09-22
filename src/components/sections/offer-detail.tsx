@@ -133,7 +133,7 @@ export function OfferDetail() {
       toast({
         title: "Souscription enregistrée",
         description:
-          "Mode démonstration — engagement enregistré (aucun paiement réel).",
+          "Votre engagement est réservé. Les instructions de paiement seront affichées dans votre espace.",
       });
       setView("investor_dashboard");
     } catch (e) {
@@ -556,12 +556,11 @@ export function OfferDetail() {
                   {submitting ? "Traitement…" : "Souscrire"}
                 </Button>
 
-                {/* Demo notice */}
                 <div className="flex items-start gap-2 rounded-md bg-nexora-pale p-3">
                   <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-positive" />
                   <p className="text-[11px] leading-relaxed text-positive">
-                    Mode démonstration. Aucun paiement réel. La mise en
-                    production nécessite un prestataire de paiement habilité.
+                    Le paiement par carte ou Mobile Money sera proposé uniquement
+                    via un prestataire autorisé, avec confirmation avant débit.
                   </p>
                 </div>
 

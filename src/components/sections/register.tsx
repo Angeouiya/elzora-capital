@@ -57,6 +57,7 @@ export function Register() {
   const [consentMarketing, setConsentMarketing] = useState(false);
 
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const progressPct = useMemo(() => (step / TOTAL_STEPS) * 100, [step]);
 
@@ -85,8 +86,8 @@ export function Register() {
       setErrorMsg("Adresse email invalide.");
       return;
     }
-    if (password.length < 6) {
-      setErrorMsg("Le mot de passe doit contenir au moins 6 caractères.");
+    if (password.length < 10) {
+      setErrorMsg("Le mot de passe doit contenir au moins 10 caractères.");
       return;
     }
     if (password !== confirmPassword) {
@@ -104,12 +105,43 @@ export function Register() {
     goToStep(4);
   };
 
-  const handleStep4Next = () => {
+  const handleStep4Next = async () => {
     if (!acceptCgu || !acceptRisks) {
       setErrorMsg("Vous devez accepter les CGU et reconnaître les risques.");
       return;
     }
-    goToStep(5);
+    setSubmitting(true);
+    setErrorMsg(null);
+    try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kind,
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          email: email.trim().toLowerCase(),
+          phone: phone.trim(),
+          password,
+          country: countryCode,
+          language,
+          objective,
+          acceptedTerms: acceptCgu,
+          acceptedRisks: acceptRisks,
+          consentMarketing,
+        }),
+      });
+      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+      if (!response.ok) {
+        setErrorMsg(payload.error || "Impossible de créer le compte.");
+        return;
+      }
+      goToStep(5);
+    } catch {
+      setErrorMsg("Connexion indisponible. Réessayez dans quelques instants.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleFinalLogin = () => {
@@ -407,7 +439,7 @@ export function Register() {
                   </Select>
                   {country && country.operationalStatus !== "active" && (
                     <p className="mt-1 text-[11px] text-muted-foreground">
-                      Statut opérationnel : {country.operationalStatus === "demo" ? "démonstration" : "bientôt disponible"}.
+                      Disponibilité : {country.operationalStatus === "demo" ? "accès pilote" : "bientôt disponible"}.
                     </p>
                   )}
                 </div>
@@ -517,8 +549,8 @@ export function Register() {
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Retour
                 </Button>
-                <Button onClick={handleStep4Next} className="btn-nexora">
-                  Créer mon compte
+                <Button onClick={handleStep4Next} disabled={submitting} className="btn-nexora">
+                  {submitting ? "Création…" : "Créer mon compte"}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
@@ -580,13 +612,11 @@ export function Register() {
         </p>
       )}
 
-      {/* Demo notice */}
       <div className="mt-6 flex items-start gap-2 rounded-md bg-nexora-pale p-3">
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-positive" />
         <p className="text-[11px] leading-relaxed text-positive">
-          Mode démonstration — aucune authentification réelle. Le compte est
-          créé localement pour la démonstration ; aucune donnée n&rsquo;est
-          persistée ni transmise.
+          Votre mot de passe n&rsquo;est jamais stocké en clair et votre session est protégée. Une
+          vérification d&rsquo;identité sera demandée avant toute souscription.
         </p>
       </div>
     </section>
