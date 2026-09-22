@@ -11,6 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PayoutDialog } from "@/components/investor/payout-dialog";
+import { KycDialog } from "@/components/investor/kyc-dialog";
 import {
   PieChart,
   Pie,
@@ -34,6 +35,7 @@ import {
   AlertTriangle,
   RefreshCw,
   Clock,
+  UserRoundCheck,
 } from "lucide-react";
 
 const CHART_COLORS = ["#541249", "#7A246C", "#250820", "#A55B98", "#C62828"];
@@ -240,6 +242,7 @@ export function InvestorDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [payoutOpen, setPayoutOpen] = useState(false);
+  const [kycOpen, setKycOpen] = useState(false);
 
   const reload = useCallback(() => {
     fetch("/api/investor/dashboard")
@@ -353,11 +356,22 @@ export function InvestorDashboard() {
             <p className="text-xs text-muted-foreground">{user.email}</p>
           </div>
         </div>
-        {user.kycStatus === "verified" && (
+        {user.kycStatus === "verified" ? (
           <div className="flex items-center gap-2 rounded-full bg-nexora-pale px-3 py-1.5 text-xs font-medium text-positive">
             <ShieldCheck className="h-3.5 w-3.5" />
             {en ? "Identity verified" : "Identité vérifiée"}
           </div>
+        ) : (
+          <Button
+            variant="outline"
+            className="border-[#D9BFD4] bg-[#FCF8FB] text-[#541249] hover:bg-[#F5EAF3]"
+            onClick={() => setKycOpen(true)}
+          >
+            <UserRoundCheck className="h-4 w-4" />
+            {user.kycStatus === "pending" || user.kycStatus === "review"
+              ? en ? "Verification in progress" : "Vérification en cours"
+              : en ? "Verify my identity" : "Vérifier mon identité"}
+          </Button>
         )}
       </div>
 
@@ -748,6 +762,14 @@ export function InvestorDashboard() {
           </div>
         </div>
       </div>
+
+      <KycDialog
+        open={kycOpen}
+        onOpenChange={setKycOpen}
+        locale={locale}
+        status={user.kycStatus}
+        onSubmitted={() => setReloadKey((key) => key + 1)}
+      />
 
       <PayoutDialog
         open={payoutOpen}

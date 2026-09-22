@@ -48,6 +48,49 @@ model User {
   sessions          UserSession[]
   notifications     Notification[]
   submittedProjects Project[]       @relation("ProjectSubmitter")
+  kycProfile        KycProfile?
+  kycDocuments      KycDocument[]
+}
+
+model KycProfile {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  identityType        String
+  identityNumberHash  String
+  identityNumberLast4 String
+  documentCountry     String
+  expiresAt           String?
+  residentialAddress String
+  city                String
+  occupation          String
+  sourceOfFunds       String
+  politicallyExposed  Boolean  @default(false)
+  actingForSelf       Boolean  @default(true)
+  consentAt           DateTime
+  reviewedAt          DateTime?
+  reviewedBy          String?
+  decidedBy           String?
+  decisionReason      String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model KycDocument {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind        String
+  storageKey  String   @unique
+  fileName    String
+  contentType String
+  size        Int
+  checksum    String
+  status      String   @default("active")
+  uploadedAt  DateTime @default(now())
+  reviewedAt  DateTime?
+
+  @@index([userId, status])
 }
 
 model UserSession {

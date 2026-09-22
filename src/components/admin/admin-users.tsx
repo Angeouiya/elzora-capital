@@ -5,6 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { KycReviewDialog } from "@/components/admin/kyc-review-dialog";
 import {
   Select,
   SelectContent,
@@ -27,6 +29,7 @@ import {
   ShieldCheck,
   ShieldAlert,
   Inbox,
+  Eye,
 } from "lucide-react";
 
 interface UserRow {
@@ -86,11 +89,13 @@ function EmptyState({ label }: { label: string }) {
 }
 
 export function AdminUsers() {
-  const { data, loading } = useFetch<AdminStatsResponse>("/api/admin/stats");
+  const [refreshKey, setRefreshKey] = useState(0);
+  const { data, loading } = useFetch<AdminStatsResponse>(`/api/admin/stats?refresh=${refreshKey}`);
   const [tab, setTab] = useState<"users" | "companies">("users");
   const [search, setSearch] = useState("");
   const [kycFilter, setKycFilter] = useState<string>("all");
   const [verifFilter, setVerifFilter] = useState<string>("all");
+  const [selectedUser, setSelectedUser] = useState<string | null>(null);
 
   const filteredUsers = useMemo(() => {
     if (!data?.users) return [];
@@ -242,6 +247,7 @@ export function AdminUsers() {
                   <TableHead>Pays</TableHead>
                   <TableHead>KYC</TableHead>
                   <TableHead>Inscrit le</TableHead>
+                  <TableHead className="text-right">Dossier</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -265,6 +271,14 @@ export function AdminUsers() {
                       </TableCell>
                       <TableCell className="tnum text-xs text-muted-foreground">
                         {new Date(u.createdAt).toLocaleDateString("fr-FR")}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {u.kycStatus !== "incomplete" ? (
+                          <Button variant="outline" size="sm" onClick={() => setSelectedUser(u.id)}>
+                            <Eye className="h-3.5 w-3.5" />
+                            Examiner
+                          </Button>
+                        ) : <span className="text-xs text-muted-foreground">—</span>}
                       </TableCell>
                     </TableRow>
                   );
@@ -344,6 +358,13 @@ export function AdminUsers() {
           être motivée et contre-signée par le responsable conformité.
         </p>
       </div>
+
+      <KycReviewDialog
+        userId={selectedUser}
+        open={Boolean(selectedUser)}
+        onOpenChange={(next) => { if (!next) setSelectedUser(null); }}
+        onChanged={() => setRefreshKey((key) => key + 1)}
+      />
     </div>
   );
 }
