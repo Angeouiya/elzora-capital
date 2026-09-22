@@ -255,13 +255,16 @@ export function Home() {
         </div>
         <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-2 scroll-area-fancy sm:flex-wrap sm:overflow-visible">
           {SECTORS.map((s) => (
-            <button
+            <Button
               key={s}
+              type="button"
+              variant="outline"
+              size="sm"
               onClick={() => openExploreSector(s)}
-              className="shrink-0 rounded-full border border-border bg-white/80 px-4 py-2 text-sm font-semibold text-foreground transition-all hover:-translate-y-0.5 hover:border-foreground hover:bg-secondary"
+              className="shrink-0 rounded-full"
             >
               {getSectorLabel(s, locale)}
-            </button>
+            </Button>
           ))}
         </div>
       </section>

@@ -171,13 +171,9 @@ export function Login() {
           {/* No-account CTA */}
           <p className="mt-6 text-center text-sm text-muted-foreground">
             {copy.noAccount}{" "}
-            <button
-              type="button"
-              onClick={() => setView("register")}
-              className="font-semibold text-foreground underline-offset-4 hover:underline"
-            >
+            <Button type="button" variant="link" onClick={() => setView("register")} className="inline h-auto p-0 align-baseline font-semibold">
               {copy.register}
-            </button>
+            </Button>
           </p>
 
           <div className="mt-4 flex items-start gap-2 rounded-md bg-nexora-pale p-3">

@@ -447,13 +447,16 @@ export function CompanySubmit() {
     <section className="page-shell max-w-3xl reveal-in">
       {/* Header */}
       <div className="mb-4 flex items-center gap-2">
-        <button
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
           onClick={() => setView("company_dashboard")}
-          className="rounded-md p-1 text-muted-foreground hover:bg-secondary/60"
+          className="h-9 w-9 text-muted-foreground"
           aria-label={copy.back}
         >
           <ArrowLeft className="h-4 w-4" />
-        </button>
+        </Button>
         <h1 className="text-lg font-bold tracking-tight text-foreground sm:text-xl">
           {copy.title}
         </h1>
@@ -519,10 +522,11 @@ export function CompanySubmit() {
                     key={c.id}
                     type="button"
                     onClick={() => set("companyId", c.id)}
-                    className={`flex w-full items-start gap-3 rounded-md border p-3 text-left transition-colors ${
+                    aria-pressed={isSelected}
+                    className={`flex w-full items-start gap-3 rounded-2xl border p-4 text-left shadow-[0_4px_16px_rgba(56,12,49,.035)] transition-all hover:-translate-y-0.5 hover:shadow-[0_9px_22px_rgba(56,12,49,.08)] ${
                       isSelected
-                        ? "border-nexora-lime bg-nexora-pale/60"
-                        : "border-border hover:bg-secondary/60"
+                        ? "border-[#541249]/55 bg-[linear-gradient(145deg,#FAF4F9,#F1DFEE)] ring-2 ring-[#541249]/12"
+                        : "border-[#541249]/10 bg-white/90 hover:border-[#541249]/30"
                     }`}
                   >
                     <Building2

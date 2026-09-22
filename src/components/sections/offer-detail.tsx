@@ -460,13 +460,16 @@ export function OfferDetail() {
                   />
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {quickAmounts.map((q, i) => (
-                      <button
+                      <Button
                         key={i}
+                        type="button"
+                        variant="outline"
+                        size="sm"
                         onClick={() => setAmount(q)}
-                        className="rounded-md border border-border bg-background px-2 py-1 text-xs text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
+                        className="h-8 rounded-lg px-2.5 text-xs text-muted-foreground"
                       >
                         <span className="tnum">{money(q, true)}</span>
-                      </button>
+                      </Button>
                     ))}
                   </div>
                   <p className="mt-2 text-[11px] text-muted-foreground">

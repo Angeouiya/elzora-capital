@@ -196,6 +196,35 @@ function instrumentBadge(type: string | undefined, locale: Locale) {
   return <Badge variant="outline">{locale === "en" ? "Debt" : "Dette"}</Badge>;
 }
 
+function localizedNotification(notification: DashboardNotification, locale: Locale) {
+  if (locale === "fr") return { title: notification.title, message: notification.message };
+  if (notification.type === "verification") {
+    return { title: "Identity verified", message: "Your identity has been verified. You can now invest." };
+  }
+  if (notification.type === "payout") {
+    return { title: "Payout requested", message: "Your request has been sent securely to the payment provider." };
+  }
+  if (notification.type === "investment") {
+    const match = notification.message.match(/engagement de (.+?) FCFA pour « (.+?) »/i);
+    return {
+      title: "Subscription saved",
+      message: match
+        ? `Your commitment of XOF ${match[1]} for “${match[2]}” is awaiting payment.`
+        : "Your commitment has been saved and is awaiting payment.",
+    };
+  }
+  if (notification.type === "payment") {
+    const match = notification.message.match(/investissement de (.+?) FCFA sur « (.+?) »/i);
+    return {
+      title: "Investment confirmed",
+      message: match
+        ? `Your investment of XOF ${match[1]} in “${match[2]}” is confirmed.`
+        : "Your investment has been confirmed.",
+    };
+  }
+  return { title: notification.title, message: notification.message };
+}
+
 export function InvestorDashboard() {
   const userEmail = useAppStore((s) => s.userEmail);
   const setView = useAppStore((s) => s.setView);
@@ -204,6 +233,7 @@ export function InvestorDashboard() {
   const displayCurrency = useAppStore((s) => s.displayCurrency);
   const money = (value: bigint | number, compact = false) => formatDisplayMoney(value, displayCurrency, locale, compact);
   const en = locale === "en";
+  const dateLocale = en ? "en-GB" : "fr-FR";
 
   const [data, setData] = useState<InvestorDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -227,10 +257,10 @@ export function InvestorDashboard() {
         setLoading(false);
       })
       .catch((e) => {
-        setError(e.message || "Erreur réseau");
+        setError(e.message || (en ? "Network error" : "Erreur réseau"));
         setLoading(false);
       });
-  }, []);
+  }, [en]);
 
   useEffect(() => {
     if (!userEmail) return;
@@ -302,6 +332,10 @@ export function InvestorDashboard() {
   const pendingCount = investments.filter(
     (i) => i.status === "pending_payment"
   ).length;
+  const sectorAllocation = (portfolio?.bySector ?? []).map((item) => ({
+    ...item,
+    name: getSectorLabel(item.name, locale),
+  }));
 
   return (
     <section className="page-shell reveal-in">
@@ -341,7 +375,7 @@ export function InvestorDashboard() {
           </p>
           <p className="mt-0.5 text-[11px] text-muted-foreground">
             {en ? "Across" : "Réparti sur"} {portfolio?.activeDeals ?? 0}{" "}
-            {en ? (investments.length > 1 ? "active deals" : "active deal") : (investments.length > 1 ? "dossiers actifs" : "dossier actif")}
+            {en ? ((portfolio?.activeDeals ?? 0) > 1 ? "active deals" : "active deal") : ((portfolio?.activeDeals ?? 0) > 1 ? "dossiers actifs" : "dossier actif")}
           </p>
         </Card>
 
@@ -380,21 +414,21 @@ export function InvestorDashboard() {
               className="btn-nexora mt-2 h-7 px-3 text-xs"
               onClick={() =>
                 toast({
-                  title: "Versement sécurisé",
-                  description: "Sélectionnez votre moyen de versement vérifié.",
+                  title: en ? "Secure payout" : "Versement sécurisé",
+                  description: en ? "Select your verified payout method." : "Sélectionnez votre moyen de versement vérifié.",
                 })
               }
             >
               <ArrowDownToLine className="mr-1.5 h-3.5 w-3.5" />
-              Demander un versement
+              {en ? "Request payout" : "Demander un versement"}
             </Button>
           ) : availableBalance > 0 ? (
             <p className="mt-1 text-[11px] font-medium text-positive">
-              Versements par banque et Mobile Money en cours d&apos;activation
+              {en ? "Bank and Mobile Money payouts are being activated" : "Versements par banque et Mobile Money en cours d’activation"}
             </p>
           ) : (
             <p className="mt-0.5 text-[11px] text-muted-foreground">
-              Vos revenus apparaîtront ici après distribution
+              {en ? "Your returns will appear here after distribution" : "Vos revenus apparaîtront ici après distribution"}
             </p>
           )}
         </Card>
@@ -407,15 +441,13 @@ export function InvestorDashboard() {
             <Clock className="mt-0.5 h-5 w-5 shrink-0 text-positive" />
             <div>
               <p className="text-sm font-bold text-positive">
-                Vous avez {pendingCount}{" "}
-                {pendingCount > 1
-                  ? "investissements en attente"
-                  : "investissement en attente"}{" "}
-                de confirmation de paiement.
+                {en ? "You have" : "Vous avez"} {pendingCount}{" "}
+                {en
+                  ? pendingCount > 1 ? "investments awaiting payment confirmation." : "investment awaiting payment confirmation."
+                  : pendingCount > 1 ? "investissements en attente de confirmation de paiement." : "investissement en attente de confirmation de paiement."}
               </p>
               <p className="mt-0.5 text-xs text-positive/90">
-                La confirmation sera appliquée automatiquement après
-                validation du prestataire de paiement.
+                {en ? "Confirmation will be applied automatically after validation by the payment provider." : "La confirmation sera appliquée automatiquement après validation du prestataire de paiement."}
               </p>
             </div>
           </div>
@@ -427,7 +459,7 @@ export function InvestorDashboard() {
         <div className="lg:col-span-2">
           <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-foreground">
             <Wallet className="h-4 w-4" />
-            Mes investissements
+            {en ? "My investments" : "Mes investissements"}
             <span className="tnum text-xs font-normal text-muted-foreground">
               ({investments.length})
             </span>
@@ -437,18 +469,17 @@ export function InvestorDashboard() {
             <Card className="p-8 text-center">
               <Wallet className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
               <p className="text-sm font-medium text-foreground">
-                Vous n&apos;avez encore aucun investissement
+                {en ? "You do not have any investments yet" : "Vous n’avez encore aucun investissement"}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Explorez les offres disponibles et souscrivez à partir de
-                10 000 FCFA.
+                {en ? `Explore available opportunities and invest from ${money(10_000)}.` : `Explorez les offres disponibles et souscrivez à partir de ${money(10_000)}.`}
               </p>
               <Button
                 onClick={() => setView("explore")}
                 className="btn-nexora mt-4"
                 size="sm"
               >
-                Explorer les offres
+                {en ? "Explore opportunities" : "Explorer les offres"}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Card>
@@ -472,7 +503,7 @@ export function InvestorDashboard() {
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div className="min-w-0 flex-1">
                         <p className="line-clamp-1 text-sm font-semibold text-foreground">
-                          {p?.title || "Projet"}
+                          {p?.title || (en ? "Project" : "Projet")}
                         </p>
                         <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
                           <Building2 className="h-3 w-3" />
@@ -494,7 +525,7 @@ export function InvestorDashboard() {
                             <Calendar className="h-3 w-3" />
                             <span className="tnum">
                               {new Date(inv.createdAt).toLocaleDateString(
-                                "fr-FR"
+                                dateLocale
                               )}
                             </span>
                           </span>
@@ -505,16 +536,16 @@ export function InvestorDashboard() {
                           {money(inv.amount, true)}
                         </p>
                         <p className="mt-0.5 text-[11px] text-muted-foreground">
-                          Soit{" "}
+                          {en ? "Equivalent to" : "Soit"}{" "}
                           <span className="tnum font-medium text-foreground">
                             {money(inv.amount)}
                           </span>
                         </p>
                         <p className="mt-1 text-[11px] text-muted-foreground">
                           <span className="tnum font-semibold text-foreground">
-                            {inv.sharePct.toFixed(3).replace(".", ",")} %
+                            {inv.sharePct.toFixed(3).replace(".", en ? "." : ",")} %
                           </span>{" "}
-                          {isEquity ? "du capital" : "de l'offre"}
+                          {isEquity ? (en ? "of equity" : "du capital") : (en ? "of the offer" : "de l’offre")}
                         </p>
                       </div>
                     </div>
@@ -524,7 +555,7 @@ export function InvestorDashboard() {
                       <div className="mt-3 grid grid-cols-1 gap-2 rounded-md border border-border/60 bg-secondary/40 p-3 sm:grid-cols-3">
                         <div>
                           <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                            Remboursement attendu
+                            {en ? "Expected repayment" : "Remboursement attendu"}
                           </p>
                           <p className="tnum mt-0.5 text-sm font-semibold text-muted-foreground">
                             {inv.expectedRepayment !== null
@@ -532,12 +563,12 @@ export function InvestorDashboard() {
                               : "—"}
                           </p>
                           <p className="text-[10px] text-muted-foreground">
-                            projeté, non garanti
+                            {en ? "projected, not guaranteed" : "projeté, non garanti"}
                           </p>
                         </div>
                         <div>
                           <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                            Reçu à ce jour
+                            {en ? "Received to date" : "Reçu à ce jour"}
                           </p>
                           <p
                             className={`tnum mt-0.5 text-sm font-semibold ${
@@ -549,7 +580,7 @@ export function InvestorDashboard() {
                         </div>
                         <div>
                           <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                            Restant dû
+                            {en ? "Remaining due" : "Restant dû"}
                           </p>
                           <p className="tnum mt-0.5 text-sm font-semibold text-muted-foreground">
                             {inv.remainingDue !== null
@@ -563,10 +594,9 @@ export function InvestorDashboard() {
                       <div className="mt-3 rounded-md border border-border/60 bg-secondary/40 p-3">
                         <p className="text-xs text-muted-foreground">
                           <span className="font-semibold text-foreground">
-                            Sortie à terme, non garantie.
+                            {en ? "Future exit, not guaranteed." : "Sortie à terme, non garantie."}
                           </span>{" "}
-                          Aucun échéancier de remboursement pour cette prise de
-                          participation.
+                          {en ? "No repayment schedule applies to this equity investment." : "Aucun échéancier de remboursement pour cette prise de participation."}
                         </p>
                       </div>
                     )}
@@ -580,8 +610,7 @@ export function InvestorDashboard() {
                         <div className="flex items-start gap-2">
                           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[#8a6d00]" />
                           <p className="text-xs text-[#8a6d00]">
-                            Paiement en attente. Sa confirmation apparaîtra
-                            automatiquement après validation par le prestataire.
+                            {en ? "Payment pending. Confirmation will appear automatically after provider validation." : "Paiement en attente. Sa confirmation apparaîtra automatiquement après validation par le prestataire."}
                           </p>
                         </div>
                       </div>
@@ -599,14 +628,14 @@ export function InvestorDashboard() {
           <div>
             <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-foreground">
               <PieIcon className="h-4 w-4" />
-              Répartition par secteur
+              {en ? "Allocation by sector" : "Répartition par secteur"}
             </h2>
-            {portfolio && portfolio.bySector.length > 0 ? (
+            {sectorAllocation.length > 0 ? (
               <Card className="p-4">
                 <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
                     <Pie
-                      data={portfolio.bySector}
+                      data={sectorAllocation}
                       dataKey="value"
                       nameKey="name"
                       cx="50%"
@@ -615,7 +644,7 @@ export function InvestorDashboard() {
                       outerRadius={80}
                       paddingAngle={2}
                     >
-                      {portfolio.bySector.map((_, i) => (
+                      {sectorAllocation.map((_, i) => (
                         <Cell
                           key={i}
                           fill={CHART_COLORS[i % CHART_COLORS.length]}
@@ -633,7 +662,7 @@ export function InvestorDashboard() {
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="mt-3 space-y-1.5">
-                  {portfolio.bySector.map((s, i) => (
+                  {sectorAllocation.map((s, i) => (
                     <div
                       key={s.name}
                       className="flex items-center justify-between text-xs"
@@ -656,7 +685,7 @@ export function InvestorDashboard() {
               </Card>
             ) : (
               <Card className="p-8 text-center text-sm text-muted-foreground">
-                Pas encore de répartition
+                {en ? "No allocation yet" : "Pas encore de répartition"}
               </Card>
             )}
           </div>
@@ -665,16 +694,18 @@ export function InvestorDashboard() {
           <div>
             <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-foreground">
               <Bell className="h-4 w-4" />
-              Notifications
+              {en ? "Notifications" : "Notifications"}
             </h2>
             {notifications.length === 0 ? (
               <Card className="p-8 text-center text-sm text-muted-foreground">
-                Aucune notification
+                {en ? "No notifications" : "Aucune notification"}
               </Card>
             ) : (
               <Card className="max-h-96 overflow-y-auto p-0">
                 <ul className="divide-y divide-border">
-                  {notifications.map((n) => (
+                  {notifications.map((n) => {
+                    const localized = localizedNotification(n, locale);
+                    return (
                     <li
                       key={n.id}
                       className={`flex items-start gap-3 p-4 ${
@@ -693,19 +724,19 @@ export function InvestorDashboard() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">
                           <p className="text-sm font-semibold text-foreground">
-                            {n.title}
+                            {localized.title}
                           </p>
                           {!n.read && (
                             <span className="shrink-0 text-[10px] font-bold uppercase text-positive">
-                              Nouveau
+                              {en ? "New" : "Nouveau"}
                             </span>
                           )}
                         </div>
                         <p className="mt-0.5 text-xs text-muted-foreground">
-                          {n.message}
+                          {localized.message}
                         </p>
                         <p className="mt-1 text-[10px] text-muted-foreground">
-                          {new Date(n.createdAt).toLocaleDateString("fr-FR", {
+                          {new Date(n.createdAt).toLocaleDateString(dateLocale, {
                             day: "2-digit",
                             month: "short",
                             year: "numeric",
@@ -713,7 +744,8 @@ export function InvestorDashboard() {
                         </p>
                       </div>
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
               </Card>
             )}

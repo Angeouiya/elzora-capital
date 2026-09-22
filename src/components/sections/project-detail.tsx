@@ -130,13 +130,10 @@ export function ProjectDetail() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-      <button
-        onClick={() => setView("projects")}
-        className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-      >
+      <Button variant="ghost" size="sm" onClick={() => setView("projects")} className="mb-4 -ml-2 text-muted-foreground">
         <ArrowLeft className="h-4 w-4" />
         Retour aux opportunités
-      </button>
+      </Button>
 
       {/* Header image */}
       <div className="relative mb-6 h-64 overflow-hidden rounded-2xl sm:h-80">

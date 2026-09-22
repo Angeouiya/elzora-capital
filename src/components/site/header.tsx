@@ -31,6 +31,11 @@ const COPY = {
     preferences: "Langue et devise",
     language: "Langue",
     currency: "Devise d’affichage",
+    subtitle: "Capital privé",
+    signedOut: "Déconnecté",
+    signedOutText: "Vous avez été déconnecté de votre espace.",
+    closeMenu: "Fermer le menu",
+    mobileNavigation: "Navigation mobile",
   },
   en: {
     nav: [
@@ -47,6 +52,11 @@ const COPY = {
     preferences: "Language and currency",
     language: "Language",
     currency: "Display currency",
+    subtitle: "Private capital",
+    signedOut: "Signed out",
+    signedOutText: "You have been signed out of your workspace.",
+    closeMenu: "Close menu",
+    mobileNavigation: "Mobile navigation",
   },
 };
 
@@ -98,8 +108,8 @@ export function Header() {
       logout();
       setSigningOut(false);
       toast({
-        title: "Déconnecté",
-        description: "Vous avez été déconnecté de votre espace.",
+        title: copy.signedOut,
+        description: copy.signedOutText,
       });
       setView("home");
     }
@@ -110,7 +120,7 @@ export function Header() {
       {open && !userEmail && (
         <button
           type="button"
-          aria-label="Fermer le menu"
+          aria-label={copy.closeMenu}
           onClick={() => setOpen(false)}
           className="fixed inset-0 z-40 cursor-default bg-black/35 backdrop-blur-[2px] lg:hidden"
         />
@@ -128,24 +138,23 @@ export function Header() {
           <Image src="/logo.svg" alt="" width={38} height={38} priority className="h-9.5 w-9.5 drop-shadow-[0_8px_18px_rgba(56,12,49,.22)]" />
           <span className="leading-none">
             <span className="block text-[1.05rem] font-black tracking-[-.035em] text-foreground">NEXORA</span>
-            <span className="mt-1 block text-[.56rem] font-bold uppercase tracking-[.19em] text-[#6C195E]">Capital privé</span>
+            <span className="mt-1 block text-[.56rem] font-bold uppercase tracking-[.19em] text-[#6C195E]">{copy.subtitle}</span>
           </span>
         </button>
 
         {/* Desktop nav */}
-        <nav className="hidden items-center gap-1 lg:flex">
+        <nav className="hidden items-center gap-1 rounded-2xl border border-[#541249]/8 bg-[#FAF4F9]/72 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,.8)] lg:flex">
           {copy.nav.map((item) => (
             <button
               key={item.view}
               onClick={() => setView(item.view)}
-              className={`relative rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-colors ${
+              className={`relative rounded-xl px-3.5 py-2 text-sm font-semibold transition-all ${
                 view === item.view
-                  ? "bg-[#F7EAF5] text-[#541249]"
-                  : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+                  ? "bg-white text-[#541249] shadow-[0_5px_15px_rgba(56,12,49,.10)]"
+                  : "text-muted-foreground hover:bg-white/70 hover:text-[#541249]"
               }`}
             >
               {item.label}
-              {view === item.view && <span className="absolute inset-x-3 -bottom-[.9rem] h-0.5 rounded-full bg-[#541249]" />}
             </button>
           ))}
         </nav>
@@ -156,7 +165,7 @@ export function Header() {
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="inline-flex h-9 items-center gap-1.5 rounded-full border border-[#541249]/12 bg-[#FAF4F9] px-2.5 text-[11px] font-extrabold tracking-wide text-[#541249] transition hover:border-[#541249]/25 hover:bg-[#F4E5F1]"
+                className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[#541249]/14 bg-white/85 px-3 text-[11px] font-extrabold tracking-wide text-[#541249] shadow-[0_4px_14px_rgba(56,12,49,.06)] hover:-translate-y-0.5 hover:border-[#541249]/28 hover:bg-[#FAF4F9] hover:shadow-[0_8px_18px_rgba(56,12,49,.10)]"
                 aria-label={copy.preferences}
               >
                 <Languages className="h-3.5 w-3.5" />
@@ -193,7 +202,7 @@ export function Header() {
           {userEmail ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex h-9 items-center gap-2 rounded-full border border-border bg-background pl-1 pr-3 text-sm font-medium transition-colors hover:bg-secondary/60">
+                <button className="flex h-10 items-center gap-2 rounded-xl border border-[#541249]/12 bg-white/88 pl-1.5 pr-3 text-sm font-semibold shadow-[0_4px_14px_rgba(56,12,49,.06)] hover:-translate-y-0.5 hover:border-[#541249]/25 hover:bg-[#FAF4F9]">
                   <Avatar className="h-7 w-7">
                     <AvatarFallback className="bg-nexora-black text-xs font-bold text-nexora-lime">
                       {initials}
@@ -259,7 +268,7 @@ export function Header() {
           {!userEmail && (
             <button
               onClick={() => setOpen(!open)}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-md text-foreground hover:bg-secondary lg:hidden"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#541249]/10 bg-white/80 text-[#541249] shadow-[0_4px_14px_rgba(56,12,49,.06)] hover:bg-[#F7EAF5] lg:hidden"
               aria-label="Menu"
               aria-expanded={open}
               aria-controls="mobile-navigation"
@@ -274,7 +283,7 @@ export function Header() {
       {open && !userEmail && (
         <nav
           id="mobile-navigation"
-          aria-label="Navigation mobile"
+          aria-label={copy.mobileNavigation}
           className="absolute inset-x-0 top-full border-t border-border/70 bg-white px-4 py-4 shadow-[0_24px_50px_rgba(16,16,16,.14)] lg:hidden"
         >
           <div className="flex flex-col gap-1">
@@ -285,10 +294,10 @@ export function Header() {
                   setView(item.view);
                   setOpen(false);
                 }}
-                className={`rounded-xl px-3 py-3 text-left text-sm font-semibold transition-colors ${
+                className={`rounded-xl border px-3.5 py-3 text-left text-sm font-semibold transition-all ${
                   view === item.view
-                    ? "bg-secondary text-secondary-foreground"
-                    : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+                    ? "border-[#541249]/15 bg-[#F7EAF5] text-[#541249] shadow-[0_5px_15px_rgba(56,12,49,.08)]"
+                    : "border-transparent text-muted-foreground hover:border-[#541249]/10 hover:bg-[#FAF4F9] hover:text-[#541249]"
                 }`}
               >
                 {item.label}

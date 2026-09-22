@@ -14,6 +14,7 @@ import { SlidersHorizontal, SearchX } from "lucide-react";
 import { COUNTRIES, SECTORS, getCountryLabel, getSectorLabel } from "@/lib/countries";
 import type { OfferDTO } from "@/lib/types";
 import { useAppStore } from "@/lib/store";
+import { Button } from "@/components/ui/button";
 
 const COPY = {
   fr: {
@@ -176,17 +177,19 @@ export function Explore() {
             {copy.emptyText}
           </p>
           {(sector !== "all" || country !== "all" || instrument !== "all") ? (
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={() => {
                 setSector("all");
                 setCountry("all");
                 setInstrument("all");
               }}
-              className="mt-4 rounded-full border border-[#541249]/20 bg-white px-4 py-2 text-xs font-bold text-[#541249] transition hover:bg-[#F7EAF5]"
+              className="mt-4 rounded-full text-xs"
             >
               {copy.reset}
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : (

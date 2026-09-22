@@ -35,7 +35,7 @@ const COPY = {
   fr: {
     step: "Étape", titles: ["Créez votre compte NEXORA", "Vos coordonnées", "Pays et langue", "Consentements", "Compte créé"], companyGoal: "Votre objectif",
     choose: "Choisissez le type de compte. Vous pourrez compléter votre profil plus tard — aucun justificatif n’est demandé à cette étape.", individual: "Particulier", individualDesc: "Investir dans les offres publiées sur NEXORA.", company: "Entreprise", companyDesc: "Rechercher un financement ou investir en tant que société.",
-    continue: "Continuer", back: "Retour", firstName: "Prénom", lastName: "Nom", phone: "Téléphone", password: "Mot de passe", confirm: "Confirmer", currency: "Devise", reflection: "Délai de rétractation", days: "jours",
+    continue: "Continuer", back: "Retour", firstName: "Prénom", lastName: "Nom", phone: "Téléphone", password: "Mot de passe", confirm: "Confirmer", settlementCurrency: "Devise de règlement", reflection: "Délai de rétractation", days: "jours",
     goalIntro: "Quel est votre objectif principal ? Vous pourrez évoluer plus tard entre les deux rôles.", goals: [["Investir", "Placer la trésorerie de l’entreprise dans des offres publiées."], ["Rechercher un financement", "Déposer un dossier pour lever des fonds."], ["Les deux", "Investir et lever du capital — mêmes accès."]],
     residence: "Pays de résidence", availability: "Disponibilité", pilot: "accès pilote", soon: "bientôt disponible", language: "Langue de communication", profileInfo: "Vous pourrez compléter votre profil, vos justificatifs et vos coordonnées de paiement vérifiées depuis votre espace. La vérification d’identité est requise avant tout investissement.",
     terms: "J’accepte les Conditions Générales d’Utilisation", termsText: "(obligatoire) — j’ai pris connaissance du fonctionnement de la plateforme, des frais applicables et du rôle de NEXORA comme intermédiaire.", risk: "Je reconnais le risque de perte en capital", riskText: "(obligatoire) — l’investissement présente un risque de perte en capital. Les performances passées ne préjugent pas des performances futures.", marketing: "Je souhaite recevoir les nouvelles opportunités d’investissement par email (optionnel).",
@@ -45,7 +45,7 @@ const COPY = {
   en: {
     step: "Step", titles: ["Create your NEXORA account", "Your contact details", "Country and language", "Consents", "Account created"], companyGoal: "Your objective",
     choose: "Choose your account type. You can complete your profile later — no supporting document is required at this stage.", individual: "Individual", individualDesc: "Invest in opportunities published on NEXORA.", company: "Company", companyDesc: "Seek financing or invest as a company.",
-    continue: "Continue", back: "Back", firstName: "First name", lastName: "Last name", phone: "Phone", password: "Password", confirm: "Confirm", currency: "Currency", reflection: "Reflection period", days: "days",
+    continue: "Continue", back: "Back", firstName: "First name", lastName: "Last name", phone: "Phone", password: "Password", confirm: "Confirm", settlementCurrency: "Settlement currency", reflection: "Reflection period", days: "days",
     goalIntro: "What is your main objective? You can switch between both roles later.", goals: [["Invest", "Invest company cash in published opportunities."], ["Seek financing", "Submit an application to raise funds."], ["Both", "Invest and raise capital with the same access."]],
     residence: "Country of residence", availability: "Availability", pilot: "pilot access", soon: "coming soon", language: "Communication language", profileInfo: "You can complete your profile, supporting documents and verified payment details from your account. Identity verification is required before investing.",
     terms: "I accept the Terms of Use", termsText: "(required) — I have reviewed how the platform works, the applicable fees and NEXORA’s role as an intermediary.", risk: "I acknowledge the risk of capital loss", riskText: "(required) — investing involves a risk of capital loss. Past performance does not predict future performance.", marketing: "I would like to receive new investment opportunities by email (optional).",
@@ -209,10 +209,11 @@ export function Register() {
                 <button
                   type="button"
                   onClick={() => setKind("individual")}
-                  className={`flex flex-col items-start gap-3 rounded-lg border p-5 text-left transition-all ${
+                  aria-pressed={kind === "individual"}
+                  className={`flex flex-col items-start gap-3 rounded-2xl border p-5 text-left shadow-[0_5px_18px_rgba(56,12,49,.04)] transition-all hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(56,12,49,.09)] ${
                     kind === "individual"
-                      ? "border-[#541249] bg-nexora-pale ring-1 ring-[#541249]"
-                      : "border-border bg-background hover:border-foreground/40"
+                      ? "border-[#541249]/55 bg-[linear-gradient(145deg,#FAF4F9,#F1DFEE)] ring-2 ring-[#541249]/12"
+                      : "border-[#541249]/10 bg-white/90 hover:border-[#541249]/30"
                   }`}
                 >
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-nexora-black">
@@ -229,10 +230,11 @@ export function Register() {
                 <button
                   type="button"
                   onClick={() => setKind("company")}
-                  className={`flex flex-col items-start gap-3 rounded-lg border p-5 text-left transition-all ${
+                  aria-pressed={kind === "company"}
+                  className={`flex flex-col items-start gap-3 rounded-2xl border p-5 text-left shadow-[0_5px_18px_rgba(56,12,49,.04)] transition-all hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(56,12,49,.09)] ${
                     kind === "company"
-                      ? "border-[#541249] bg-nexora-pale ring-1 ring-[#541249]"
-                      : "border-border bg-background hover:border-foreground/40"
+                      ? "border-[#541249]/55 bg-[linear-gradient(145deg,#FAF4F9,#F1DFEE)] ring-2 ring-[#541249]/12"
+                      : "border-[#541249]/10 bg-white/90 hover:border-[#541249]/30"
                   }`}
                 >
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-nexora-black">
@@ -322,13 +324,13 @@ export function Register() {
                     inputMode="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder={country ? `77 000 00 00 (${country.currencyDisplay})` : copy.phone}
+                    placeholder="77 000 00 00"
                     className="flex-1"
                   />
                 </div>
                 {country && (
                   <p className="mt-1 text-[11px] text-muted-foreground">
-                    {copy.currency} : {country.currencyDisplay} · {copy.reflection} : {country.reflectionPeriodDays} {copy.days}
+                    {copy.settlementCurrency} : {country.currencyDisplay} ({country.currency}) · {copy.reflection} : {country.reflectionPeriodDays} {copy.days}
                   </p>
                 )}
               </div>
@@ -411,10 +413,11 @@ export function Register() {
                       key={opt.id}
                       type="button"
                       onClick={() => setObjective(opt.id)}
-                      className={`flex items-start gap-3 rounded-lg border p-4 text-left transition-all ${
+                      aria-pressed={active}
+                      className={`flex items-start gap-3 rounded-2xl border p-4 text-left shadow-[0_4px_16px_rgba(56,12,49,.035)] transition-all hover:-translate-y-0.5 hover:shadow-[0_9px_22px_rgba(56,12,49,.08)] ${
                         active
-                          ? "border-[#541249] bg-nexora-pale ring-1 ring-[#541249]"
-                          : "border-border bg-background hover:border-foreground/40"
+                          ? "border-[#541249]/55 bg-[linear-gradient(145deg,#FAF4F9,#F1DFEE)] ring-2 ring-[#541249]/12"
+                          : "border-[#541249]/10 bg-white/90 hover:border-[#541249]/30"
                       }`}
                     >
                       <Icon className="mt-0.5 h-5 w-5 shrink-0 text-foreground" />
@@ -454,7 +457,7 @@ export function Register() {
                     <SelectContent>
                       {COUNTRIES.map((c) => (
                         <SelectItem key={c.code} value={c.code}>
-                          {getCountryLabel(c.code, locale)} ({c.currencyDisplay})
+                          {getCountryLabel(c.code, locale)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -597,13 +600,9 @@ export function Register() {
                 {copy.access}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
-              <button
-                type="button"
-                onClick={() => setView("explore")}
-                className="mt-3 text-xs text-muted-foreground underline-offset-4 hover:underline"
-              >
+              <Button type="button" variant="link" size="sm" onClick={() => setView("explore")} className="mt-3 text-xs text-muted-foreground">
                 {copy.exploreFirst}
-              </button>
+              </Button>
             </div>
           )}
         </CardContent>
@@ -613,13 +612,9 @@ export function Register() {
       {step < 5 && (
         <p className="mt-6 text-center text-xs text-muted-foreground">
           {copy.already}{" "}
-          <button
-            type="button"
-            onClick={() => setView("login")}
-            className="font-semibold text-foreground underline-offset-4 hover:underline"
-          >
+          <Button type="button" variant="link" onClick={() => setView("login")} className="inline h-auto p-0 align-baseline font-semibold">
             {copy.signIn}
-          </button>
+          </Button>
         </p>
       )}
 

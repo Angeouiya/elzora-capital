@@ -142,36 +142,42 @@ export function BottomNav() {
           </SheetHeader>
 
           <div className="mt-4 flex flex-col gap-2">
-            <button
+            <Button
+              type="button"
+              variant="outline"
               onClick={() => {
                 setView("investor_dashboard");
                 setAccountOpen(false);
               }}
-              className="flex w-full items-center gap-3 rounded-md border border-border p-3 text-left text-sm font-medium hover:bg-secondary/60"
+              className="w-full justify-start"
             >
               <Wallet className="h-4 w-4" />
               {labels.myWallet}
-            </button>
-            <button
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
               onClick={() => {
                 setView("company_dashboard");
                 setAccountOpen(false);
               }}
-              className="flex w-full items-center gap-3 rounded-md border border-border p-3 text-left text-sm font-medium hover:bg-secondary/60"
+              className="w-full justify-start"
             >
               <Building2 className="h-4 w-4" />
               {labels.myCompany}
-            </button>
-            <button
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
               onClick={() => {
                 setView("home");
                 setAccountOpen(false);
               }}
-              className="flex w-full items-center gap-3 rounded-md border border-border p-3 text-left text-sm font-medium hover:bg-secondary/60"
+              className="w-full justify-start"
             >
               <LayoutGrid className="h-4 w-4" />
               {labels.home}
-            </button>
+            </Button>
           </div>
 
           <SheetFooter className="mt-4">
