@@ -12,85 +12,89 @@ import {
   LayoutGrid,
   Wallet,
 } from "lucide-react";
+import { useAppStore } from "@/lib/store";
 
-const INVESTOR_STEPS = [
-  {
-    icon: Search,
-    title: "Découvrir",
-    desc: "Parcourez les offres vérifiées, filtrez par secteur, pays, instrument (dette ou capital).",
+const COPY = {
+  fr: {
+    kicker: "Un parcours lisible",
+    title: "Fonctionnement",
+    intro: "Du dépôt du dossier au remboursement des investisseurs — un parcours structuré et transparent.",
+    investorTitle: "Pour les investisseurs",
+    companyTitle: "Pour les entreprises",
+    step: "Étape",
+    investorSteps: [
+      ["Découvrir", "Parcourez les offres vérifiées et filtrez par secteur, pays ou instrument."],
+      ["Analyser", "Lisez la présentation, le budget et les risques. Simulez avant de souscrire."],
+      ["Souscrire", "Indiquez votre montant, signez électroniquement et bénéficiez du délai de réflexion applicable."],
+      ["Suivre", "Suivez les échéances, les distributions et les actualités depuis votre portefeuille."],
+    ],
+    companySteps: [
+      ["Déposer", "Créez le compte entreprise et soumettez le dossier financier et juridique."],
+      ["Analyse équipe", "L’équipe NEXORA instruit le dossier, demande les compléments et structure le financement."],
+      ["Publication", "Une fois validée, l’offre est publiée par NEXORA. L’entreprise ne publie jamais directement."],
+      ["Financement", "Les fonds sont décaissés après contrôle. L’entreprise respecte ensuite l’échéancier contractuel."],
+    ],
+    roleTitle: "Notre rôle",
+    roleText: "NEXORA Capital analyse et prépare chaque offre publiée. Le dossier est instruit, structuré financièrement, puis soumis à validation. Cette instruction améliore la qualité de l’information sans constituer un conseil en investissement ni une garantie de remboursement.",
+    pricing: "Tarification",
+    pricingItems: [
+      ["Commission initiale", "6 %", "du capital financé, prélevée à la levée", "Entreprise"],
+      ["Commission de suivi", "2 %/an", "sur le capital restant dû, au prorata de la durée", "Entreprise"],
+      ["Frais investisseur", "0 %", "aucuns frais de souscription ni de gestion", "Investisseur"],
+    ],
+    riskTitle: "Avertissement sur les risques",
+    riskText: "La dette comme le capital présentent un risque de perte. La capacité de remboursement dépend de l’activité de l’entreprise. Diversifiez et n’investissez que des sommes dont vous n’avez pas besoin à court terme.",
   },
-  {
-    icon: FileText,
-    title: "Analyser",
-    desc: "Lisez la présentation, le budget, les risques. Simulez votre investissement avant de souscrire.",
+  en: {
+    kicker: "A clear journey",
+    title: "How it works",
+    intro: "From application to investor repayment — a structured and transparent journey.",
+    investorTitle: "For investors",
+    companyTitle: "For companies",
+    step: "Step",
+    investorSteps: [
+      ["Discover", "Browse verified opportunities and filter by sector, country or instrument."],
+      ["Review", "Read the presentation, budget and risks. Simulate before subscribing."],
+      ["Subscribe", "Choose your amount, sign electronically and benefit from the applicable reflection period."],
+      ["Track", "Follow schedules, distributions and updates from your portfolio."],
+    ],
+    companySteps: [
+      ["Apply", "Create a company account and submit the financial and legal application."],
+      ["Team review", "The NEXORA team reviews the file, requests additions and structures the financing."],
+      ["Publication", "Once approved, the offer is published by NEXORA. Companies never publish directly."],
+      ["Funding", "Funds are released after controls. The company then follows the contractual schedule."],
+    ],
+    roleTitle: "Our role",
+    roleText: "NEXORA Capital reviews and prepares every published offer. Each application is assessed, financially structured and submitted for approval. This process improves information quality without constituting investment advice or a repayment guarantee.",
+    pricing: "Pricing",
+    pricingItems: [
+      ["Initial commission", "6%", "of funded capital, charged at closing", "Company"],
+      ["Monitoring commission", "2%/year", "on outstanding principal, prorated over time", "Company"],
+      ["Investor fee", "0%", "no subscription or management fee", "Investor"],
+    ],
+    riskTitle: "Risk warning",
+    riskText: "Debt and equity investments both involve a risk of loss. Repayment depends on the company’s activity. Diversify and invest only money you will not need in the short term.",
   },
-  {
-    icon: Coins,
-    title: "Souscrire",
-    desc: "Indiquez votre montant, signez électroniquement. Délai de rétractation de 14 jours.",
-  },
-  {
-    icon: CalendarDays,
-    title: "Suivre",
-    desc: "Suivez les échéances de remboursement et les actualités depuis votre portefeuille.",
-  },
-];
+} as const;
 
-const COMPANY_STEPS = [
-  {
-    icon: Building2,
-    title: "Déposer",
-    desc: "Créez le compte entreprise, soumettez le dossier (bilan, business plan, garanties).",
-  },
-  {
-    icon: FileText,
-    title: "Analyse équipe",
-    desc: "L&rsquo;équipe NEXORA instruit le dossier, demande les compléments, structure le financement.",
-  },
-  {
-    icon: LayoutGrid,
-    title: "Publication",
-    desc: "Une fois validé, l&rsquo;offre est publiée sur la plateforme. L&rsquo;entreprise ne publie jamais directement.",
-  },
-  {
-    icon: Wallet,
-    title: "Financement",
-    desc: "Les fonds sont décaissés à l&rsquo;entreprise. Elle rembourse selon l&rsquo;échéancier contractuel.",
-  },
-];
-
-const PRICING = [
-  {
-    label: "Commission initiale",
-    value: "6 %",
-    desc: "du capital financé, prélevée à la levée",
-    audience: "Entreprise",
-  },
-  {
-    label: "Commission de suivi",
-    value: "2 %/an",
-    desc: "sur le capital restant dû, prorata temporis",
-    audience: "Entreprise",
-  },
-  {
-    label: "Frais investisseur",
-    value: "0 %",
-    desc: "aucun frais de souscription ni de gestion",
-    audience: "Investisseur",
-  },
-];
+const INVESTOR_ICONS = [Search, FileText, Coins, CalendarDays];
+const COMPANY_ICONS = [Building2, FileText, LayoutGrid, Wallet];
 
 export function HowItWorks() {
+  const locale = useAppStore((state) => state.locale);
+  const copy = COPY[locale];
+  const investorSteps: ReadonlyArray<readonly [string, string]> = copy.investorSteps;
+  const companySteps: ReadonlyArray<readonly [string, string]> = copy.companySteps;
+  const pricingItems: ReadonlyArray<readonly [string, string, string, string]> = copy.pricingItems;
   return (
     <div className="page-shell reveal-in">
       <div className="mb-8">
-        <p className="page-kicker">Un parcours lisible</p>
+        <p className="page-kicker">{copy.kicker}</p>
         <h1 className="page-title mt-1">
-          Fonctionnement
+          {copy.title}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Du dépôt du dossier au remboursement des investisseurs — un parcours
-          structuré et transparent.
+          {copy.intro}
         </p>
       </div>
 
@@ -101,30 +105,31 @@ export function HowItWorks() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Wallet className="h-5 w-5" />
-              Pour les investisseurs
+              {copy.investorTitle}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {INVESTOR_STEPS.map((step, i) => (
-              <div key={step.title} className="flex items-start gap-3">
+            {investorSteps.map(([title, description], i) => {
+              const Icon = INVESTOR_ICONS[i];
+              return <div key={title} className="flex items-start gap-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-nexora-pale text-positive">
-                  <step.icon className="h-5 w-5" />
+                  <Icon className="h-5 w-5" />
                 </span>
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Étape {i + 1}
+                      {copy.step} {i + 1}
                     </span>
                     <h3 className="text-sm font-bold text-foreground">
-                      {step.title}
+                      {title}
                     </h3>
                   </div>
                   <p className="mt-0.5 text-sm text-muted-foreground">
-                    {step.desc}
+                    {description}
                   </p>
                 </div>
-              </div>
-            ))}
+              </div>;
+            })}
           </CardContent>
         </Card>
 
@@ -133,31 +138,29 @@ export function HowItWorks() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Building2 className="h-5 w-5" />
-              Pour les entreprises
+              {copy.companyTitle}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {COMPANY_STEPS.map((step, i) => (
-              <div key={step.title} className="flex items-start gap-3">
+            {companySteps.map(([title, description], i) => {
+              const Icon = COMPANY_ICONS[i];
+              return <div key={title} className="flex items-start gap-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-nexora-pale text-positive">
-                  <step.icon className="h-5 w-5" />
+                  <Icon className="h-5 w-5" />
                 </span>
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Étape {i + 1}
+                      {copy.step} {i + 1}
                     </span>
                     <h3 className="text-sm font-bold text-foreground">
-                      {step.title}
+                      {title}
                     </h3>
                   </div>
-                  <p
-                    className="mt-0.5 text-sm text-muted-foreground"
-                    dangerouslySetInnerHTML={{ __html: step.desc }}
-                  />
+                  <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>
                 </div>
-              </div>
-            ))}
+              </div>;
+            })}
           </CardContent>
         </Card>
       </div>
@@ -167,18 +170,12 @@ export function HowItWorks() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <ShieldCheck className="h-5 w-5" />
-            Notre rôle
+            {copy.roleTitle}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm leading-relaxed text-foreground/90">
-            NEXORA Capital analyse et prépare chaque offre publiée sur la
-            plateforme. L&rsquo;entreprise ne publie jamais directement : son
-            dossier est instruit par l&rsquo;équipe, structuré financièrement,
-            puis soumis à validation. Cette instruction préalable vise à
-            garantir une information complète et homogène pour les
-            investisseurs, mais ne constitue ni un conseil en investissement,
-            ni une garantie de remboursement.
+            {copy.roleText}
           </p>
         </CardContent>
       </Card>
@@ -188,35 +185,35 @@ export function HowItWorks() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Coins className="h-5 w-5" />
-            Tarification
+            {copy.pricing}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {PRICING.map((p) => (
+            {pricingItems.map(([label, value, description, audience]) => (
               <div
-                key={p.label}
+                key={label}
                 className="rounded-lg border border-border bg-card p-4"
               >
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    {p.label}
+                    {label}
                   </p>
                   <Badge
                     variant="outline"
                     className={
-                      p.audience === "Investisseur"
+                      audience === "Investisseur" || audience === "Investor"
                         ? "border-[#541249] text-positive"
                         : "border-border text-foreground"
                     }
                   >
-                    {p.audience}
+                    {audience}
                   </Badge>
                 </div>
                 <p className="tnum mt-2 text-2xl font-black text-foreground">
-                  {p.value}
+                  {value}
                 </p>
-                <p className="mt-1 text-xs text-muted-foreground">{p.desc}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{description}</p>
               </div>
             ))}
           </div>
@@ -232,17 +229,10 @@ export function HowItWorks() {
           <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-nexora-danger" />
           <div>
             <p className="text-sm font-bold text-nexora-danger">
-              Avertissement sur les risques
+              {copy.riskTitle}
             </p>
             <p className="mt-1 text-xs leading-relaxed text-nexora-danger">
-              L&rsquo;investissement en dette comme en capital présente un
-              risque de perte en capital. Les performances passées ne
-              préjugent pas des performances futures. La capacité de
-              remboursement de l&rsquo;entreprise dépend de son activité ;
-              l&rsquo;absence de garantie sur le capital investi doit être
-              prise en compte. Diversifiez vos investissements et
-              n&rsquo;allouez pas plus de 10 % de votre patrimoine à un projet
-              unique.
+              {copy.riskText}
             </p>
           </div>
         </div>

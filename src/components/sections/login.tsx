@@ -11,10 +11,30 @@ import { toast } from "@/hooks/use-toast";
 export function Login() {
   const setView = useAppStore((s) => s.setView);
   const login = useAppStore((s) => s.login);
+  const locale = useAppStore((s) => s.locale);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const copy = locale === "fr" ? {
+    title: "Connexion à votre espace",
+    intro: "Accédez à votre portefeuille ou à l’espace entreprise.",
+    password: "Mot de passe",
+    submit: "Se connecter",
+    submitting: "Connexion…",
+    noAccount: "Pas encore de compte ?",
+    register: "Créer un compte",
+    security: "Votre mot de passe n’est jamais stocké en clair. La session est conservée dans un cookie sécurisé inaccessible aux scripts de la page.",
+  } : {
+    title: "Sign in to your account",
+    intro: "Access your portfolio or company workspace.",
+    password: "Password",
+    submit: "Sign in",
+    submitting: "Signing in…",
+    noAccount: "Don’t have an account yet?",
+    register: "Create account",
+    security: "Your password is never stored in plain text. Your session is kept in a secure cookie that page scripts cannot access.",
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,10 +98,10 @@ export function Login() {
             <Lock className="h-6 w-6 text-nexora-lime" />
           </div>
           <CardTitle className="text-xl font-bold tracking-tight">
-            Connexion à votre espace
+            {copy.title}
           </CardTitle>
           <CardDescription className="mt-1 text-sm text-muted-foreground">
-            Accédez à votre portefeuille ou à l&apos;espace entreprise.
+            {copy.intro}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -107,7 +127,7 @@ export function Login() {
             </div>
             <div>
               <Label htmlFor="login-password" className="text-xs">
-                Mot de passe
+                {copy.password}
               </Label>
               <div className="relative mt-1">
                 <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -138,10 +158,10 @@ export function Login() {
               className="btn-nexora w-full"
             >
               {submitting ? (
-                "Connexion…"
+                copy.submitting
               ) : (
                 <>
-                  Se connecter
+                  {copy.submit}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </>
               )}
@@ -150,21 +170,20 @@ export function Login() {
 
           {/* No-account CTA */}
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            Pas encore de compte ?{" "}
+            {copy.noAccount}{" "}
             <button
               type="button"
               onClick={() => setView("register")}
               className="font-semibold text-foreground underline-offset-4 hover:underline"
             >
-              Créer un compte
+              {copy.register}
             </button>
           </p>
 
           <div className="mt-4 flex items-start gap-2 rounded-md bg-nexora-pale p-3">
             <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-positive" />
             <p className="text-[11px] leading-relaxed text-positive">
-              Votre mot de passe n&rsquo;est jamais stocké en clair. La session est
-              conservée dans un cookie sécurisé inaccessible aux scripts de la page.
+              {copy.security}
             </p>
           </div>
         </CardContent>

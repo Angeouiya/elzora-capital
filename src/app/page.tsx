@@ -28,6 +28,11 @@ export default function Page() {
   const view = useAppStore((s) => s.view);
   const setView = useAppStore((s) => s.setView);
   const userEmail = useAppStore((s) => s.userEmail);
+  const hydratePreferences = useAppStore((s) => s.hydratePreferences);
+
+  useEffect(() => {
+    hydratePreferences();
+  }, [hydratePreferences]);
 
   // Raccourci clavier Ctrl+Shift+A → portail admin
   // (le portail admin est intentionnellement non lié depuis le portail public — spec 02)

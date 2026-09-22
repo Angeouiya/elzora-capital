@@ -1,19 +1,37 @@
 "use client";
 import Image from "next/image";
 import { useAppStore } from "@/lib/store";
+import type { PortalView } from "@/lib/store";
 import { ArrowUpRight, ShieldCheck } from "lucide-react";
 
-const PRODUCT = [
-  { label: "Explorer", view: "explore" as const },
-  { label: "Fonctionnement", view: "how" as const },
-  { label: "Tarification", view: "fees" as const },
-  { label: "Risques", view: "risks" as const },
-];
-
-const LEGAL = ["CGU", "Confidentialité", "Conformité BCEAO"];
+const COPY = {
+  fr: {
+    tagline: "Le trait d’union entre le capital privé et les entreprises qui transforment l’Afrique de l’Ouest.",
+    product: "Produit",
+    productItems: [["Explorer", "explore"], ["Fonctionnement", "how"], ["Tarification", "fees"], ["Risques", "risks"]] as const,
+    legal: "Légal",
+    legalItems: ["CGU", "Confidentialité", "Conformité BCEAO"],
+    contact: "Contact",
+    rights: "Tous droits réservés.",
+    warning: "Investir comporte un risque de perte en capital.",
+  },
+  en: {
+    tagline: "Connecting private capital with the businesses transforming West Africa.",
+    product: "Product",
+    productItems: [["Explore", "explore"], ["How it works", "how"], ["Pricing", "fees"], ["Risks", "risks"]] as const,
+    legal: "Legal",
+    legalItems: ["Terms", "Privacy", "BCEAO compliance"],
+    contact: "Contact",
+    rights: "All rights reserved.",
+    warning: "Investing involves a risk of capital loss.",
+  },
+};
 
 export function Footer() {
   const setView = useAppStore((s) => s.setView);
+  const locale = useAppStore((s) => s.locale);
+  const copy = COPY[locale];
+  const productItems: ReadonlyArray<readonly [string, PortalView]> = copy.productItems;
 
   return (
     <footer className="mt-auto bg-[linear-gradient(135deg,#250820_0%,#130410_58%,#090208_100%)] text-white">
@@ -28,23 +46,23 @@ export function Footer() {
               </span>
             </div>
             <p className="mt-3 max-w-xs text-sm leading-6 text-white/55">
-              Le trait d&rsquo;union entre le capital privé et les entreprises qui transforment l&rsquo;Afrique de l&rsquo;Ouest.
+              {copy.tagline}
             </p>
           </div>
 
           {/* Produit */}
           <div>
             <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-white/85">
-              Produit
+              {copy.product}
             </h4>
             <ul className="space-y-2 text-sm text-white/55">
-              {PRODUCT.map((item) => (
-                <li key={item.label}>
+              {productItems.map(([label, view]) => (
+                <li key={view}>
                   <button
-                    onClick={() => setView(item.view)}
+                    onClick={() => setView(view)}
                     className="text-left transition-colors hover:text-white"
                   >
-                    {item.label}
+                    {label}
                   </button>
                 </li>
               ))}
@@ -54,10 +72,10 @@ export function Footer() {
           {/* Légal */}
           <div>
             <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-white/85">
-              Légal
+              {copy.legal}
             </h4>
             <ul className="space-y-2 text-sm text-white/55">
-              {LEGAL.map((item) => (
+              {copy.legalItems.map((item) => (
                 <li key={item}>
                   <span className="cursor-default transition-colors hover:text-white">
                     {item}
@@ -70,7 +88,7 @@ export function Footer() {
           {/* Contact */}
           <div>
             <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-white/85">
-              Contact
+              {copy.contact}
             </h4>
             <ul className="space-y-2 text-sm text-white/55">
               <li>Dakar · Sénégal</li>
@@ -88,10 +106,10 @@ export function Footer() {
         </div>
 
         <div className="mt-8 flex flex-col gap-4 border-t border-white/10 pt-6 text-xs text-white/45 sm:flex-row sm:items-center sm:justify-between">
-          <p>© 2026 NEXORA Capital. Tous droits réservés.</p>
+          <p>© 2026 NEXORA Capital. {copy.rights}</p>
           <p className="flex items-center gap-1.5">
             <ShieldCheck className="h-3.5 w-3.5 text-nexora-lime" />
-            Investir comporte un risque de perte en capital.
+            {copy.warning}
           </p>
         </div>
       </div>

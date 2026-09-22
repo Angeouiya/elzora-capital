@@ -28,18 +28,20 @@ interface NavItem {
   view: PortalView;
 }
 
-const ITEMS: NavItem[] = [
-  { icon: LayoutGrid, label: "Accueil", view: "home" },
-  { icon: Search, label: "Explorer", view: "explore" },
-  { icon: Wallet, label: "Portefeuille", view: "investor_dashboard" },
-  { icon: BriefcaseBusiness, label: "Entreprise", view: "company_dashboard" },
-  { icon: UserRound, label: "Compte", view: "company_dashboard" },
-];
-
 export function BottomNav() {
-  const { view, setView, userEmail, logout } = useAppStore();
+  const { view, setView, userEmail, logout, locale } = useAppStore();
   const [accountOpen, setAccountOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const labels = locale === "fr"
+    ? { home: "Accueil", explore: "Explorer", wallet: "Portefeuille", company: "Entreprise", account: "Compte", signOut: "Déconnexion", signingOut: "Déconnexion…", myWallet: "Mon portefeuille", myCompany: "Ma société" }
+    : { home: "Home", explore: "Explore", wallet: "Portfolio", company: "Company", account: "Account", signOut: "Sign out", signingOut: "Signing out…", myWallet: "My portfolio", myCompany: "My company" };
+  const items: NavItem[] = [
+    { icon: LayoutGrid, label: labels.home, view: "home" },
+    { icon: Search, label: labels.explore, view: "explore" },
+    { icon: Wallet, label: labels.wallet, view: "investor_dashboard" },
+    { icon: BriefcaseBusiness, label: labels.company, view: "company_dashboard" },
+    { icon: UserRound, label: labels.account, view: "company_dashboard" },
+  ];
 
   const initials = userEmail
     ? userEmail
@@ -51,7 +53,7 @@ export function BottomNav() {
     : "??";
 
   const handleItemClick = (item: NavItem) => {
-    if (item.label === "Compte") {
+    if (item.view === "company_dashboard" && item.icon === UserRound) {
       setAccountOpen(true);
       return;
     }
@@ -84,9 +86,9 @@ export function BottomNav() {
         aria-label="Navigation principale mobile"
       >
         <ul className="mx-auto flex max-w-md items-stretch justify-between px-2">
-          {ITEMS.map((item) => {
+          {items.map((item) => {
             const Icon = item.icon;
-            const isActive = view === item.view && item.label !== "Compte";
+            const isActive = view === item.view && item.icon !== UserRound;
             return (
               <li key={item.label} className="flex-1">
                 <button
@@ -148,7 +150,7 @@ export function BottomNav() {
               className="flex w-full items-center gap-3 rounded-md border border-border p-3 text-left text-sm font-medium hover:bg-secondary/60"
             >
               <Wallet className="h-4 w-4" />
-              Mon portefeuille
+              {labels.myWallet}
             </button>
             <button
               onClick={() => {
@@ -158,7 +160,7 @@ export function BottomNav() {
               className="flex w-full items-center gap-3 rounded-md border border-border p-3 text-left text-sm font-medium hover:bg-secondary/60"
             >
               <Building2 className="h-4 w-4" />
-              Ma société
+              {labels.myCompany}
             </button>
             <button
               onClick={() => {
@@ -168,7 +170,7 @@ export function BottomNav() {
               className="flex w-full items-center gap-3 rounded-md border border-border p-3 text-left text-sm font-medium hover:bg-secondary/60"
             >
               <LayoutGrid className="h-4 w-4" />
-              Accueil
+              {labels.home}
             </button>
           </div>
 
@@ -180,7 +182,7 @@ export function BottomNav() {
               className="w-full text-nexora-danger"
             >
               <LogOut className="mr-2 h-4 w-4" />
-              {signingOut ? "Déconnexion…" : "Déconnexion"}
+              {signingOut ? labels.signingOut : labels.signOut}
             </Button>
           </SheetFooter>
         </SheetContent>

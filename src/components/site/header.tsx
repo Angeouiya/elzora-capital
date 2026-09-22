@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import { useAppStore } from "@/lib/store";
+import { useAppStore, type DisplayCurrency, type Locale } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -11,20 +11,59 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Menu, X, Wallet, Building2, LogOut, ChevronDown } from "lucide-react";
+import { Menu, X, Wallet, Building2, LogOut, ChevronDown, Languages, Check } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "@/hooks/use-toast";
 
-const NAV = [
-  { label: "Explorer", view: "explore" as const },
-  { label: "Financer mon entreprise", view: "register" as const },
-  { label: "Fonctionnement", view: "how" as const },
-];
+const COPY = {
+  fr: {
+    nav: [
+      { label: "Explorer", view: "explore" as const },
+      { label: "Financer mon entreprise", view: "register" as const },
+      { label: "Fonctionnement", view: "how" as const },
+    ],
+    login: "Connexion",
+    register: "Créer un compte",
+    wallet: "Mon portefeuille",
+    company: "Ma société",
+    logout: "Déconnexion",
+    signingOut: "Déconnexion…",
+    preferences: "Langue et devise",
+    language: "Langue",
+    currency: "Devise d’affichage",
+  },
+  en: {
+    nav: [
+      { label: "Explore", view: "explore" as const },
+      { label: "Finance my business", view: "register" as const },
+      { label: "How it works", view: "how" as const },
+    ],
+    login: "Sign in",
+    register: "Create account",
+    wallet: "My portfolio",
+    company: "My company",
+    logout: "Sign out",
+    signingOut: "Signing out…",
+    preferences: "Language and currency",
+    language: "Language",
+    currency: "Display currency",
+  },
+};
 
 export function Header() {
-  const { view, setView, userEmail, logout } = useAppStore();
+  const {
+    view,
+    setView,
+    userEmail,
+    logout,
+    locale,
+    displayCurrency,
+    setLocale,
+    setDisplayCurrency,
+  } = useAppStore();
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const copy = COPY[locale];
 
   useEffect(() => {
     if (!open) return;
@@ -95,7 +134,7 @@ export function Header() {
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-1 lg:flex">
-          {NAV.map((item) => (
+          {copy.nav.map((item) => (
             <button
               key={item.view}
               onClick={() => setView(item.view)}
@@ -113,6 +152,44 @@ export function Header() {
 
         {/* Right side */}
         <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="inline-flex h-9 items-center gap-1.5 rounded-full border border-[#541249]/12 bg-[#FAF4F9] px-2.5 text-[11px] font-extrabold tracking-wide text-[#541249] transition hover:border-[#541249]/25 hover:bg-[#F4E5F1]"
+                aria-label={copy.preferences}
+              >
+                <Languages className="h-3.5 w-3.5" />
+                <span>{locale.toUpperCase()} · {displayCurrency}</span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2">
+              <DropdownMenuLabel className="text-[10px] uppercase tracking-[.14em] text-muted-foreground">
+                {copy.language}
+              </DropdownMenuLabel>
+              {(["fr", "en"] as Locale[]).map((item) => (
+                <DropdownMenuItem key={item} onClick={() => setLocale(item)} className="cursor-pointer rounded-xl">
+                  <span className="flex-1">{item === "fr" ? "Français" : "English"}</span>
+                  {locale === item ? <Check className="h-4 w-4 text-[#541249]" /> : null}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-[10px] uppercase tracking-[.14em] text-muted-foreground">
+                {copy.currency}
+              </DropdownMenuLabel>
+              {(["XOF", "EUR"] as DisplayCurrency[]).map((item) => (
+                <DropdownMenuItem key={item} onClick={() => setDisplayCurrency(item)} className="cursor-pointer rounded-xl">
+                  <span className="flex-1">{item === "XOF" ? "Franc CFA · XOF" : "Euro · EUR"}</span>
+                  {displayCurrency === item ? <Check className="h-4 w-4 text-[#541249]" /> : null}
+                </DropdownMenuItem>
+              ))}
+              {displayCurrency === "EUR" ? (
+                <p className="px-2 pb-1 pt-2 text-[10px] leading-4 text-muted-foreground">
+                  {locale === "fr" ? "Conversion d’affichage. Les opérations restent réglées en XOF." : "Display conversion. Transactions remain settled in XOF."}
+                </p>
+              ) : null}
+            </DropdownMenuContent>
+          </DropdownMenu>
           {userEmail ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -138,14 +215,14 @@ export function Header() {
                   className="cursor-pointer"
                 >
                   <Wallet className="mr-2 h-4 w-4" />
-                  Mon portefeuille
+                  {copy.wallet}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => setView("company_dashboard")}
                   className="cursor-pointer"
                 >
                   <Building2 className="mr-2 h-4 w-4" />
-                  Ma société
+                  {copy.company}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -154,7 +231,7 @@ export function Header() {
                   className="cursor-pointer text-nexora-danger"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
-                  {signingOut ? "Déconnexion…" : "Déconnexion"}
+                  {signingOut ? copy.signingOut : copy.logout}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -166,14 +243,14 @@ export function Header() {
                 onClick={() => setView("login")}
                 className="text-foreground hover:bg-secondary/60"
               >
-                Connexion
+                {copy.login}
               </Button>
               <Button
                 size="sm"
                 onClick={() => setView("register")}
                 className="btn-nexora hidden sm:inline-flex"
               >
-                Créer un compte
+                {copy.register}
               </Button>
             </>
           )}
@@ -201,7 +278,7 @@ export function Header() {
           className="absolute inset-x-0 top-full border-t border-border/70 bg-white px-4 py-4 shadow-[0_24px_50px_rgba(16,16,16,.14)] lg:hidden"
         >
           <div className="flex flex-col gap-1">
-            {NAV.map((item) => (
+            {copy.nav.map((item) => (
               <button
                 key={item.view}
                 onClick={() => {
@@ -224,7 +301,7 @@ export function Header() {
               }}
               className="mt-2 btn-nexora"
             >
-              Créer un compte
+              {copy.register}
             </Button>
           </div>
         </nav>

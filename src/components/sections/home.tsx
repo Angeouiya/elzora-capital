@@ -17,30 +17,85 @@ import {
   CircleCheck,
 } from "lucide-react";
 import type { OfferDTO } from "@/lib/types";
+import { formatDisplayMoney } from "@/lib/display-money";
 
-const STEPS = [
-  {
-    icon: Building2,
-    title: "Dépôt",
-    desc: "L&rsquo;entreprise soumet un dossier analysé par l&rsquo;équipe NEXORA.",
+const COPY = {
+  fr: {
+    kicker: "Investissement privé · Zone UEMOA",
+    title: "Le capital qui fait grandir l’Afrique de l’Ouest.",
+    intro: "Accédez à des entreprises sélectionnées, analysez chaque opportunité et investissez simplement en dette ou en capital.",
+    opportunities: "Voir les opportunités",
+    raise: "Lever des fonds",
+    proof: [
+      ["Dossiers vérifiés", "Sélection rigoureuse"],
+      ["Cadre régional", "8 pays UEMOA"],
+      ["Paiements", "Carte & Mobile Money"],
+    ],
+    market: "Marché privé",
+    open: "Opportunités ouvertes",
+    loading: "Chargement…",
+    offerCount: (count: number) => `${count} offre${count > 1 ? "s" : ""} ouverte${count > 1 ? "s" : ""} aux souscriptions`,
+    all: "Tout voir",
+    next: "La prochaine sélection est en préparation",
+    nextText: "Chaque dossier est vérifié avant sa publication. Créez votre compte pour suivre les nouvelles opportunités.",
+    notify: "Être informé",
+    journey: "Parcours encadré",
+    journeyTitle: "Simple pour investir. Exigeant pour sélectionner.",
+    step: "Étape",
+    more: "En savoir plus",
+    economy: "Économie réelle",
+    sectors: "Secteurs financés",
+    steps: [
+      ["Dépôt", "L’entreprise soumet un dossier analysé par l’équipe NEXORA."],
+      ["Analyse", "Cabinet indépendant, structuration financière, publication de l’offre."],
+      ["Financement", "Les investisseurs souscrivent ; les fonds sont décaissés à l’entreprise."],
+    ],
   },
-  {
-    icon: FileText,
-    title: "Analyse",
-    desc: "Cabinet indépendant, structuration financière, publication de l&rsquo;offre.",
+  en: {
+    kicker: "Private investment · WAEMU region",
+    title: "Capital that helps West Africa grow.",
+    intro: "Access selected businesses, review every opportunity and invest simply through debt or equity.",
+    opportunities: "View opportunities",
+    raise: "Raise capital",
+    proof: [
+      ["Verified applications", "Rigorous selection"],
+      ["Regional scope", "8 WAEMU countries"],
+      ["Payments", "Card & Mobile Money"],
+    ],
+    market: "Private market",
+    open: "Open opportunities",
+    loading: "Loading…",
+    offerCount: (count: number) => `${count} opportunit${count === 1 ? "y" : "ies"} open for investment`,
+    all: "View all",
+    next: "The next selection is being prepared",
+    nextText: "Every application is reviewed before publication. Create an account to follow new opportunities.",
+    notify: "Keep me informed",
+    journey: "Structured journey",
+    journeyTitle: "Simple to invest. Rigorous in selection.",
+    step: "Step",
+    more: "Learn more",
+    economy: "Real economy",
+    sectors: "Funded sectors",
+    steps: [
+      ["Application", "The company submits an application reviewed by the NEXORA team."],
+      ["Review", "Independent assessment, financial structuring and offer publication."],
+      ["Funding", "Investors subscribe and the funds are released to the company."],
+    ],
   },
-  {
-    icon: LayoutGrid,
-    title: "Financement",
-    desc: "Les investisseurs souscrivent ; les fonds sont décaissés à l&rsquo;entreprise.",
-  },
-];
+} as const;
+
+const STEP_ICONS = [Building2, FileText, LayoutGrid];
 
 export function Home() {
   const setView = useAppStore((s) => s.setView);
+  const locale = useAppStore((s) => s.locale);
+  const displayCurrency = useAppStore((s) => s.displayCurrency);
   const { data, loading } = useFetch<{ offers: OfferDTO[] }>("/api/offers");
 
   const offers = data?.offers ?? [];
+  const copy = COPY[locale];
+  const proofItems: ReadonlyArray<readonly [string, string]> = copy.proof;
+  const journeySteps: ReadonlyArray<readonly [string, string]> = copy.steps;
 
   return (
     <div className="page-shell reveal-in">
@@ -51,15 +106,14 @@ export function Home() {
           <div className="max-w-3xl">
             <p className="page-kicker hero-kicker">
               <span className="h-1.5 w-1.5 rounded-full bg-current" />
-              Investissement privé · Zone UEMOA
+              {copy.kicker}
             </p>
             <h1 className="mt-4 max-w-3xl text-[2.15rem] font-black leading-[.98] tracking-[-.055em] sm:text-5xl lg:text-[3.65rem]">
-              Le capital qui fait grandir l&rsquo;Afrique de l&rsquo;Ouest.
+              {copy.title}
             </h1>
             <p className="mt-5 max-w-2xl text-sm leading-6 text-white/68 sm:text-base sm:leading-7">
-              Accédez à des entreprises sélectionnées, analysez chaque
-              opportunité et investissez simplement en dette ou en capital.
-              Dès 10&nbsp;000 FCFA.
+              {copy.intro} {locale === "fr" ? "Dès" : "From"}{" "}
+              {formatDisplayMoney(10_000, displayCurrency, locale)}.
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <Button
@@ -68,7 +122,7 @@ export function Home() {
               size="lg"
             >
               <Search className="h-4 w-4" />
-              Voir les opportunités
+              {copy.opportunities}
             </Button>
             <Button
               onClick={() => setView("register")}
@@ -77,16 +131,14 @@ export function Home() {
               className="w-full border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white sm:w-auto"
             >
               <Building2 className="h-4 w-4" />
-              Lever des fonds
+              {copy.raise}
             </Button>
           </div>
           </div>
           <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-1">
-            {[
-              { icon: ShieldCheck, label: "Dossiers vérifiés", value: "Sélection rigoureuse" },
-              { icon: Landmark, label: "Cadre régional", value: "8 pays UEMOA" },
-              { icon: Smartphone, label: "Paiements", value: "Carte & Mobile Money" },
-            ].map(({ icon: Icon, label, value }) => (
+            {proofItems.map(([label, value], index) => {
+              const Icon = [ShieldCheck, Landmark, Smartphone][index];
+              return (
               <div key={label} className="rounded-xl border border-white/10 bg-white/[.055] p-3.5 backdrop-blur-sm last:col-span-2 lg:last:col-span-1">
                 <div className="flex items-center gap-2 text-[#F2C7EB]">
                   <Icon className="h-4 w-4" />
@@ -94,7 +146,8 @@ export function Home() {
                 </div>
                 <p className="mt-1.5 text-sm font-semibold text-white">{value}</p>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
@@ -103,14 +156,14 @@ export function Home() {
       <section className="mt-9 sm:mt-12">
         <div className="mb-5 flex items-end justify-between gap-4">
           <div>
-            <p className="page-kicker">Marché privé</p>
+            <p className="page-kicker">{copy.market}</p>
             <h2 className="mt-1 text-xl font-extrabold tracking-[-.025em] text-foreground sm:text-2xl">
-              Opportunités ouvertes
+              {copy.open}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               {loading
-                ? "Chargement…"
-                : `${offers.length} offre${offers.length > 1 ? "s" : ""} ouverte${offers.length > 1 ? "s" : ""} aux souscriptions`}
+                ? copy.loading
+                : copy.offerCount(offers.length)}
             </p>
           </div>
           <Button
@@ -119,7 +172,7 @@ export function Home() {
             onClick={() => setView("explore")}
             className="text-foreground"
           >
-            Tout voir
+            {copy.all}
             <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
@@ -133,12 +186,12 @@ export function Home() {
         ) : offers.length === 0 ? (
           <div className="surface-card rounded-2xl border border-dashed border-border bg-white/65 px-5 py-8 text-center sm:py-10">
             <CircleCheck className="mx-auto h-8 w-8 text-positive" />
-            <p className="mt-3 text-sm font-semibold text-foreground">La prochaine sélection est en préparation</p>
+            <p className="mt-3 text-sm font-semibold text-foreground">{copy.next}</p>
             <p className="mx-auto mt-1 max-w-md text-xs leading-5 text-muted-foreground">
-              Chaque dossier est vérifié avant sa publication. Créez votre compte pour suivre les nouvelles opportunités.
+              {copy.nextText}
             </p>
             <Button variant="outline" size="sm" className="mt-4" onClick={() => setView("register")}>
-              Être informé
+              {copy.notify}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
@@ -153,31 +206,33 @@ export function Home() {
 
       {/* Comment ça marche */}
       <section className="mt-10 section-rule pt-9 sm:mt-12 sm:pt-11">
-        <p className="page-kicker">Parcours encadré</p>
-        <h2 className="mb-5 mt-1 text-xl font-extrabold tracking-[-.025em] text-foreground sm:text-2xl">Simple pour investir. Exigeant pour sélectionner.</h2>
+        <p className="page-kicker">{copy.journey}</p>
+        <h2 className="mb-5 mt-1 text-xl font-extrabold tracking-[-.025em] text-foreground sm:text-2xl">{copy.journeyTitle}</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {STEPS.map((step, i) => (
+          {journeySteps.map(([title, description], i) => {
+            const Icon = STEP_ICONS[i];
+            return (
             <div
-              key={step.title}
+              key={title}
               className="surface-card rounded-2xl border border-border bg-white/75 p-5 transition duration-200 hover:-translate-y-0.5 hover:border-black/15"
             >
               <div className="flex items-center gap-3">
                 <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-nexora-pale text-positive">
-                  <step.icon className="h-5 w-5" />
+                  <Icon className="h-5 w-5" />
                 </span>
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Étape {i + 1}
+                  {copy.step} {i + 1}
                 </span>
               </div>
               <h3 className="mt-3 text-base font-bold text-foreground">
-                {step.title}
+                {title}
               </h3>
               <p
                 className="mt-1 text-sm text-muted-foreground"
-                dangerouslySetInnerHTML={{ __html: step.desc }}
-              />
+              >{description}</p>
             </div>
-          ))}
+            );
+          })}
         </div>
         <div className="mt-3 text-right">
           <Button
@@ -186,7 +241,7 @@ export function Home() {
             onClick={() => setView("how")}
             className="px-0 text-foreground"
           >
-            En savoir plus
+            {copy.more}
             <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
@@ -195,7 +250,7 @@ export function Home() {
       {/* Secteurs */}
       <section className="mt-10 section-rule pt-9 sm:mt-12 sm:pt-11">
         <div className="mb-4 flex items-end justify-between gap-4">
-          <div><p className="page-kicker">Économie réelle</p><h2 className="mt-1 text-xl font-extrabold tracking-[-.025em] text-foreground sm:text-2xl">Secteurs financés</h2></div>
+          <div><p className="page-kicker">{copy.economy}</p><h2 className="mt-1 text-xl font-extrabold tracking-[-.025em] text-foreground sm:text-2xl">{copy.sectors}</h2></div>
         </div>
         <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-2 scroll-area-fancy sm:flex-wrap sm:overflow-visible">
           {SECTORS.map((s) => (

@@ -35,12 +35,16 @@ export type PortalView =
   | "admin_commissions";
 
 export type AuthContext = "guest" | "individual" | "company" | "admin";
+export type Locale = "fr" | "en";
+export type DisplayCurrency = "XOF" | "EUR";
 
 interface AppState {
   view: PortalView;
   selectedOfferId: string | null;
   selectedProjectId: string | null;
   authContext: AuthContext;
+  locale: Locale;
+  displayCurrency: DisplayCurrency;
   // État d'affichage de la session authentifiée côté client.
   userEmail: string | null;
   adminEmail: string | null;
@@ -53,6 +57,9 @@ interface AppState {
   openOffer: (offerId: string) => void;
   openProject: (projectId: string) => void;
   setAuthContext: (c: AuthContext) => void;
+  setLocale: (locale: Locale) => void;
+  setDisplayCurrency: (currency: DisplayCurrency) => void;
+  hydratePreferences: () => void;
   login: (email: string) => void;
   loginAdmin: (
     email: string,
@@ -70,6 +77,8 @@ export const useAppStore = create<AppState>((set) => ({
   selectedOfferId: null,
   selectedProjectId: null,
   authContext: "guest",
+  locale: "fr",
+  displayCurrency: "XOF",
   userEmail: null,
   adminEmail: null,
   adminRole: null,
@@ -96,6 +105,28 @@ export const useAppStore = create<AppState>((set) => ({
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   },
   setAuthContext: (c) => set({ authContext: c }),
+  setLocale: (locale) => {
+    set({ locale });
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("nexora-locale", locale);
+      document.documentElement.lang = locale;
+    }
+  },
+  setDisplayCurrency: (displayCurrency) => {
+    set({ displayCurrency });
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("nexora-currency", displayCurrency);
+    }
+  },
+  hydratePreferences: () => {
+    if (typeof window === "undefined") return;
+    const savedLocale = window.localStorage.getItem("nexora-locale");
+    const savedCurrency = window.localStorage.getItem("nexora-currency");
+    const locale: Locale = savedLocale === "en" ? "en" : "fr";
+    const displayCurrency: DisplayCurrency = savedCurrency === "EUR" ? "EUR" : "XOF";
+    document.documentElement.lang = locale;
+    set({ locale, displayCurrency });
+  },
   login: (email) =>
     set({ userEmail: email, authContext: "individual", view: "investor_dashboard" }),
   loginAdmin: (email, role, firstName, lastName) =>

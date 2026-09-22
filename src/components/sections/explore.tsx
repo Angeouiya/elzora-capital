@@ -13,6 +13,46 @@ import {
 import { SlidersHorizontal, SearchX } from "lucide-react";
 import { SECTORS } from "@/lib/countries";
 import type { OfferDTO } from "@/lib/types";
+import { useAppStore } from "@/lib/store";
+
+const COPY = {
+  fr: {
+    kicker: "Marché privé",
+    title: "Explorer les offres",
+    loading: "Chargement des offres…",
+    count: (value: number) => `${value} offre${value > 1 ? "s" : ""} disponible${value > 1 ? "s" : ""}`,
+    filters: "Filtres",
+    sector: "Secteur",
+    country: "Pays",
+    instrument: "Instrument",
+    allSectors: "Tous les secteurs",
+    allCountries: "Tous les pays",
+    allInstruments: "Tous les instruments",
+    debt: "Dette",
+    equity: "Capital",
+    empty: "Aucune offre ne correspond à vos filtres",
+    emptyText: "Essayez d’élargir votre recherche.",
+    reset: "Réinitialiser les filtres",
+  },
+  en: {
+    kicker: "Private market",
+    title: "Explore opportunities",
+    loading: "Loading opportunities…",
+    count: (value: number) => `${value} opportunit${value === 1 ? "y" : "ies"} available`,
+    filters: "Filters",
+    sector: "Sector",
+    country: "Country",
+    instrument: "Instrument",
+    allSectors: "All sectors",
+    allCountries: "All countries",
+    allInstruments: "All instruments",
+    debt: "Debt",
+    equity: "Equity",
+    empty: "No opportunity matches your filters",
+    emptyText: "Try broadening your search.",
+    reset: "Reset filters",
+  },
+};
 
 const COUNTRIES = [
   { code: "SN", name: "Sénégal" },
@@ -29,6 +69,7 @@ const INSTRUMENTS = [
 ];
 
 export function Explore() {
+  const locale = useAppStore((state) => state.locale);
   const [sector, setSector] = useState("all");
   const [country, setCountry] = useState("all");
   const [instrument, setInstrument] = useState("all");
@@ -43,19 +84,20 @@ export function Explore() {
   );
 
   const offers = data?.offers ?? [];
+  const copy = COPY[locale];
 
   return (
     <div className="page-shell reveal-in">
       {/* Header */}
       <div className="mb-6">
-        <p className="page-kicker">Marché privé</p>
+        <p className="page-kicker">{copy.kicker}</p>
         <h1 className="page-title mt-1">
-          Explorer les offres
+          {copy.title}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {loading
-            ? "Chargement des offres…"
-            : `${offers.length} offre${offers.length > 1 ? "s" : ""} disponible${offers.length > 1 ? "s" : ""}`}
+            ? copy.loading
+            : copy.count(offers.length)}
         </p>
       </div>
 
@@ -63,19 +105,19 @@ export function Explore() {
       <div className="surface-card mb-6 rounded-2xl border border-border bg-white/75 p-4 sm:p-5">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           <SlidersHorizontal className="h-4 w-4" />
-          Filtres
+          {copy.filters}
         </div>
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div>
             <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-              Secteur
+              {copy.sector}
             </label>
             <Select value={sector} onValueChange={setSector}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Tous les secteurs" />
+                <SelectValue placeholder={copy.allSectors} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tous les secteurs</SelectItem>
+                <SelectItem value="all">{copy.allSectors}</SelectItem>
                 {SECTORS.map((s) => (
                   <SelectItem key={s} value={s}>
                     {s}
@@ -87,14 +129,14 @@ export function Explore() {
 
           <div>
             <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-              Pays
+              {copy.country}
             </label>
             <Select value={country} onValueChange={setCountry}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Tous les pays" />
+                <SelectValue placeholder={copy.allCountries} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tous les pays</SelectItem>
+                <SelectItem value="all">{copy.allCountries}</SelectItem>
                 {COUNTRIES.map((c) => (
                   <SelectItem key={c.code} value={c.code}>
                     {c.name}
@@ -106,17 +148,17 @@ export function Explore() {
 
           <div>
             <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-              Instrument
+              {copy.instrument}
             </label>
             <Select value={instrument} onValueChange={setInstrument}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Tous les instruments" />
+                <SelectValue placeholder={copy.allInstruments} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tous les instruments</SelectItem>
+                <SelectItem value="all">{copy.allInstruments}</SelectItem>
                 {INSTRUMENTS.map((i) => (
                   <SelectItem key={i.code} value={i.code}>
-                    {i.name}
+                    {i.code === "debt" ? copy.debt : copy.equity}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -136,11 +178,24 @@ export function Explore() {
         <div className="surface-card rounded-2xl border border-dashed border-border bg-white/65 px-5 py-10 text-center sm:p-12">
           <SearchX className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
           <p className="text-sm font-medium text-foreground">
-            Aucune offre ne correspond à vos filtres
+            {copy.empty}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Essayez d&rsquo;élargir votre recherche.
+            {copy.emptyText}
           </p>
+          {(sector !== "all" || country !== "all" || instrument !== "all") ? (
+            <button
+              type="button"
+              onClick={() => {
+                setSector("all");
+                setCountry("all");
+                setInstrument("all");
+              }}
+              className="mt-4 rounded-full border border-[#541249]/20 bg-white px-4 py-2 text-xs font-bold text-[#541249] transition hover:bg-[#F7EAF5]"
+            >
+              {copy.reset}
+            </button>
+          ) : null}
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">

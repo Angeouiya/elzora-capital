@@ -1,10 +1,12 @@
 "use client";
+import Image from "next/image";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { useAppStore } from "@/lib/store";
-import { fmtCompact, fmtPct } from "@/lib/finance";
+import { fmtPct } from "@/lib/finance";
+import { formatDisplayMoney } from "@/lib/display-money";
 import { Bookmark, Users, MapPin } from "lucide-react";
 import type { OfferDTO } from "@/lib/types";
 
@@ -14,23 +16,27 @@ function progressPct(raised: number, goal: number): number {
   return Math.min(100, Math.max(0, Math.round(p * 10) / 10));
 }
 
-function yieldLabel(offer: OfferDTO): string {
+function yieldLabel(offer: OfferDTO, locale: "fr" | "en"): string {
   if (offer.project.instrumentType === "equity") {
     const pct = offer.equityOfferedPct ?? 0;
-    return `${pct.toFixed(pct % 1 === 0 ? 0 : 2).replace(".", ",")} % du capital`;
+    return `${pct.toFixed(pct % 1 === 0 ? 0 : 2).replace(".", locale === "fr" ? "," : ".")} % ${locale === "fr" ? "du capital" : "equity"}`;
   }
   // dette
   const rate = offer.annualRate ?? 0;
   const duration = offer.durationMonths ?? 0;
-  const rateStr = rate.toFixed(rate % 1 === 0 ? 0 : 2).replace(".", ",");
+  const rateStr = rate
+    .toFixed(rate % 1 === 0 ? 0 : 2)
+    .replace(".", locale === "fr" ? "," : ".");
   if (offer.ratePeriod === "annual" && duration > 0) {
-    return `${rateStr} % par an · ${duration} mois`;
+    return `${rateStr} % ${locale === "fr" ? "par an" : "per year"} · ${duration} ${locale === "fr" ? "mois" : "months"}`;
   }
-  return `${rateStr} % total sur ${duration} mois`;
+  return `${rateStr} % ${locale === "fr" ? `total sur ${duration} mois` : `total over ${duration} months`}`;
 }
 
 export function OfferCard({ offer }: { offer: OfferDTO }) {
   const openOffer = useAppStore((s) => s.openOffer);
+  const locale = useAppStore((s) => s.locale);
+  const displayCurrency = useAppStore((s) => s.displayCurrency);
   const pct = progressPct(offer.raisedAmount, offer.fundingGoal);
   const isEquity = offer.project.instrumentType === "equity";
 
@@ -40,13 +46,15 @@ export function OfferCard({ offer }: { offer: OfferDTO }) {
       <button
         onClick={() => openOffer(offer.id)}
         className="relative block h-36 w-full overflow-hidden sm:h-40"
-        aria-label={`Voir l'offre ${offer.project.title}`}
+        aria-label={`${locale === "fr" ? "Voir l’offre" : "View offer"} ${offer.project.title}`}
       >
-        <img
+        <Image
           src={offer.project.imageUrl}
           alt={offer.project.title}
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          unoptimized
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-          loading="lazy"
         />
         <div className="absolute left-3 top-3 flex gap-1.5">
           <Badge className="bg-background/95 text-foreground shadow-sm">
@@ -54,11 +62,11 @@ export function OfferCard({ offer }: { offer: OfferDTO }) {
           </Badge>
           {isEquity ? (
             <Badge className="bg-nexora-black text-nexora-lime shadow-sm">
-              Capital
+              {locale === "fr" ? "Capital" : "Equity"}
             </Badge>
           ) : (
             <Badge className="bg-nexora-pale text-positive shadow-sm">
-              Dette
+              {locale === "fr" ? "Dette" : "Debt"}
             </Badge>
           )}
         </div>
@@ -83,14 +91,14 @@ export function OfferCard({ offer }: { offer: OfferDTO }) {
         {/* Rémunération */}
         <div className="rounded-md bg-secondary/60 px-3 py-2">
           <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            Rémunération
+            {locale === "fr" ? "Rémunération" : "Return"}
           </p>
           <p
             className={`tnum text-sm font-extrabold ${
               isEquity ? "text-foreground" : "text-positive"
             }`}
           >
-            {yieldLabel(offer)}
+            {yieldLabel(offer, locale)}
           </p>
         </div>
 
@@ -98,20 +106,20 @@ export function OfferCard({ offer }: { offer: OfferDTO }) {
         <div>
           <div className="mb-1 flex items-center justify-between text-xs">
             <span className="tnum font-semibold text-foreground">
-              {fmtCompact(offer.raisedAmount)}
+              {formatDisplayMoney(offer.raisedAmount, displayCurrency, locale, true)}
             </span>
             <span className="text-muted-foreground">
-              sur {fmtCompact(offer.fundingGoal)}
+              {locale === "fr" ? "sur" : "of"} {formatDisplayMoney(offer.fundingGoal, displayCurrency, locale, true)}
             </span>
           </div>
           <Progress value={pct} className="h-1.5" />
           <div className="mt-1 flex items-center justify-between text-[11px] text-muted-foreground">
             <span className="tnum font-medium text-positive">
-              {fmtPct(pct, 0)} financé
+              {fmtPct(pct, 0)} {locale === "fr" ? "financé" : "funded"}
             </span>
             <span className="flex items-center gap-1">
               <Users className="h-3 w-3" />
-              <span className="tnum">{offer.backersCount}</span> souscripteurs
+              <span className="tnum">{offer.backersCount}</span> {locale === "fr" ? "souscripteurs" : "investors"}
             </span>
           </div>
         </div>
@@ -119,9 +127,9 @@ export function OfferCard({ offer }: { offer: OfferDTO }) {
         {/* Min investment + actions */}
         <div className="mt-auto flex items-center justify-between gap-2 border-t border-border/60 pt-3">
           <div className="text-xs">
-            <span className="text-muted-foreground">Dès </span>
+            <span className="text-muted-foreground">{locale === "fr" ? "Dès" : "From"} </span>
             <span className="tnum font-semibold text-foreground">
-              {fmtCompact(offer.minInvestment)}
+              {formatDisplayMoney(offer.minInvestment, displayCurrency, locale, true)}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
@@ -129,7 +137,7 @@ export function OfferCard({ offer }: { offer: OfferDTO }) {
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-muted-foreground hover:bg-secondary hover:text-foreground"
-              aria-label="Sauvegarder l'offre"
+              aria-label={locale === "fr" ? "Sauvegarder l’offre" : "Save offer"}
               onClick={(e) => e.stopPropagation()}
             >
               <Bookmark className="h-4 w-4" />
@@ -139,7 +147,7 @@ export function OfferCard({ offer }: { offer: OfferDTO }) {
               onClick={() => openOffer(offer.id)}
               className="btn-nexora"
             >
-              Voir l&rsquo;offre
+              {locale === "fr" ? "Voir l’offre" : "View offer"}
             </Button>
           </div>
         </div>
