@@ -1,4 +1,6 @@
-const ITERATIONS = 210_000;
+// Cloudflare Workers currently caps PBKDF2 at 100,000 iterations.
+// Keep the encoded iteration count so hashes remain portable and upgradeable.
+const ITERATIONS = 100_000;
 const KEY_BYTES = 32;
 const PREFIX = "pbkdf2_sha256";
 
