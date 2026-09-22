@@ -109,7 +109,7 @@ export function ProjectDetail() {
           investorEmail,
         }),
       });
-      const result = await res.json();
+      const result = (await res.json()) as { error?: string; sharePct: number };
       if (!res.ok) throw new Error(result.error || "Erreur");
       toast({
         title: "Investissement confirmé ! 🎉",

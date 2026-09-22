@@ -3,6 +3,7 @@
 # dependencies
 node_modules
 bun.lock
+bun.lock.disabled
 /.pnp
 .pnp.*
 .yarn/*
@@ -16,6 +17,7 @@ bun.lock
 
 # next.js
 /.next/
+/.open-next/
 /out/
 
 # production
@@ -45,6 +47,7 @@ db/*.db-*
 
 # generated runtime artifacts
 .playwright-cli/
+src/lib/generated/
 .vinext/
 .wrangler/
 .zscripts/

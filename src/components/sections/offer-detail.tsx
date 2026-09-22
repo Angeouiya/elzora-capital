@@ -126,7 +126,7 @@ export function OfferDetail() {
           investorId: "guest",
         }),
       });
-      const json = await res.json();
+      const json = (await res.json()) as { error?: string };
       if (!res.ok) {
         throw new Error(json.error || "Souscription échouée");
       }

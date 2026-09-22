@@ -144,7 +144,7 @@ export function CompanySubmit() {
   const fetchMe = useCallback(() => {
     setLoading(true);
     fetch("/api/auth/me")
-      .then((r) => r.json())
+      .then((r) => r.json() as Promise<MeResponse>)
       .then((data: MeResponse) => {
         setMe(data);
         if (data.memberships?.length > 0 && !form.companyId) {
@@ -344,7 +344,7 @@ export function CompanySubmit() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(buildPayload(true)),
       });
-      const body = await res.json().catch(() => ({}));
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
         toast({
           title: "Brouillon non enregistré",
@@ -376,7 +376,7 @@ export function CompanySubmit() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(buildPayload(false)),
       });
-      const body = await res.json().catch(() => ({}));
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
         toast({
           title: "Soumission échouée",

@@ -225,12 +225,12 @@ export function CompanyDashboard() {
     setLoading(true);
     setError(null);
     Promise.all([
-      fetch("/api/auth/me").then((r) => r.json()),
+      fetch("/api/auth/me").then((r) => r.json() as Promise<MeResponse>),
       fetch("/api/projects?mine=true").then((r) =>
-        r.ok ? r.json() : { projects: [] }
+        r.ok ? (r.json() as Promise<ProjectsResponse>) : { projects: [] }
       ),
       fetch("/api/company/payments").then((r) =>
-        r.ok ? r.json() : { payments: [], projects: [] }
+        r.ok ? (r.json() as Promise<PaymentsResponse>) : { payments: [], projects: [] }
       ),
     ])
       .then(([meData, projData, payData]: [MeResponse, ProjectsResponse, PaymentsResponse]) => {
@@ -356,7 +356,11 @@ export function CompanyDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ paymentId: payDialogPayment.id }),
       });
-      const body = await res.json().catch(() => ({}));
+      const body = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        notice?: string;
+        instructions?: { paymentRef?: string };
+      };
       if (!res.ok) {
         toast({
           title: "Déclaration échouée",

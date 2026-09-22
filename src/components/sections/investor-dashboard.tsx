@@ -230,7 +230,7 @@ export function InvestorDashboard() {
           return;
         }
         if (!r.ok) throw new Error("Erreur " + r.status);
-        return r.json();
+        return r.json() as Promise<InvestorDashboardData>;
       })
       .then((d) => {
         if (d) setData(d);
@@ -327,7 +327,7 @@ export function InvestorDashboard() {
         `/api/investments/${investmentId}/confirm`,
         { method: "POST" }
       );
-      const body = await res.json().catch(() => ({}));
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
         toast({
           title: "Confirmation échouée",
@@ -390,7 +390,10 @@ export function InvestorDashboard() {
           beneficiaryAccount: payoutAccount.trim(),
         }),
       });
-      const body = await res.json().catch(() => ({}));
+      const body = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        notice?: string;
+      };
       if (!res.ok) {
         toast({
           title: "Demande refusée",

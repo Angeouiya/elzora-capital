@@ -21,7 +21,7 @@ export function useFetch<T>(url: string | null) {
     fetch(url)
       .then(async (r) => {
         if (!r.ok) throw new Error("Erreur réseau (" + r.status + ")");
-        return r.json();
+        return r.json() as Promise<T>;
       })
       .then((d) => {
         if (active) {

@@ -29,7 +29,7 @@ export function Login() {
         body: JSON.stringify({ email: trimmedEmail, password }),
       });
       if (res.status === 401) {
-        const data = await res.json().catch(() => ({}));
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
         const msg = data?.error || "Identifiants invalides.";
         setError(msg);
         toast({
@@ -40,7 +40,7 @@ export function Login() {
         return;
       }
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
         const msg = data?.error || "Erreur inattendue. Réessayez.";
         setError(msg);
         toast({
@@ -50,7 +50,7 @@ export function Login() {
         });
         return;
       }
-      const data = await res.json();
+      const data = (await res.json()) as { user?: { email?: string } };
       const userEmail = data?.user?.email || trimmedEmail;
       toast({
         title: "Bienvenue",

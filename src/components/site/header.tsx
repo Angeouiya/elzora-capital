@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Menu, X, Wallet, Building2, LogOut, ChevronDown } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "@/hooks/use-toast";
 
 const NAV = [
@@ -24,6 +24,20 @@ export function Header() {
   const { view, setView, userEmail, logout } = useAppStore();
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [open]);
 
   const initials = userEmail
     ? userEmail
@@ -52,6 +66,15 @@ export function Header() {
   };
 
   return (
+    <>
+      {open && !userEmail && (
+        <button
+          type="button"
+          aria-label="Fermer le menu"
+          onClick={() => setOpen(false)}
+          className="fixed inset-0 z-40 cursor-default bg-black/35 backdrop-blur-[2px] lg:hidden"
+        />
+      )}
     <header
       className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/80 backdrop-blur-xl"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
@@ -160,6 +183,8 @@ export function Header() {
               onClick={() => setOpen(!open)}
               className="inline-flex h-9 w-9 items-center justify-center rounded-md text-foreground hover:bg-secondary lg:hidden"
               aria-label="Menu"
+              aria-expanded={open}
+              aria-controls="mobile-navigation"
             >
               {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
@@ -169,7 +194,11 @@ export function Header() {
 
       {/* Mobile nav (guest only) */}
       {open && !userEmail && (
-        <nav className="border-t border-border/60 bg-background px-4 py-3 lg:hidden">
+        <nav
+          id="mobile-navigation"
+          aria-label="Navigation mobile"
+          className="border-t border-border/60 bg-background px-4 py-3 shadow-2xl lg:hidden"
+        >
           <div className="flex flex-col gap-1">
             {NAV.map((item) => (
               <button
@@ -200,5 +229,6 @@ export function Header() {
         </nav>
       )}
     </header>
+    </>
   );
 }

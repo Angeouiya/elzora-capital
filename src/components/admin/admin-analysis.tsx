@@ -339,7 +339,7 @@ export function AdminAnalysis() {
           note: note.trim() || undefined,
         }),
       });
-      const j = await res.json().catch(() => null);
+      const j = (await res.json().catch(() => null)) as { error?: string } | null;
       if (!res.ok) {
         // Messages d&rsquo;erreur précis selon 400/403
         if (res.status === 403) {
