@@ -70,6 +70,12 @@ interface AppState {
     firstName?: string,
     lastName?: string
   ) => void;
+  restoreAdmin: (
+    email: string,
+    role: string,
+    firstName?: string,
+    lastName?: string
+  ) => void;
   logout: () => void;
   logoutAdmin: () => void;
   setCompany: (id: string | null) => void;
@@ -147,6 +153,17 @@ export const useAppStore = create<AppState>((set) => ({
       adminLastName: lastName || null,
       view: "admin_dashboard",
     }),
+  restoreAdmin: (email, role, firstName, lastName) =>
+    set((state) => ({
+      adminEmail: email,
+      adminRole: role,
+      adminFirstName: firstName || null,
+      adminLastName: lastName || null,
+      view:
+        state.view.startsWith("admin_") && state.view !== "admin_login"
+          ? state.view
+          : "admin_dashboard",
+    })),
   logout: () =>
     set({ userEmail: null, authContext: "guest", view: "home", selectedCompanyId: null }),
   logoutAdmin: () =>

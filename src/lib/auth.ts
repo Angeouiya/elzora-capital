@@ -10,6 +10,8 @@ export interface SessionUser {
 export interface SessionAdmin {
   adminId: string;
   email: string;
+  firstName: string;
+  lastName: string;
   role: string;
   permissions: string[];
 }
@@ -24,6 +26,8 @@ interface UserSessionRow {
 interface AdminSessionRow {
   adminId: string;
   email: string;
+  firstName: string;
+  lastName: string;
   role: string;
   permissions: string;
   active: number;
@@ -64,7 +68,7 @@ export async function getAdminSession(req?: Request): Promise<SessionAdmin | nul
   const admin = await database
     .prepare(
       `SELECT s.adminId, s.lastActiveAt, s.revoked,
-              a.email, a.role, a.permissions, a.active
+              a.email, a.firstName, a.lastName, a.role, a.permissions, a.active
        FROM AdminSession s
        JOIN AdminUser a ON a.id = s.adminId
        WHERE s.id = ? LIMIT 1`
@@ -81,6 +85,8 @@ export async function getAdminSession(req?: Request): Promise<SessionAdmin | nul
   return {
     adminId: admin.adminId,
     email: admin.email,
+    firstName: admin.firstName,
+    lastName: admin.lastName,
     role: admin.role,
     permissions: safeParse(admin.permissions),
   };
