@@ -6,6 +6,11 @@ import {
   verifyPayDunyaHash,
   type PayDunyaTransaction,
 } from "@/lib/payments/paydunya";
+import { finalizeFundedOffer } from "@/lib/funding-lifecycle";
+import {
+  settleCompanyPayment,
+  type CompanyPaymentSettlement,
+} from "@/lib/company-payment-settlement";
 
 interface InvestmentPaymentRow extends Record<string, unknown> {
   id: string;
@@ -41,10 +46,30 @@ export async function POST(req: NextRequest) {
 
   const token = confirmed.invoice?.token;
   const customData = confirmed.custom_data;
-  const investmentId = stringValue(customData?.investmentId);
   const flow = stringValue(customData?.flow);
   const totalAmount = Number(confirmed.invoice?.total_amount);
-  if (token !== callbackToken || flow !== "investment" || !investmentId) {
+  if (token !== callbackToken || !Number.isSafeInteger(totalAmount) || totalAmount <= 0) {
+    return NextResponse.json({ error: "Transaction incohérente" }, { status: 400 });
+  }
+
+  if (flow === "investment") {
+    return handleInvestmentWebhook(req, confirmed, token, totalAmount);
+  }
+  if (flow === "company_payment") {
+    return handleCompanyPaymentWebhook(req, confirmed, token, totalAmount);
+  }
+  return NextResponse.json({ error: "Transaction non reconnue" }, { status: 400 });
+}
+
+async function handleInvestmentWebhook(
+  req: NextRequest,
+  confirmed: PayDunyaTransaction,
+  token: string,
+  totalAmount: number
+) {
+  const customData = confirmed.custom_data;
+  const investmentId = stringValue(customData?.investmentId);
+  if (!investmentId) {
     return NextResponse.json({ error: "Transaction incohérente" }, { status: 400 });
   }
 
@@ -60,7 +85,6 @@ export async function POST(req: NextRequest) {
   if (
     !investment ||
     investment.paymentRef !== token ||
-    !Number.isSafeInteger(totalAmount) ||
     totalAmount !== Number(investment.amount) ||
     stringValue(customData?.offerId) !== investment.offerId
   ) {
@@ -70,12 +94,14 @@ export async function POST(req: NextRequest) {
   const status = confirmed.status?.toLowerCase();
   if (status === "completed") {
     if (investment.status === "confirmed") {
+      await finalizeFundedOffer(investment.offerId);
       return NextResponse.json({ received: true, idempotent: true });
     }
     if (!['pending_payment', 'payment_pending'].includes(investment.status)) {
       return NextResponse.json({ error: "Transaction à rapprocher" }, { status: 409 });
     }
     await confirmInvestment(req, investment);
+    await finalizeFundedOffer(investment.offerId);
     return NextResponse.json({ received: true, status: "confirmed" });
   }
 
@@ -85,6 +111,102 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ received: true, status: status || "pending" });
+}
+
+async function handleCompanyPaymentWebhook(
+  req: NextRequest,
+  confirmed: PayDunyaTransaction,
+  token: string,
+  totalAmount: number
+) {
+  const customData = confirmed.custom_data;
+  const paymentId = stringValue(customData?.companyPaymentId);
+  if (!paymentId) {
+    return NextResponse.json({ error: "Transaction incohérente" }, { status: 400 });
+  }
+
+  const database = getD1();
+  const payment = await database
+    .prepare(
+      `SELECT id, projectId, installmentNo, capitalDue, interestDue,
+              followUpFeeDue, totalDue, paidAmount, remaining, status, paymentRef
+       FROM CompanyPayment WHERE id = ? LIMIT 1`
+    )
+    .bind(paymentId)
+    .first<CompanyPaymentSettlement>();
+
+  const expectedAmount = payment
+    ? Number(payment.remaining) > 0
+      ? Number(payment.remaining)
+      : Number(payment.totalDue) - Number(payment.paidAmount || 0)
+    : 0;
+  if (
+    !payment ||
+    payment.paymentRef !== token ||
+    payment.projectId !== stringValue(customData?.projectId) ||
+    expectedAmount !== totalAmount
+  ) {
+    return NextResponse.json({ error: "Transaction non reconnue" }, { status: 400 });
+  }
+
+  const status = confirmed.status?.toLowerCase();
+  if (status === "completed") {
+    if (payment.status === "paid") {
+      return NextResponse.json({ received: true, idempotent: true });
+    }
+    if (payment.status !== "verifying") {
+      return NextResponse.json({ error: "Transaction à rapprocher" }, { status: 409 });
+    }
+    await settleCompanyPayment(req, payment, totalAmount);
+    return NextResponse.json({ received: true, status: "paid" });
+  }
+
+  if (status === "cancelled" || status === "failed") {
+    await reopenCompanyPayment(req, payment, status);
+    return NextResponse.json({ received: true, status });
+  }
+
+  return NextResponse.json({ received: true, status: status || "pending" });
+}
+
+async function reopenCompanyPayment(
+  req: NextRequest,
+  payment: CompanyPaymentSettlement,
+  providerStatus: string
+) {
+  if (payment.status !== "verifying") return;
+  const database = getD1();
+  const now = isoNow();
+  const eventId = crypto.randomUUID();
+  await database.batch([
+    database
+      .prepare(
+        `UPDATE CompanyPayment
+         SET status = CASE WHEN datetime(dueDate) <= datetime(?) THEN 'due' ELSE 'upcoming' END,
+             paymentRef = NULL, paymentEventId = ?
+         WHERE id = ? AND status = 'verifying' AND paymentRef = ?`
+      )
+      .bind(now, eventId, payment.id, payment.paymentRef),
+    database
+      .prepare(
+        `INSERT INTO AuditLog
+         (id, actorType, actorId, action, entityType, entityId, metadata, ipAddress, createdAt)
+         SELECT ?, 'system', 'paydunya', 'company_payment_reopened',
+                'company_payment', ?, ?, ?, ?
+         WHERE EXISTS (
+           SELECT 1 FROM CompanyPayment WHERE id = ? AND paymentEventId = ?
+         )`
+      )
+      .bind(
+        crypto.randomUUID(),
+        payment.id,
+        JSON.stringify({ providerStatus }),
+        requestIp(req),
+        now,
+        payment.id,
+        eventId
+      ),
+  ]);
 }
 
 async function confirmInvestment(req: NextRequest, investment: InvestmentPaymentRow) {

@@ -279,6 +279,7 @@ model CompanyPayment {
   paidAmount     BigInt    @default(0)
   remaining      BigInt    @default(0)
   paymentRef     String?
+  paymentEventId String?   @unique
   createdAt      DateTime  @default(now())
 
   distributions Distribution[]
@@ -301,6 +302,8 @@ model Distribution {
   // pending, available, withdrawal_requested, withdrawn
   createdAt        DateTime       @default(now())
   availableAt      DateTime?
+
+  @@unique([companyPaymentId, investmentId])
 }
 
 model Payout {

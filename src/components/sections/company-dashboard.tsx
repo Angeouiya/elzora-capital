@@ -28,6 +28,7 @@ import { simulateDebtFinancing } from "@/lib/finance";
 import { formatDisplayMoney } from "@/lib/display-money";
 import { CompanyOnboarding } from "@/components/company/company-onboarding";
 import { getCountryLabel, getSectorLabel } from "@/lib/countries";
+import { useToast } from "@/hooks/use-toast";
 import {
   Building2,
   Wallet,
@@ -78,12 +79,12 @@ const COPY = {
   fr: {
     workspace: "Espace entreprise", signInIntro: "Connectez-vous pour accéder à l’espace entreprise : vos dossiers, vos financements et le règlement de vos échéances.", signIn: "Se connecter", create: "Créer un compte entreprise", loadError: "Impossible de charger votre espace entreprise", retry: "Réessayer", select: "Sélectionnez une société", personal: "Compte personnel",
     nextDue: "Prochaine échéance", due: "Échéance", noDue: "Aucune échéance", afterFunding: "Sera créée après financement complet", activeFiles: "Dossiers actifs", totalFiles: "dossier(s) au total", fundedCapital: "Capital financé", raised: "Collecté auprès des investisseurs", newFile: "Nouveau dossier", myFiles: "Mes dossiers", noFiles: "Aucun dossier pour cette société", firstFile: "Soumettez un premier dossier de financement.", submitFile: "Soumettre un dossier", debt: "Dette", equity: "Capital", target: "Objectif", submitted: "Soumis le", fundraising: "Collecte", investors: "souscripteurs", investor: "souscripteur", closing: "Clôture",
-    financing: "Mes financements", privacy: "Vous n’avez pas accès aux données personnelles des investisseurs. Les remboursements sont collectés globalement (capital + intérêts + suivi) par carte ou Mobile Money via un prestataire agréé.", noFinancing: "Aucun financement actif. Vos échéances apparaîtront ici une fois votre offre financée.", bullet: "Remboursement in fine", amortized: "Remboursement amortissable", months: "mois", principal: "Capital", interest: "Intérêts", followUp: "Suivi plateforme", totalDue: "Total à régler", bulletNote: "Échéance unique — paiement global à effectuer à la fin de la période de", paid: "Échéance réglée", verifying: "Paiement déclaré — en cours de vérification", pay: "Régler l’échéance", soon: "Paiement bientôt disponible", provider: "Paiement par carte et Mobile Money en cours d’activation avec un prestataire agréé.", paymentAfterFunding: "L’échéance sera créée après financement complet de l’offre.", noPayment: "Aucune échéance déclarée pour ce dossier.", offerNotFunded: "L’offre n’est pas encore financée. L’échéance sera créée automatiquement une fois le financement complet.", paymentUnavailable: "L’échéance n’est pas encore disponible. Contactez notre équipe.",
+    financing: "Mes financements", privacy: "Vous n’avez pas accès aux données personnelles des investisseurs. Les remboursements sont collectés globalement (capital + intérêts + suivi) par carte ou Mobile Money via un prestataire agréé.", noFinancing: "Aucun financement actif. Vos échéances apparaîtront ici une fois votre offre financée.", bullet: "Remboursement in fine", amortized: "Remboursement amortissable", months: "mois", principal: "Capital", interest: "Intérêts", followUp: "Suivi plateforme", totalDue: "Total à régler", bulletNote: "Échéance unique — paiement global à effectuer à la fin de la période de", paid: "Échéance réglée", verifying: "Paiement en cours de vérification", pay: "Régler l’échéance", paying: "Ouverture du paiement…", paymentError: "Paiement indisponible", soon: "Paiement bientôt disponible", provider: "Paiement par carte et Mobile Money en cours d’activation avec un prestataire agréé.", paymentAfterFunding: "L’échéance sera créée après financement complet de l’offre.", noPayment: "Aucune échéance déclarée pour ce dossier.", offerNotFunded: "L’offre n’est pas encore financée. L’échéance sera créée automatiquement une fois le financement complet.", paymentUnavailable: "L’échéance n’est pas encore disponible. Contactez notre équipe.",
   },
   en: {
     workspace: "Company workspace", signInIntro: "Sign in to manage your applications, financing and repayments.", signIn: "Sign in", create: "Create a company account", loadError: "Unable to load your company workspace", retry: "Try again", select: "Select a company", personal: "Personal account",
     nextDue: "Next payment", due: "Payment", noDue: "No payment due", afterFunding: "Created once funding is complete", activeFiles: "Active applications", totalFiles: "application(s) in total", fundedCapital: "Capital funded", raised: "Raised from investors", newFile: "New application", myFiles: "My applications", noFiles: "No application for this company", firstFile: "Submit your first financing application.", submitFile: "Submit an application", debt: "Debt", equity: "Equity", target: "Target", submitted: "Submitted on", fundraising: "Fundraising", investors: "investors", investor: "investor", closing: "Closes",
-    financing: "My financing", privacy: "You cannot access investors’ personal data. Repayments are collected globally (principal + interest + monitoring fee) by card or Mobile Money through an authorized provider.", noFinancing: "No active financing. Repayments will appear here once your offer is funded.", bullet: "Bullet repayment", amortized: "Amortizing repayment", months: "months", principal: "Principal", interest: "Interest", followUp: "Platform monitoring", totalDue: "Total payable", bulletNote: "Single payment — the full amount is payable at the end of the", paid: "Payment completed", verifying: "Payment declared — verification in progress", pay: "Make payment", soon: "Payment coming soon", provider: "Card and Mobile Money payments are being activated with an authorized provider.", paymentAfterFunding: "The payment will be created once the offer is fully funded.", noPayment: "No payment has been scheduled for this application.", offerNotFunded: "The offer is not funded yet. The payment will be created automatically once funding is complete.", paymentUnavailable: "The payment is not available yet. Contact our team.",
+    financing: "My financing", privacy: "You cannot access investors’ personal data. Repayments are collected globally (principal + interest + monitoring fee) by card or Mobile Money through an authorized provider.", noFinancing: "No active financing. Repayments will appear here once your offer is funded.", bullet: "Bullet repayment", amortized: "Amortizing repayment", months: "months", principal: "Principal", interest: "Interest", followUp: "Platform monitoring", totalDue: "Total payable", bulletNote: "Single payment — the full amount is payable at the end of the", paid: "Payment completed", verifying: "Payment verification in progress", pay: "Make payment", paying: "Opening payment…", paymentError: "Payment unavailable", soon: "Payment coming soon", provider: "Card and Mobile Money payments are being activated with an authorized provider.", paymentAfterFunding: "The payment will be created once the offer is fully funded.", noPayment: "No payment has been scheduled for this application.", offerNotFunded: "The offer is not funded yet. The payment will be created automatically once funding is complete.", paymentUnavailable: "The payment is not available yet. Contact our team.",
   },
 } as const;
 
@@ -220,6 +221,7 @@ export function CompanyDashboard() {
   const locale = useAppStore((s) => s.locale);
   const displayCurrency = useAppStore((s) => s.displayCurrency);
   const copy = COPY[locale];
+  const { toast } = useToast();
   const money = (value: bigint | number, compact = false) =>
     formatDisplayMoney(value, displayCurrency, locale, compact);
   const dateLocale = locale === "fr" ? "fr-FR" : "en-GB";
@@ -232,6 +234,40 @@ export function CompanyDashboard() {
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [collectionsEnabled, setCollectionsEnabled] = useState(false);
+  const [payingId, setPayingId] = useState<string | null>(null);
+
+  const handlePayment = async (paymentId: string) => {
+    setPayingId(paymentId);
+    try {
+      const response = await fetch("/api/company/payments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paymentId }),
+      });
+      const payload = (await response.json()) as {
+        error?: string;
+        payment?: { checkoutUrl?: string; status?: string };
+      };
+      if (!response.ok) throw new Error(payload.error || copy.paymentError);
+      const checkoutUrl = payload.payment?.checkoutUrl;
+      if (!checkoutUrl || payload.payment?.status !== "ready") {
+        throw new Error(copy.paymentError);
+      }
+      const checkout = new URL(checkoutUrl);
+      if (checkout.protocol !== "https:" || checkout.hostname !== "app.paydunya.com") {
+        throw new Error(copy.paymentError);
+      }
+      window.location.assign(checkout.toString());
+    } catch (paymentError) {
+      toast({
+        title: copy.paymentError,
+        description:
+          paymentError instanceof Error ? paymentError.message : copy.paymentError,
+        variant: "destructive",
+      });
+      setPayingId(null);
+    }
+  };
 
   const fetchData = useCallback(() => {
     Promise.all([
@@ -724,10 +760,13 @@ export function CompanyDashboard() {
                                       <Button
                                         size="sm"
                                         className="btn-nexora"
-                                        disabled={!collectionsEnabled}
+                                        disabled={!collectionsEnabled || payingId === projPayments[0].id}
+                                        onClick={() => void handlePayment(projPayments[0].id)}
                                       >
                                         <HandCoins className="mr-1.5 h-3.5 w-3.5" />
-                                        {collectionsEnabled
+                                        {payingId === projPayments[0].id
+                                          ? copy.paying
+                                          : collectionsEnabled
                                           ? copy.pay
                                           : copy.soon}
                                       </Button>
