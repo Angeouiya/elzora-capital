@@ -29,7 +29,9 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "NEXORA Capital" }],
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+    icon: "/logo.svg",
+    shortcut: "/logo.svg",
+    apple: "/logo.svg",
   },
   openGraph: {
     title: "NEXORA Capital",

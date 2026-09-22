@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import { useAppStore } from "@/lib/store";
 import { ArrowUpRight, ShieldCheck } from "lucide-react";
 
@@ -21,9 +22,7 @@ export function Footer() {
           {/* Brand */}
           <div className="md:col-span-1">
             <div className="flex items-center gap-2">
-              <span className="flex h-9 w-9 items-center justify-center rounded-[.65rem] bg-nexora-lime text-base font-black text-nexora-black">
-                N
-              </span>
+              <Image src="/logo.svg" alt="" width={38} height={38} className="h-9.5 w-9.5" />
               <span className="text-lg font-black tracking-tight text-white">
                 NEXORA
               </span>

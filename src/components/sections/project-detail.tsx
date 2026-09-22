@@ -400,8 +400,8 @@ export function ProjectDetail() {
               <div className="mt-3 flex items-start gap-1.5 text-[11px] text-muted-foreground">
                 <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-primary" />
                 <span>
-                  Investissement simulé. Aucun débit réel. Conforme à la réglementation
-                  BCEAO sur le financement participatif.
+                  Votre investissement est réservé, puis confirmé après validation du
+                  paiement sécurisé.
                 </span>
               </div>
             </div>

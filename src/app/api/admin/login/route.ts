@@ -40,8 +40,23 @@ export async function POST(req: NextRequest) {
 
     const now = isoNow();
     const ipAddress = requestIp(req);
+    const sessionId = crypto.randomUUID();
     await database.batch([
       database.prepare(`UPDATE AdminUser SET lastLoginAt = ? WHERE id = ?`).bind(now, admin.id),
+      database
+        .prepare(
+          `INSERT INTO AdminSession
+           (id, adminId, deviceInfo, ipAddress, createdAt, lastActiveAt, revoked)
+           VALUES (?, ?, ?, ?, ?, ?, 0)`
+        )
+        .bind(
+          sessionId,
+          admin.id,
+          req.headers.get("user-agent")?.slice(0, 300) || "unknown",
+          ipAddress,
+          now,
+          now
+        ),
       database
         .prepare(
           `INSERT INTO AuditLog (id, actorType, actorId, action, entityType, entityId, metadata, ipAddress, createdAt)
@@ -67,7 +82,7 @@ export async function POST(req: NextRequest) {
       },
       notice: "Accès administrateur journalisé.",
     });
-    response.cookies.set("x-nexora-admin-token", admin.id, {
+    response.cookies.set("x-nexora-admin-token", sessionId, {
       httpOnly: true,
       sameSite: "strict",
       secure: process.env.NODE_ENV === "production",

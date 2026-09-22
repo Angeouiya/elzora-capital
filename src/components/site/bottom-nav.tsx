@@ -14,10 +14,10 @@ import {
   LayoutGrid,
   Search,
   Wallet,
-  Bell,
   UserRound,
   LogOut,
   Building2,
+  BriefcaseBusiness,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
@@ -32,7 +32,7 @@ const ITEMS: NavItem[] = [
   { icon: LayoutGrid, label: "Accueil", view: "home" },
   { icon: Search, label: "Explorer", view: "explore" },
   { icon: Wallet, label: "Portefeuille", view: "investor_dashboard" },
-  { icon: Bell, label: "Activité", view: "investor_dashboard" },
+  { icon: BriefcaseBusiness, label: "Entreprise", view: "company_dashboard" },
   { icon: UserRound, label: "Compte", view: "company_dashboard" },
 ];
 
@@ -79,24 +79,19 @@ export function BottomNav() {
   return (
     <>
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-[#541249]/10 bg-white/92 shadow-[0_-10px_35px_rgba(56,12,49,.08)] backdrop-blur-2xl lg:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         aria-label="Navigation principale mobile"
       >
         <ul className="mx-auto flex max-w-md items-stretch justify-between px-2">
           {ITEMS.map((item) => {
             const Icon = item.icon;
-            const isActive =
-              view === item.view ||
-              (item.view === "investor_dashboard" &&
-                view === "investor_dashboard" &&
-                item.label !== "Activité") ||
-              (item.label === "Activité" && view === "investor_dashboard");
+            const isActive = view === item.view && item.label !== "Compte";
             return (
               <li key={item.label} className="flex-1">
                 <button
                   onClick={() => handleItemClick(item)}
-                  className={`flex h-14 w-full flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors ${
+                  className={`flex h-[3.85rem] w-full flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition-colors ${
                     isActive
                       ? "text-foreground"
                       : "text-muted-foreground hover:text-foreground"
@@ -107,7 +102,7 @@ export function BottomNav() {
                   <span
                     className={`flex h-7 w-7 items-center justify-center rounded-full transition-colors ${
                       isActive
-                        ? "bg-nexora-lime text-nexora-black"
+                        ? "bg-[linear-gradient(135deg,#6f1f62,#250820)] text-white shadow-[0_7px_16px_rgba(56,12,49,.22)]"
                         : "bg-transparent"
                     }`}
                   >

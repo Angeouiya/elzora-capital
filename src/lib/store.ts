@@ -41,7 +41,7 @@ interface AppState {
   selectedOfferId: string | null;
   selectedProjectId: string | null;
   authContext: AuthContext;
-  // Session mock (en production : NextAuth + DB)
+  // État d'affichage de la session authentifiée côté client.
   userEmail: string | null;
   adminEmail: string | null;
   adminRole: string | null;

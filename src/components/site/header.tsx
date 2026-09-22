@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import { useAppStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import {
@@ -83,13 +84,12 @@ export function Header() {
         {/* Logo */}
         <button
           onClick={() => setView("home")}
-          className="flex items-center gap-2.5 rounded-lg outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring"
+          className="group flex items-center gap-2.5 rounded-xl outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <span className="flex h-9 w-9 items-center justify-center rounded-[.65rem] bg-nexora-black text-base font-black text-nexora-lime shadow-[0_6px_16px_rgba(16,16,16,.16)]">
-            N
-          </span>
-          <span className="text-lg font-black tracking-tight text-foreground">
-            NEXORA
+          <Image src="/logo.svg" alt="" width={38} height={38} priority className="h-9.5 w-9.5 drop-shadow-[0_8px_18px_rgba(56,12,49,.22)]" />
+          <span className="leading-none">
+            <span className="block text-[1.05rem] font-black tracking-[-.035em] text-foreground">NEXORA</span>
+            <span className="mt-1 block text-[.56rem] font-bold uppercase tracking-[.19em] text-[#6C195E]">Capital privé</span>
           </span>
         </button>
 
@@ -99,13 +99,14 @@ export function Header() {
             <button
               key={item.view}
               onClick={() => setView(item.view)}
-              className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              className={`relative rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-colors ${
                 view === item.view
-                  ? "bg-secondary text-secondary-foreground"
+                  ? "bg-[#F7EAF5] text-[#541249]"
                   : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
               }`}
             >
               {item.label}
+              {view === item.view && <span className="absolute inset-x-3 -bottom-[.9rem] h-0.5 rounded-full bg-[#541249]" />}
             </button>
           ))}
         </nav>

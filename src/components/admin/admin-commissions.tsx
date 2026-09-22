@@ -14,14 +14,13 @@ import {
   TableFooter,
 } from "@/components/ui/table";
 import { fmtCompact, fmtFCFA } from "@/lib/finance";
-import { Coins, ShieldCheck, Lock, Inbox } from "lucide-react";
+import { Coins, Lock, Inbox } from "lucide-react";
 
 // ---------------------------------------------------------------------------
 // Modèle tarifaire NEXORA (CONFIGURÉ — figé contractuellement) :
 //   - 6 % upfront (commission initiale sur capital financé)
 //   - 2 %/an de suivi (prorata temporis sur la durée)
 //   - 0 % pour l&rsquo;investisseur (aucun frais côté investisseur)
-// Reproduction exacte du scénario section 28 : 1M financé → 60k + 10k = 70k
 // ---------------------------------------------------------------------------
 
 interface OfferRow {
@@ -86,21 +85,6 @@ function computeRow(o: OfferRow): CommissionRow {
     total: upfront + followUp,
   };
 }
-
-// Ligne d&rsquo;exemple théorique pour le scénario section 28
-// (uniquement pour l&rsquo;empty state — clairement étiquetée "exemple de référence")
-const REF28_ROW: CommissionRow = {
-  id: "ref28",
-  offer: "Exemple de référence (section 28)",
-  company: "Téranga Commerce (exemple)",
-  funded: 1_000_000,
-  durationMonths: 6,
-  upfrontPct: 6,
-  followUpPctAnnual: 2,
-  upfront: 60_000,
-  followUp: 10_000,
-  total: 70_000,
-};
 
 export function AdminCommissions() {
   const { data, loading } = useFetch<AdminStatsResponse>("/api/admin/stats");
@@ -214,54 +198,8 @@ export function AdminCommissions() {
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 Les commissions apparaîtront automatiquement ici dès qu&rsquo;une
-                offre atteint le statut « financé ». Aucune donnée inventée.
+                offre atteint le statut « financé ».
               </p>
-
-              {/* Exemple théorique section 28 — clairement étiqueté */}
-              <div className="mx-auto mt-6 max-w-2xl rounded-md border border-dashed border-nexora-lime/50 bg-nexora-pale/60 p-4 text-left">
-                <p className="mb-2 flex items-center gap-2 text-xs font-bold text-positive">
-                  <ShieldCheck className="h-3.5 w-3.5" />
-                  Exemple de référence — section 28 du brief (théorique, pas une donnée live)
-                </p>
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-border/40 hover:bg-transparent">
-                      <TableHead className="text-xs">Offre</TableHead>
-                      <TableHead className="text-xs">Entreprise</TableHead>
-                      <TableHead className="text-right text-xs">Financé</TableHead>
-                      <TableHead className="text-xs">Durée</TableHead>
-                      <TableHead className="text-right text-xs">Upfront (6 %)</TableHead>
-                      <TableHead className="text-right text-xs">Suivi (2 %/an)</TableHead>
-                      <TableHead className="text-right text-xs">Total CA</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow className="hover:bg-transparent">
-                      <TableCell className="text-xs font-medium text-foreground">
-                        {REF28_ROW.offer}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {REF28_ROW.company}
-                      </TableCell>
-                      <TableCell className="tnum text-right text-xs">
-                        {fmtFCFA(REF28_ROW.funded)}
-                      </TableCell>
-                      <TableCell className="tnum text-xs text-muted-foreground">
-                        {REF28_ROW.durationMonths} mois
-                      </TableCell>
-                      <TableCell className="tnum text-right text-xs font-semibold">
-                        {fmtFCFA(REF28_ROW.upfront)}
-                      </TableCell>
-                      <TableCell className="tnum text-right text-xs">
-                        {fmtFCFA(REF28_ROW.followUp)}
-                      </TableCell>
-                      <TableCell className="tnum text-right text-xs font-bold">
-                        {fmtFCFA(REF28_ROW.total)}
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
             </div>
           ) : (
             <Table>
@@ -324,48 +262,6 @@ export function AdminCommissions() {
         </CardContent>
       </Card>
 
-      {/* Section 28 reference (callout) */}
-      <div className="mt-6 rounded-lg border border-nexora-lime/40 bg-nexora-pale p-4">
-        <p className="mb-2 flex items-center gap-2 text-sm font-bold text-positive">
-          <ShieldCheck className="h-4 w-4" />
-          Scénario de référence — section 28
-        </p>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="rounded-md bg-background p-3">
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-              Capital financé
-            </p>
-            <p className="tnum mt-1 text-lg font-bold text-foreground">
-              {fmtFCFA(1_000_000)}
-            </p>
-          </div>
-          <div className="rounded-md bg-background p-3">
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-              Commission upfront (6 %)
-            </p>
-            <p className="tnum mt-1 text-lg font-bold text-foreground">
-              {fmtFCFA(60_000)}
-            </p>
-          </div>
-          <div className="rounded-md bg-background p-3">
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-              Suivi 2 %/an × 6 mois
-            </p>
-            <p className="tnum mt-1 text-lg font-bold text-foreground">
-              {fmtFCFA(10_000)}
-            </p>
-          </div>
-        </div>
-        <p className="mt-3 text-xs leading-relaxed text-positive">
-          Soit un CA plateforme de{" "}
-          <span className="tnum font-bold">70 000 FCFA</span> sur
-          l&rsquo;opération complète. Le net entreprise est de{" "}
-          <span className="tnum font-bold">940 000 FCFA</span> (1 000 000 −
-          60 000), l&rsquo;entreprise rembourse{" "}
-          <span className="tnum font-bold">1 090 000 FCFA</span> à terme échu
-          (capital + 80 000 d&rsquo;intérêts + 10 000 de suivi).
-        </p>
-      </div>
     </div>
   );
 }

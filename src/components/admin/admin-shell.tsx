@@ -289,9 +289,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
         <Button
           onClick={() => {
-            // Démo : le cookie httpOnly ne peut être effacé côté client.
-            // On invalide la session Zustand → le garde-fou AdminShell bloque
-            // l'accès. Le cookie serveur expire après 8h.
+            void fetch("/api/admin/logout", { method: "POST" });
             logoutAdmin();
             setView("home");
           }}

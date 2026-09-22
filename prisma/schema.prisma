@@ -23,31 +23,31 @@ datasource db {
 // ---------------------------------------------------------------------------
 
 model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  phone         String?
-  passwordHash  String
-  firstName     String
-  lastName      String
-  birthDate     String?
-  country       String   // code pays (SN, CI, ...)
-  language      String   @default("fr")
-  consentMarketing Boolean @default(false)
+  id                 String    @id @default(cuid())
+  email              String    @unique
+  phone              String?
+  passwordHash       String
+  firstName          String
+  lastName           String
+  birthDate          String?
+  country            String // code pays (SN, CI, ...)
+  language           String    @default("fr")
+  consentMarketing   Boolean   @default(false)
   // KYC / vérification
-  kycStatus     String   @default("incomplete") // incomplete, pending, review, verified, rejected, refresh
-  kycSubmittedAt DateTime?
-  kycVerifiedAt  DateTime?
+  kycStatus          String    @default("incomplete") // incomplete, pending, review, verified, rejected, refresh
+  kycSubmittedAt     DateTime?
+  kycVerifiedAt      DateTime?
   kycRejectionReason String?
   // Sécurité
-  twoFactorEnabled Boolean @default(false)
-  lastLoginAt  DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  twoFactorEnabled   Boolean   @default(false)
+  lastLoginAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  memberships  CompanyMember[]
-  sessions     UserSession[]
-  notifications Notification[]
-  submittedProjects Project[] @relation("ProjectSubmitter")
+  memberships       CompanyMember[]
+  sessions          UserSession[]
+  notifications     Notification[]
+  submittedProjects Project[]       @relation("ProjectSubmitter")
 }
 
 model UserSession {
@@ -66,38 +66,38 @@ model UserSession {
 // ---------------------------------------------------------------------------
 
 model Company {
-  id              String   @id @default(cuid())
-  legalName       String
-  tradeName       String?
-  legalForm       String   // SARL, SA, SAS, etc.
-  country         String
-  address         String
-  registrationNo  String   // RCCM ou équivalent
-  taxId           String?
-  activity        String
-  foundedYear     Int?
+  id                    String    @id @default(cuid())
+  legalName             String
+  tradeName             String?
+  legalForm             String // SARL, SA, SAS, etc.
+  country               String
+  address               String
+  registrationNo        String // RCCM ou équivalent
+  taxId                 String?
+  activity              String
+  foundedYear           Int?
   // Vérification
-  verificationStatus String @default("incomplete") // incomplete, pending, verified, rejected
-  verifiedAt      DateTime?
+  verificationStatus    String    @default("incomplete") // incomplete, pending, verified, rejected
+  verifiedAt            DateTime?
   // Compte de paiement vérifié (compte professionnel)
-  verifiedBankAccount String?
+  verifiedBankAccount   String?
   bankAccountVerifiedAt DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
-  members         CompanyMember[]
-  projects        Project[]
+  members  CompanyMember[]
+  projects Project[]
 }
 
 model CompanyMember {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  companyId   String
-  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  role        String   // legal_representative, finance_officer, accountant, project_manager
-  mandate     String   @default("view") // view, submit, sign, manage
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  role      String // legal_representative, finance_officer, accountant, project_manager
+  mandate   String   @default("view") // view, submit, sign, manage
+  createdAt DateTime @default(now())
 
   @@unique([userId, companyId])
 }
@@ -107,11 +107,11 @@ model CompanyMember {
 // ---------------------------------------------------------------------------
 
 model Project {
-  id              String   @id @default(cuid())
+  id              String  @id @default(cuid())
   companyId       String
-  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company         Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
   submittedBy     String
-  submitter       User     @relation("ProjectSubmitter", fields: [submittedBy], references: [id])
+  submitter       User    @relation("ProjectSubmitter", fields: [submittedBy], references: [id])
   title           String
   description     String
   longDescription String
@@ -121,27 +121,27 @@ model Project {
   imageUrl        String
 
   // Conditions financières proposées par l'entreprise
-  instrumentType  String   // "debt" | "equity"
+  instrumentType      String // "debt" | "equity"
   // Dette
-  fundingGoal     BigInt   // montant recherché
-  companyContribution BigInt @default(0) // apport propre
-  annualRate      Float?
-  ratePeriod      String?  // "total" | "annual"
-  durationMonths  Int?
-  repaymentType   String?  // "bullet" | "amortized"
-  gracePeriodMonths Int?   // différé
+  fundingGoal         BigInt // montant recherché
+  companyContribution BigInt  @default(0) // apport propre
+  annualRate          Float?
+  ratePeriod          String? // "total" | "annual"
+  durationMonths      Int?
+  repaymentType       String? // "bullet" | "amortized"
+  gracePeriodMonths   Int? // différé
   // Actions
-  equityOfferedPct Float?
-  valuationPre    BigInt?
-  minInvestment   BigInt
-  maxInvestment   BigInt?
+  equityOfferedPct    Float?
+  valuationPre        BigInt?
+  minInvestment       BigInt
+  maxInvestment       BigInt?
   // Budget & calendrier
-  budgetDetail    String?
-  repaymentSource String?
-  risksIdentified String?
+  budgetDetail        String?
+  repaymentSource     String?
+  risksIdentified     String?
 
   // Workflow d'analyse
-  status          String   @default("draft")
+  status          String    @default("draft")
   // draft, submitted, under_review, complement_requested, rejected,
   // approved, offer_prepared, offer_confirmed, published, funding,
   // funded, repaying, completed, defaulted, closed
@@ -153,34 +153,34 @@ model Project {
   rejectionReason String?
   analysisNote    String?
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  offer           Offer?
-  investments     Investment[]
-  payments        CompanyPayment[]
-  documents       ProjectDocument[]
-  timeline        ProjectEvent[]
-  disbursements   Disbursement[]
+  offer         Offer?
+  investments   Investment[]
+  payments      CompanyPayment[]
+  documents     ProjectDocument[]
+  timeline      ProjectEvent[]
+  disbursements Disbursement[]
 }
 
 model ProjectDocument {
-  id          String   @id @default(cuid())
-  projectId   String
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  type        String   // bilan, compte_resultat, business_plan, contrat, garantie, etc.
-  fileName    String
-  fileUrl     String
-  uploadedAt  DateTime @default(now())
+  id         String   @id @default(cuid())
+  projectId  String
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  type       String // bilan, compte_resultat, business_plan, contrat, garantie, etc.
+  fileName   String
+  fileUrl    String
+  uploadedAt DateTime @default(now())
 }
 
 model ProjectEvent {
   id          String   @id @default(cuid())
   projectId   String
   project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  eventType   String   // submitted, complement_requested, approved, published, funded, etc.
+  eventType   String // submitted, complement_requested, approved, published, funded, etc.
   description String
-  actor       String   // "system" | userId | "admin"
+  actor       String // "system" | userId | "admin"
   createdAt   DateTime @default(now())
 }
 
@@ -189,36 +189,36 @@ model ProjectEvent {
 // ---------------------------------------------------------------------------
 
 model Offer {
-  id            String   @id @default(cuid())
-  projectId     String   @unique
-  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  version       Int      @default(1)
+  id                   String   @id @default(cuid())
+  projectId            String   @unique
+  project              Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  version              Int      @default(1)
   // Conditions finales figées
-  fundingGoal       BigInt
-  minInvestment     BigInt
-  maxInvestment     BigInt?
-  annualRate        Float?
-  ratePeriod        String?
-  durationMonths    Int?
-  repaymentType     String?
-  equityOfferedPct  Float?
-  valuationPre      BigInt?
+  fundingGoal          BigInt
+  minInvestment        BigInt
+  maxInvestment        BigInt?
+  annualRate           Float?
+  ratePeriod           String?
+  durationMonths       Int?
+  repaymentType        String?
+  equityOfferedPct     Float?
+  valuationPre         BigInt?
   // Commission plateforme (figée contractuellement)
-  upfrontCommissionPct Float @default(6)
-  annualFollowUpPct   Float @default(2)
+  upfrontCommissionPct Float    @default(6)
+  annualFollowUpPct    Float    @default(2)
   // Collecte
-  raisedAmount   BigInt @default(0)
-  committedAmount BigInt @default(0) // engagements (non confirmés)
-  backersCount   Int    @default(0)
+  raisedAmount         BigInt   @default(0)
+  committedAmount      BigInt   @default(0) // engagements (non confirmés)
+  backersCount         Int      @default(0)
   // Dates
-  publishedAt    DateTime @default(now())
-  closingDate    DateTime
+  publishedAt          DateTime @default(now())
+  closingDate          DateTime
   // Visibilité
-  visibility     String @default("public") // public, restricted, whitelist
-  status         String @default("open") // open, closing, funded, failed, closed
-  createdAt      DateTime @default(now())
+  visibility           String   @default("public") // public, restricted, whitelist
+  status               String   @default("open") // open, closing, funded, failed, closed
+  createdAt            DateTime @default(now())
 
-  investments    Investment[]
+  investments Investment[]
 }
 
 // ---------------------------------------------------------------------------
@@ -226,32 +226,32 @@ model Offer {
 // ---------------------------------------------------------------------------
 
 model Investment {
-  id            String   @id @default(cuid())
-  offerId       String
-  offer         Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
-  projectId     String
-  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  id                 String    @id @default(cuid())
+  offerId            String
+  offer              Offer     @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  projectId          String
+  project            Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
   // Investisseur : particulier ou entreprise (relation polymorphique, pas de FK)
-  investorType  String   // "individual" | "company"
-  investorId    String   // userId ou companyId (stocké, pas de FK contrainte)
-  investorName  String
-  investorEmail String
-  amount        BigInt   // montant investi
-  sharePct      Float    // part de l'offre
+  investorType       String // "individual" | "company"
+  investorId         String // userId ou companyId (stocké, pas de FK contrainte)
+  investorName       String
+  investorEmail      String
+  amount             BigInt // montant investi
+  sharePct           Float // part de l'offre
   // État
-  status        String   @default("pending_payment")
+  status             String    @default("pending_payment")
   // pending_payment, payment_pending, confirmed, rejected, refunded, cancelled
   // Signature
-  signedAt      DateTime?
-  signatureHash String?
+  signedAt           DateTime?
+  signatureHash      String?
   // Paiement
-  paymentRef    String?  // référence unique
+  paymentRef         String? // référence unique
   paymentConfirmedAt DateTime?
   // Délai de rétractation
-  reflectionEndsAt DateTime?
-  refundableUntil DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  reflectionEndsAt   DateTime?
+  refundableUntil    DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   @@index([investorId])
   @@index([offerId])
@@ -262,23 +262,23 @@ model Investment {
 // ---------------------------------------------------------------------------
 
 model CompanyPayment {
-  id          String   @id @default(cuid())
-  projectId   String
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  installmentNo Int
-  dueDate     DateTime
-  capitalDue  BigInt
-  interestDue BigInt
-  followUpFeeDue BigInt @default(0)
-  totalDue    BigInt
+  id             String    @id @default(cuid())
+  projectId      String
+  project        Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  installmentNo  Int
+  dueDate        DateTime
+  capitalDue     BigInt
+  interestDue    BigInt
+  followUpFeeDue BigInt    @default(0)
+  totalDue       BigInt
   // État
-  status      String   @default("upcoming")
+  status         String    @default("upcoming")
   // upcoming, due, verifying, paid, partial, late, defaulted
-  paidAt      DateTime?
-  paidAmount  BigInt @default(0)
-  remaining   BigInt @default(0)
-  paymentRef  String?
-  createdAt   DateTime @default(now())
+  paidAt         DateTime?
+  paidAmount     BigInt    @default(0)
+  remaining      BigInt    @default(0)
+  paymentRef     String?
+  createdAt      DateTime  @default(now())
 
   distributions Distribution[]
 }
@@ -288,33 +288,33 @@ model CompanyPayment {
 // ---------------------------------------------------------------------------
 
 model Distribution {
-  id            String   @id @default(cuid())
+  id               String         @id @default(cuid())
   companyPaymentId String
-  companyPayment CompanyPayment @relation(fields: [companyPaymentId], references: [id], onDelete: Cascade)
-  investmentId  String
-  amount        BigInt   // montant reçu par l'investisseur
-  capitalPortion BigInt
-  interestPortion BigInt
-  feePortion    BigInt @default(0)
-  status        String   @default("pending")
+  companyPayment   CompanyPayment @relation(fields: [companyPaymentId], references: [id], onDelete: Cascade)
+  investmentId     String
+  amount           BigInt // montant reçu par l'investisseur
+  capitalPortion   BigInt
+  interestPortion  BigInt
+  feePortion       BigInt         @default(0)
+  status           String         @default("pending")
   // pending, available, withdrawal_requested, withdrawn
-  createdAt     DateTime @default(now())
-  availableAt   DateTime?
+  createdAt        DateTime       @default(now())
+  availableAt      DateTime?
 }
 
 model Payout {
-  id            String   @id @default(cuid())
-  investorType  String   // "individual" | "company"
-  investorId    String
-  amount        BigInt
-  fees          BigInt @default(0)
-  netAmount     BigInt
-  status        String @default("pending")
+  id                 String    @id @default(cuid())
+  investorType       String // "individual" | "company"
+  investorId         String
+  amount             BigInt
+  fees               BigInt    @default(0)
+  netAmount          BigInt
+  status             String    @default("pending")
   // pending, ordered, completed, failed, uncertain
   beneficiaryAccount String // compte vérifié
-  partnerRef    String?
-  createdAt     DateTime @default(now())
-  completedAt   DateTime?
+  partnerRef         String?
+  createdAt          DateTime  @default(now())
+  completedAt        DateTime?
 }
 
 // ---------------------------------------------------------------------------
@@ -322,29 +322,45 @@ model Payout {
 // ---------------------------------------------------------------------------
 
 model AdminUser {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  passwordHash  String
-  firstName     String
-  lastName      String
-  role          String   // superadmin, compliance, analyst, legal, technical, finance, validator, support, auditor, sales
-  permissions   String   // JSON string of permissions
-  active        Boolean  @default(true)
-  invitedAt    DateTime @default(now())
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  role         String // superadmin, compliance, analyst, legal, technical, finance, validator, support, auditor, sales
+  permissions  String // JSON string of permissions
+  active       Boolean   @default(true)
+  invitedAt    DateTime  @default(now())
   lastLoginAt  DateTime?
-  createdAt     DateTime @default(now())
+  createdAt    DateTime  @default(now())
+
+  sessions AdminSession[]
+}
+
+model AdminSession {
+  id           String    @id
+  adminId      String
+  admin        AdminUser @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  deviceInfo   String
+  ipAddress    String
+  createdAt    DateTime  @default(now())
+  lastActiveAt DateTime  @default(now())
+  revoked      Boolean   @default(false)
+
+  @@index([adminId])
+  @@index([lastActiveAt])
 }
 
 model AuditLog {
-  id          String   @id @default(cuid())
-  actorType   String   // "admin" | "user" | "system"
-  actorId     String
-  action      String
-  entityType  String
-  entityId    String
-  metadata    String   // JSON
-  ipAddress   String?
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  actorType  String // "admin" | "user" | "system"
+  actorId    String
+  action     String
+  entityType String
+  entityId   String
+  metadata   String // JSON
+  ipAddress  String?
+  createdAt  DateTime @default(now())
 }
 
 // ---------------------------------------------------------------------------
@@ -352,15 +368,15 @@ model AuditLog {
 // ---------------------------------------------------------------------------
 
 model Notification {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type        String   // registration, verification, decision, publication, payment, etc.
-  title       String
-  message     String
-  read        Boolean  @default(false)
-  actionUrl   String?
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String // registration, verification, decision, publication, payment, etc.
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  actionUrl String?
+  createdAt DateTime @default(now())
 }
 
 // ---------------------------------------------------------------------------
@@ -372,25 +388,25 @@ model Notification {
 // platform_revenue (commissions), investor_external (fonds versés hors plateforme).
 
 model LedgerEntry {
-  id           String   @id @default(cuid())
+  id               String   @id @default(cuid())
   // Identifiant d'idempotence : un même idemKey ne peut produire qu'une seule écriture
-  idemKey      String   @unique
+  idemKey          String   @unique
   // Compte affecté
-  accountType String   // investor_wallet, escrow, company_payout, platform_revenue, investor_external, company_external
-  accountId    String   // userId ou companyId ou offerId (selon accountType)
+  accountType      String // investor_wallet, escrow, company_payout, platform_revenue, investor_external, company_external
+  accountId        String // userId ou companyId ou offerId (selon accountType)
   // Contrepartie (pour audit)
   counterpartyType String?
   counterpartyId   String?
   // Montant en centimes (signé : + = crédit, - = débit sur ce compte)
-  amount      BigInt
+  amount           BigInt
   // Devise
-  currency    String   @default("XOF")
+  currency         String   @default("XOF")
   // Liaison métier
-  sourceType  String   // investment, company_payment, distribution, payout, disbursement, commission
-  sourceId    String
+  sourceType       String // investment, company_payment, distribution, payout, disbursement, commission
+  sourceId         String
   // Description
-  description String
-  createdAt   DateTime @default(now())
+  description      String
+  createdAt        DateTime @default(now())
 
   @@index([accountType, accountId])
   @@index([sourceType, sourceId])
@@ -401,18 +417,18 @@ model LedgerEntry {
 // ---------------------------------------------------------------------------
 
 model Disbursement {
-  id            String   @id @default(cuid())
-  projectId     String
-  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  grossAmount   BigInt   // capital brut collecté
-  upfrontCommission BigInt
-  netAmount     BigInt   // montant net versé à l'entreprise
+  id                 String    @id @default(cuid())
+  projectId          String
+  project            Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  grossAmount        BigInt // capital brut collecté
+  upfrontCommission  BigInt
+  netAmount          BigInt // montant net versé à l'entreprise
   beneficiaryAccount String
-  trancheNo     Int      @default(1)
-  status        String   @default("pending")
-  preparedBy    String?
-  approvedBy    String?
-  executedAt    DateTime?
-  paymentRef    String?
-  createdAt     DateTime @default(now())
+  trancheNo          Int       @default(1)
+  status             String    @default("pending")
+  preparedBy         String?
+  approvedBy         String?
+  executedAt         DateTime?
+  paymentRef         String?
+  createdAt          DateTime  @default(now())
 }

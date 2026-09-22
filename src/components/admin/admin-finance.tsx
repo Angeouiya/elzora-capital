@@ -46,6 +46,25 @@ interface AdminStatsResponse {
   companies: unknown[];
 }
 
+interface DisbursementRow {
+  id: string;
+  grossAmount: number;
+  upfrontCommission: number;
+  netAmount: number;
+  status: string;
+  createdAt: string;
+  project: {
+    title: string;
+    company: { legalName: string; tradeName?: string | null };
+  };
+}
+
+interface DisbursementsResponse {
+  disbursements: DisbursementRow[];
+  executionEnabled: boolean;
+  executionMessage: string;
+}
+
 const STATUS_LABEL: Record<string, string> = {
   open: "Ouverte",
   closing: "Clôture",
@@ -109,6 +128,8 @@ function EmptyState({
 
 export function AdminFinance() {
   const { data, loading } = useFetch<AdminStatsResponse>("/api/admin/stats");
+  const { data: disbursementData, loading: disbursementsLoading } =
+    useFetch<DisbursementsResponse>("/api/admin/disbursements");
 
   // Calculs live depuis les offres remontées par /api/admin/stats
   const { totalCollected, collections } = useMemo(() => {
@@ -120,7 +141,7 @@ export function AdminFinance() {
     return { totalCollected: sum, collections: list };
   }, [data]);
 
-  if (loading || !data) {
+  if (loading || disbursementsLoading || !data) {
     return (
       <div className="p-4 sm:p-6 lg:p-8">
         <Skeleton className="mb-6 h-9 w-72" />
@@ -134,9 +155,11 @@ export function AdminFinance() {
     );
   }
 
-  // En démo : aucun décaissement ni remboursement enregistré (État initial)
-  const totalDisbursed = 0;
-  const totalRepaid = 0;
+  const disbursements = disbursementData?.disbursements ?? [];
+  const totalDisbursed = disbursements
+    .filter((item) => item.status === "executed")
+    .reduce((sum, item) => sum + Number(item.netAmount || 0), 0);
+  const totalRepaid = Number(data.stats.totalRepaid || 0);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -169,13 +192,13 @@ export function AdminFinance() {
         <KpiCard
           label="Total décaissé"
           value={fmtCompact(totalDisbursed)}
-          hint="Aucun décaissement exécuté à ce jour"
+          hint={`${disbursements.filter((item) => item.status === "executed").length} versement(s) exécuté(s)`}
           icon={HandCoins}
         />
         <KpiCard
           label="Total remboursé"
           value={fmtCompact(totalRepaid)}
-          hint="Aucun remboursement reçu à ce jour"
+          hint="Capital et intérêts distribués aux investisseurs"
           icon={CalendarClock}
         />
       </div>
@@ -240,7 +263,7 @@ export function AdminFinance() {
         </CardContent>
       </Card>
 
-      {/* 2. Décaissements (empty state — endpoint GET /api/admin/disbursements) */}
+      {/* 2. Décaissements */}
       <Card className="mt-6 overflow-hidden p-0">
         <CardHeader className="bg-secondary/40 pb-3 pt-4">
           <CardTitle className="flex items-center gap-2 text-base font-semibold">
@@ -249,11 +272,46 @@ export function AdminFinance() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <EmptyState
-            title="Aucun décaissement en cours"
-            desc="Aucun projet n&rsquo;a encore atteint le statut « financé » ou aucun décaissement n&rsquo;a été préparé. La séparation préparateur / approbateur est enforced côté serveur."
-            icon={HandCoins}
-          />
+          {disbursements.length === 0 ? (
+            <EmptyState
+              title="Aucun décaissement en cours"
+              desc="Les versements apparaîtront après financement complet et validation du compte entreprise."
+              icon={HandCoins}
+            />
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-secondary/20 hover:bg-secondary/20">
+                  <TableHead>Projet</TableHead>
+                  <TableHead>Entreprise</TableHead>
+                  <TableHead className="text-right">Brut</TableHead>
+                  <TableHead className="text-right">Net</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead>Date</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {disbursements.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="text-sm font-medium">{item.project.title}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {item.project.company.tradeName || item.project.company.legalName}
+                    </TableCell>
+                    <TableCell className="tnum text-right text-sm">{fmtFCFA(item.grossAmount)}</TableCell>
+                    <TableCell className="tnum text-right text-sm font-semibold">{fmtFCFA(item.netAmount)}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="text-xs">
+                        {item.status === "pending" ? "À approuver" : item.status === "approved" ? "Approuvé" : item.status === "executed" ? "Versé" : item.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {new Date(item.createdAt).toLocaleDateString("fr-FR")}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 
@@ -274,25 +332,6 @@ export function AdminFinance() {
         </CardContent>
       </Card>
 
-      {/* Scénario section 28 — callout (référence, PAS une ligne de donnée) */}
-      <div className="mt-6 rounded-lg border border-nexora-lime/40 bg-nexora-pale p-4">
-        <p className="mb-2 flex items-center gap-2 text-sm font-bold text-positive">
-          <ShieldCheck className="h-4 w-4" />
-          Scénario de référence — section 28 du brief (exemple théorique)
-        </p>
-        <p className="text-xs leading-relaxed text-positive">
-          Ce callout n&rsquo;est <strong>pas une donnée live</strong> mais une
-          référence contractuelle. Pour 1 000 000 FCFA financés en dette à 8 %
-          total sur 6 mois : le net décaissé à l&rsquo;entreprise est de{" "}
-          <span className="tnum font-bold">940 000 FCFA</span> (1 000 000 − 6 %
-          de commission upfront). L&rsquo;entreprise devra rembourser à terme
-          échu un paiement global de{" "}
-          <span className="tnum font-bold">1 090 000 FCFA</span> (1 000 000
-          capital + 80 000 intérêts + 10 000 suivi 2 %/an × 6 mois). Le CA
-          plateforme sur l&rsquo;opération est de{" "}
-          <span className="tnum font-bold">70 000 FCFA</span>.
-        </p>
-      </div>
     </div>
   );
 }

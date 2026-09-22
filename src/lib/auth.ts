@@ -22,12 +22,13 @@ interface UserSessionRow {
 }
 
 interface AdminSessionRow {
-  id: string;
+  adminId: string;
   email: string;
   role: string;
   permissions: string;
   active: number;
-  lastLoginAt: string | null;
+  lastActiveAt: string;
+  revoked: number;
 }
 
 export async function getUserSession(req?: Request): Promise<SessionUser | null> {
@@ -59,15 +60,26 @@ export async function requireUser(req?: Request): Promise<SessionUser> {
 export async function getAdminSession(req?: Request): Promise<SessionAdmin | null> {
   const token = readTokenFromRequest(req, "x-nexora-admin-token");
   if (!token) return null;
-  const admin = await getD1()
-    .prepare(`SELECT id, email, role, permissions, active, lastLoginAt FROM AdminUser WHERE id = ? LIMIT 1`)
+  const database = getD1();
+  const admin = await database
+    .prepare(
+      `SELECT s.adminId, s.lastActiveAt, s.revoked,
+              a.email, a.role, a.permissions, a.active
+       FROM AdminSession s
+       JOIN AdminUser a ON a.id = s.adminId
+       WHERE s.id = ? LIMIT 1`
+    )
     .bind(token)
     .first<AdminSessionRow>();
-  if (!admin || !Boolean(admin.active) || !admin.lastLoginAt) return null;
-  const lastLogin = new Date(admin.lastLoginAt).getTime();
-  if (!Number.isFinite(lastLogin) || Date.now() - lastLogin > 8 * 60 * 60 * 1000) return null;
+  if (!admin || !Boolean(admin.active) || Boolean(admin.revoked)) return null;
+  const lastActive = new Date(admin.lastActiveAt).getTime();
+  if (!Number.isFinite(lastActive) || Date.now() - lastActive > 8 * 60 * 60 * 1000) return null;
+  await database
+    .prepare(`UPDATE AdminSession SET lastActiveAt = ? WHERE id = ?`)
+    .bind(isoNow(), token)
+    .run();
   return {
-    adminId: admin.id,
+    adminId: admin.adminId,
     email: admin.email,
     role: admin.role,
     permissions: safeParse(admin.permissions),

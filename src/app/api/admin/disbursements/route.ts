@@ -1,14 +1,53 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { ser } from "@/lib/serialize";
-import { requireAdmin, requirePermission } from "@/lib/auth";
-import { postLedgerEntry, genIdemKey } from "@/lib/ledger";
+import { requireAdmin, requirePermission, type SessionAdmin } from "@/lib/auth";
+import { getD1, isoNow, requestIp } from "@/lib/d1";
 import { computeUpfrontCommission } from "@/lib/finance";
 
-// ============================================================================
-// GET /api/admin/disbursements
-// Liste tous les décaissements (toutes sociétés) pour le suivi admin.
-// ============================================================================
+interface DisbursementRow extends Record<string, unknown> {
+  id: string;
+  projectId: string;
+  grossAmount: number;
+  upfrontCommission: number;
+  netAmount: number;
+  beneficiaryAccount: string;
+  trancheNo: number;
+  status: string;
+  preparedBy: string | null;
+  approvedBy: string | null;
+  executedAt: string | null;
+  paymentRef: string | null;
+  createdAt: string;
+  projectTitle: string;
+  companyId: string;
+  companyLegalName: string;
+  companyTradeName: string | null;
+}
+
+interface ProjectFundingRow extends Record<string, unknown> {
+  id: string;
+  title: string;
+  status: string;
+  companyId: string;
+  offerId: string | null;
+  raisedAmount: number | null;
+  upfrontCommissionPct: number | null;
+  verificationStatus: string;
+  verifiedBankAccount: string | null;
+  bankAccountVerifiedAt: string | null;
+}
+
+function hasAnyPermission(admin: SessionAdmin, permissions: string[]): boolean {
+  return (
+    admin.permissions.includes("all") ||
+    permissions.some((permission) => admin.permissions.includes(permission))
+  );
+}
+
+function maskReference(value: string): string {
+  if (value.length <= 8) return "••••";
+  return `${value.slice(0, 4)}••••${value.slice(-4)}`;
+}
+
 export async function GET(req: Request) {
   let admin;
   try {
@@ -16,143 +55,211 @@ export async function GET(req: Request) {
   } catch {
     return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   }
-  try {
-    requirePermission(admin, "disbursement:prepare");
-  } catch {
+  if (
+    !hasAnyPermission(admin, [
+      "disbursement:prepare",
+      "disbursement:approve",
+      "disbursement:execute",
+    ])
+  ) {
     return NextResponse.json({ error: "Permission refusée" }, { status: 403 });
   }
 
-  const disbursements = await db.disbursement.findMany({
-    include: { project: { include: { company: true } } },
-    orderBy: { createdAt: "desc" },
-  });
-  return NextResponse.json({ disbursements: ser(disbursements) });
+  const result = await getD1()
+    .prepare(
+      `SELECT d.id, d.projectId, d.grossAmount, d.upfrontCommission,
+              d.netAmount, d.beneficiaryAccount, d.trancheNo, d.status,
+              d.preparedBy, d.approvedBy, d.executedAt, d.paymentRef,
+              d.createdAt, p.title AS projectTitle, p.companyId,
+              c.legalName AS companyLegalName,
+              c.tradeName AS companyTradeName
+       FROM Disbursement d
+       JOIN Project p ON p.id = d.projectId
+       JOIN Company c ON c.id = p.companyId
+       ORDER BY d.createdAt DESC`
+    )
+    .all<DisbursementRow>();
+
+  return NextResponse.json(
+    {
+      disbursements: result.results.map((row) => ({
+        id: row.id,
+        projectId: row.projectId,
+        grossAmount: Number(row.grossAmount),
+        upfrontCommission: Number(row.upfrontCommission),
+        netAmount: Number(row.netAmount),
+        beneficiaryAccount: maskReference(row.beneficiaryAccount),
+        trancheNo: row.trancheNo,
+        status: row.status,
+        preparedBy: row.preparedBy,
+        approvedBy: row.approvedBy,
+        executedAt: row.executedAt,
+        paymentRef: row.paymentRef,
+        createdAt: row.createdAt,
+        project: {
+          id: row.projectId,
+          title: row.projectTitle,
+          company: {
+            id: row.companyId,
+            legalName: row.companyLegalName,
+            tradeName: row.companyTradeName,
+          },
+        },
+      })),
+      executionEnabled: false,
+      executionMessage:
+        "L'exécution reste verrouillée jusqu'à la connexion du prestataire de paiement agréé.",
+    },
+    { headers: { "Cache-Control": "private, no-store" } }
+  );
 }
 
-// ============================================================================
-// POST /api/admin/disbursements
-// Body: { projectId, grossAmount, beneficiaryAccount, preparedBy }
-// ----------------------------------------------------------------------------
-// Prépare un décaissement (statut "pending", approvedBy=null).
-// - requireAdmin(req) + requirePermission("disbursement:prepare")
-// - Calcule upfrontCommission = computeUpfrontCommission(grossAmount, 6)
-// - netAmount = grossAmount - upfrontCommission
-// - AuditLog
-// ============================================================================
 export async function POST(req: NextRequest) {
   let admin;
   try {
     admin = await requireAdmin(req);
-  } catch {
-    return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-  }
-  try {
     requirePermission(admin, "disbursement:prepare");
-  } catch {
+  } catch (error) {
     return NextResponse.json(
-      { error: "Permission refusée: disbursement:prepare" },
-      { status: 403 }
+      { error: String(error).includes("FORBIDDEN") ? "Permission refusée" : "Non authentifié" },
+      { status: String(error).includes("FORBIDDEN") ? 403 : 401 }
     );
   }
 
-  let body: any = {};
+  let body: Record<string, unknown>;
   try {
-    body = await req.json();
+    body = (await req.json()) as Record<string, unknown>;
   } catch {
     return NextResponse.json({ error: "Payload invalide" }, { status: 400 });
   }
-
-  const projectId = String(body.projectId || "");
-  const beneficiaryAccount = String(body.beneficiaryAccount || "");
-  const grossAmount = toBigIntSafe(body.grossAmount);
-  if (!projectId || !beneficiaryAccount || !grossAmount || grossAmount <= 0n) {
+  const projectId = String(body.projectId || "").trim();
+  const grossAmount = Number(body.grossAmount);
+  if (!projectId || !Number.isSafeInteger(grossAmount) || grossAmount <= 0) {
     return NextResponse.json(
-      { error: "projectId, beneficiaryAccount et grossAmount requis" },
+      { error: "Projet et montant positif requis." },
       { status: 400 }
     );
   }
 
-  const project = await db.project.findUnique({
-    where: { id: projectId },
-    include: { company: true, offer: true },
-  });
+  const database = getD1();
+  const project = await database
+    .prepare(
+      `SELECT p.id, p.title, p.status, p.companyId,
+              o.id AS offerId, o.raisedAmount, o.upfrontCommissionPct,
+              c.verificationStatus, c.verifiedBankAccount,
+              c.bankAccountVerifiedAt
+       FROM Project p
+       JOIN Company c ON c.id = p.companyId
+       LEFT JOIN Offer o ON o.projectId = p.id
+       WHERE p.id = ? LIMIT 1`
+    )
+    .bind(projectId)
+    .first<ProjectFundingRow>();
   if (!project) {
     return NextResponse.json({ error: "Projet introuvable" }, { status: 404 });
   }
-  if (project.status !== "funded" && project.status !== "repaying") {
+  if (!["funded", "repaying"].includes(project.status) || !project.offerId) {
     return NextResponse.json(
-      {
-        error: `Le projet doit être au statut « funded » ou « repaying » pour décaisser (actuel: ${project.status})`,
-      },
-      { status: 400 }
+      { error: "Le financement doit être atteint avant toute préparation." },
+      { status: 409 }
+    );
+  }
+  if (
+    project.verificationStatus !== "verified" ||
+    !project.verifiedBankAccount ||
+    !project.bankAccountVerifiedAt
+  ) {
+    return NextResponse.json(
+      { error: "Le compte de versement de l'entreprise doit être vérifié." },
+      { status: 409 }
+    );
+  }
+  if (grossAmount > Number(project.raisedAmount || 0)) {
+    return NextResponse.json(
+      { error: "Le montant dépasse le capital effectivement collecté." },
+      { status: 409 }
     );
   }
 
-  // Idempotence : un décaissement déjà existant pour ce projet ?
-  const existing = await db.disbursement.findFirst({
-    where: {
-      projectId,
-      grossAmount,
-      status: { in: ["pending", "approved"] },
-    },
-  });
+  const existing = await database
+    .prepare(
+      `SELECT id, status FROM Disbursement
+       WHERE projectId = ? AND trancheNo = 1 AND status IN ('pending', 'approved')
+       LIMIT 1`
+    )
+    .bind(projectId)
+    .first<{ id: string; status: string }>();
   if (existing) {
-    return NextResponse.json({
-      disbursement: ser(existing),
-      idempotent: true,
-      message: "Un décaissement est déjà en cours pour ce projet.",
-    });
+    return NextResponse.json(
+      { disbursement: existing, idempotent: true, message: "Une préparation est déjà en cours." },
+      { status: 200 }
+    );
   }
 
-  const upfrontCommission = computeUpfrontCommission(grossAmount, 6);
-  const netAmount = grossAmount - upfrontCommission;
+  const gross = BigInt(grossAmount);
+  const upfront = computeUpfrontCommission(gross, Number(project.upfrontCommissionPct || 6));
+  const net = gross - upfront;
+  const disbursementId = crypto.randomUUID();
+  const now = isoNow();
+  try {
+    await database.batch([
+      database
+        .prepare(
+          `INSERT INTO Disbursement
+           (id, projectId, grossAmount, upfrontCommission, netAmount,
+            beneficiaryAccount, trancheNo, status, preparedBy, approvedBy,
+            executedAt, paymentRef, createdAt)
+           VALUES (?, ?, ?, ?, ?, ?, 1, 'pending', ?, NULL, NULL, NULL, ?)`
+        )
+        .bind(
+          disbursementId,
+          projectId,
+          grossAmount,
+          Number(upfront),
+          Number(net),
+          project.verifiedBankAccount,
+          admin.adminId,
+          now
+        ),
+      database
+        .prepare(
+          `INSERT INTO AuditLog
+           (id, actorType, actorId, action, entityType, entityId, metadata, ipAddress, createdAt)
+           VALUES (?, 'admin', ?, 'disbursement_prepared', 'disbursement', ?, ?, ?, ?)`
+        )
+        .bind(
+          crypto.randomUUID(),
+          admin.adminId,
+          disbursementId,
+          JSON.stringify({ projectId, grossAmount, upfrontCommission: Number(upfront), netAmount: Number(net) }),
+          requestIp(req),
+          now
+        ),
+    ]);
+  } catch {
+    return NextResponse.json(
+      { error: "Une préparation est déjà en cours pour ce projet." },
+      { status: 409 }
+    );
+  }
 
-  const disbursement = await db.disbursement.create({
-    data: {
-      projectId,
-      grossAmount,
-      upfrontCommission,
-      netAmount,
-      beneficiaryAccount,
-      trancheNo: 1,
-      status: "pending",
-      preparedBy: admin.adminId,
-      approvedBy: null,
-    },
-    include: { project: { include: { company: true } } },
-  });
-
-  await db.auditLog.create({
-    data: {
-      actorType: "admin",
-      actorId: admin.adminId,
-      action: "disbursement_prepared",
-      entityType: "disbursement",
-      entityId: disbursement.id,
-      metadata: JSON.stringify({
+  return NextResponse.json(
+    {
+      disbursement: {
+        id: disbursementId,
         projectId,
-        grossAmount: grossAmount.toString(),
-        upfrontCommission: upfrontCommission.toString(),
-        netAmount: netAmount.toString(),
-        beneficiaryAccount,
-      }),
-      ipAddress: req.headers.get("x-forwarded-for") || "unknown",
+        grossAmount,
+        upfrontCommission: Number(upfront),
+        netAmount: Number(net),
+        status: "pending",
+        preparedBy: admin.adminId,
+        createdAt: now,
+      },
     },
-  });
-
-  return NextResponse.json({ disbursement: ser(disbursement) }, { status: 201 });
+    { status: 201 }
+  );
 }
 
-// ============================================================================
-// PATCH /api/admin/disbursements
-// Body: { disbursementId, action: "approve" | "execute", approvedBy }
-// ----------------------------------------------------------------------------
-// - "approve": requirePermission("disbursement:approve")
-//   Vérifie que disbursement.preparedBy !== admin.id (séparation des devoirs)
-// - "execute": requirePermission("disbursement:execute")
-//   Vérifie que approvedBy est défini
-//   Ledger: escrow → company_payout (netAmount) + escrow → platform_revenue (upfront)
-// ============================================================================
 export async function PATCH(req: NextRequest) {
   let admin;
   try {
@@ -161,217 +268,82 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   }
 
-  let body: any = {};
+  let body: Record<string, unknown>;
   try {
-    body = await req.json();
+    body = (await req.json()) as Record<string, unknown>;
   } catch {
     return NextResponse.json({ error: "Payload invalide" }, { status: 400 });
   }
-
-  const disbursementId = String(body.disbursementId || "");
-  const action = String(body.action || "");
+  const disbursementId = String(body.disbursementId || "").trim();
+  const action = String(body.action || "").trim();
   if (!disbursementId || !["approve", "execute"].includes(action)) {
-    return NextResponse.json(
-      { error: "disbursementId et action (approve|execute) requis" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Action invalide." }, { status: 400 });
   }
 
-  // Permission check
   try {
     requirePermission(
       admin,
       action === "approve" ? "disbursement:approve" : "disbursement:execute"
     );
   } catch {
+    return NextResponse.json({ error: "Permission refusée" }, { status: 403 });
+  }
+  if (action === "execute") {
     return NextResponse.json(
-      { error: `Permission refusée: disbursement:${action}` },
+      {
+        error:
+          "Exécution indisponible tant que le prestataire agréé et son retour signé ne sont pas connectés. Aucun mouvement n'a été créé.",
+        code: "DISBURSEMENT_PROVIDER_NOT_CONFIGURED",
+      },
+      { status: 503 }
+    );
+  }
+
+  const database = getD1();
+  const disbursement = await database
+    .prepare(
+      `SELECT id, status, preparedBy, approvedBy
+       FROM Disbursement WHERE id = ? LIMIT 1`
+    )
+    .bind(disbursementId)
+    .first<{ id: string; status: string; preparedBy: string | null; approvedBy: string | null }>();
+  if (!disbursement) {
+    return NextResponse.json({ error: "Décaissement introuvable" }, { status: 404 });
+  }
+  if (disbursement.approvedBy) {
+    return NextResponse.json({ disbursement, idempotent: true });
+  }
+  if (disbursement.preparedBy === admin.adminId) {
+    return NextResponse.json(
+      { error: "Le préparateur ne peut pas approuver son propre décaissement." },
       { status: 403 }
     );
   }
+  if (disbursement.status !== "pending") {
+    return NextResponse.json({ error: "Ce décaissement n'est plus en attente." }, { status: 409 });
+  }
 
-  const disbursement = await db.disbursement.findUnique({
-    where: { id: disbursementId },
-    include: { project: { include: { company: true, offer: true } } },
+  const now = isoNow();
+  await database.batch([
+    database
+      .prepare(`UPDATE Disbursement SET approvedBy = ?, status = 'approved' WHERE id = ? AND status = 'pending'`)
+      .bind(admin.adminId, disbursementId),
+    database
+      .prepare(
+        `INSERT INTO AuditLog
+         (id, actorType, actorId, action, entityType, entityId, metadata, ipAddress, createdAt)
+         VALUES (?, 'admin', ?, 'disbursement_approved', 'disbursement', ?, ?, ?, ?)`
+      )
+      .bind(
+        crypto.randomUUID(),
+        admin.adminId,
+        disbursementId,
+        JSON.stringify({ preparedBy: disbursement.preparedBy, approvedBy: admin.adminId }),
+        requestIp(req),
+        now
+      ),
+  ]);
+  return NextResponse.json({
+    disbursement: { ...disbursement, approvedBy: admin.adminId, status: "approved" },
   });
-  if (!disbursement) {
-    return NextResponse.json(
-      { error: "Décaissement introuvable" },
-      { status: 404 }
-    );
-  }
-
-  if (action === "approve") {
-    // Séparation des devoirs : le préparateur ne peut pas approuver
-    if (disbursement.preparedBy === admin.adminId) {
-      return NextResponse.json(
-        { error: "Le préparateur ne peut pas approuver son propre décaissement" },
-        { status: 403 }
-      );
-    }
-    if (disbursement.status !== "pending") {
-      return NextResponse.json(
-        { error: `Décaissement déjà traité (statut: ${disbursement.status})` },
-        { status: 400 }
-      );
-    }
-
-    // Idempotence : déjà approuvé
-    if (disbursement.approvedBy) {
-      return NextResponse.json({
-        disbursement: ser(disbursement),
-        idempotent: true,
-      });
-    }
-
-    const updated = await db.disbursement.update({
-      where: { id: disbursementId },
-      data: { approvedBy: admin.adminId },
-      include: { project: { include: { company: true, offer: true } } },
-    });
-
-    await db.auditLog.create({
-      data: {
-        actorType: "admin",
-        actorId: admin.adminId,
-        action: "disbursement_approved",
-        entityType: "disbursement",
-        entityId: disbursement.id,
-        metadata: JSON.stringify({
-          preparedBy: disbursement.preparedBy,
-          approvedBy: admin.adminId,
-        }),
-        ipAddress: req.headers.get("x-forwarded-for") || "unknown",
-      },
-    });
-
-    return NextResponse.json({ disbursement: ser(updated) });
-  }
-
-  // action === "execute"
-  if (!disbursement.approvedBy) {
-    return NextResponse.json(
-      { error: "Le décaissement doit être approuvé avant exécution" },
-      { status: 400 }
-    );
-  }
-  if (disbursement.status === "executed") {
-    return NextResponse.json({
-      disbursement: ser(disbursement),
-      idempotent: true,
-    });
-  }
-
-  const paymentRef = genIdemKey("disb", disbursement.id);
-  const now = new Date();
-
-  const updated = await db.disbursement.update({
-    where: { id: disbursementId },
-    data: {
-      status: "executed",
-      executedAt: now,
-      paymentRef,
-    },
-    include: { project: { include: { company: true, offer: true } } },
-  });
-
-  // Ledger : escrow → company_payout (netAmount)
-  //          + escrow → platform_revenue (upfrontCommission)
-  const offerId = disbursement.project.offer?.id || disbursement.projectId;
-  const companyId = disbursement.project.companyId;
-  const escrowIdem = genIdemKey("disb-pay", disbursement.id);
-  await postLedgerEntry(
-    {
-      accountType: "escrow",
-      accountId: offerId,
-      amount: disbursement.netAmount,
-      counterpartyType: "company_payout",
-      counterpartyId: companyId,
-      sourceType: "disbursement",
-      sourceId: disbursement.id,
-      description: `Décaissement net entreprise - ${disbursement.id}`,
-      idemKey: escrowIdem,
-    },
-    {
-      accountType: "company_payout",
-      accountId: companyId,
-      amount: disbursement.netAmount,
-      counterpartyType: "escrow",
-      counterpartyId: offerId,
-      sourceType: "disbursement",
-      sourceId: disbursement.id,
-      description: `Capital net reçu (après commission upfront) - décaissement ${disbursement.id}`,
-      idemKey: escrowIdem + ":credit",
-    }
-  );
-
-  const revIdem = genIdemKey("disb-rev", disbursement.id);
-  await postLedgerEntry(
-    {
-      accountType: "escrow",
-      accountId: offerId,
-      amount: disbursement.upfrontCommission,
-      counterpartyType: "platform_revenue",
-      counterpartyId: "platform",
-      sourceType: "disbursement",
-      sourceId: disbursement.id,
-      description: `Commission upfront prélevée - ${disbursement.id}`,
-      idemKey: revIdem,
-    },
-    {
-      accountType: "platform_revenue",
-      accountId: "platform",
-      amount: disbursement.upfrontCommission,
-      counterpartyType: "escrow",
-      counterpartyId: offerId,
-      sourceType: "disbursement",
-      sourceId: disbursement.id,
-      description: `Commission upfront encaissée - décaissement ${disbursement.id}`,
-      idemKey: revIdem + ":credit",
-    }
-  );
-
-  await db.auditLog.create({
-    data: {
-      actorType: "admin",
-      actorId: admin.adminId,
-      action: "disbursement_executed",
-      entityType: "disbursement",
-      entityId: disbursement.id,
-      metadata: JSON.stringify({
-        netAmount: disbursement.netAmount.toString(),
-        upfrontCommission: disbursement.upfrontCommission.toString(),
-        paymentRef,
-        approvedBy: disbursement.approvedBy,
-      }),
-      ipAddress: req.headers.get("x-forwarded-for") || "unknown",
-    },
-  });
-
-  // Notification au soumetteur du projet
-  await db.notification.create({
-    data: {
-      userId: disbursement.project.submittedBy,
-      type: "payment",
-      title: "Décaissement effectué",
-      message: `Le décaissement net de ${disbursement.netAmount} FCFA a été effectué sur votre compte (${disbursement.beneficiaryAccount}).`,
-      actionUrl: "company_dashboard",
-    },
-  });
-
-  return NextResponse.json({ disbursement: ser(updated) });
-}
-
-function toBigIntSafe(v: unknown): bigint | null {
-  if (typeof v === "bigint") return v;
-  if (typeof v === "number") {
-    if (!Number.isInteger(v)) return null;
-    return BigInt(v);
-  }
-  if (typeof v === "string") {
-    const n = Number(v);
-    if (!Number.isFinite(n) || !Number.isInteger(n)) return null;
-    return BigInt(n);
-  }
-  return null;
 }
