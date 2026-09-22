@@ -117,7 +117,7 @@ export function Register() {
   };
 
   return (
-    <section className="mx-auto max-w-2xl px-4 py-8 sm:px-6 lg:px-8">
+    <section className="page-shell max-w-2xl reveal-in">
       {/* Progress bar */}
       <div className="mb-6">
         <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
@@ -153,7 +153,7 @@ export function Register() {
                   onClick={() => setKind("individual")}
                   className={`flex flex-col items-start gap-3 rounded-lg border p-5 text-left transition-all ${
                     kind === "individual"
-                      ? "border-[#B6FF00] bg-nexora-pale ring-1 ring-[#B6FF00]"
+                      ? "border-[#541249] bg-nexora-pale ring-1 ring-[#541249]"
                       : "border-border bg-background hover:border-foreground/40"
                   }`}
                 >
@@ -173,7 +173,7 @@ export function Register() {
                   onClick={() => setKind("company")}
                   className={`flex flex-col items-start gap-3 rounded-lg border p-5 text-left transition-all ${
                     kind === "company"
-                      ? "border-[#B6FF00] bg-nexora-pale ring-1 ring-[#B6FF00]"
+                      ? "border-[#541249] bg-nexora-pale ring-1 ring-[#541249]"
                       : "border-border bg-background hover:border-foreground/40"
                   }`}
                 >
@@ -356,7 +356,7 @@ export function Register() {
                       onClick={() => setObjective(opt.id)}
                       className={`flex items-start gap-3 rounded-lg border p-4 text-left transition-all ${
                         active
-                          ? "border-[#B6FF00] bg-nexora-pale ring-1 ring-[#B6FF00]"
+                          ? "border-[#541249] bg-nexora-pale ring-1 ring-[#541249]"
                           : "border-border bg-background hover:border-foreground/40"
                       }`}
                     >

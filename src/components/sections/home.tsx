@@ -5,7 +5,17 @@ import { OfferCard } from "@/components/site/offer-card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SECTORS } from "@/lib/countries";
-import { Search, Building2, FileText, ArrowRight, LayoutGrid } from "lucide-react";
+import {
+  Search,
+  Building2,
+  FileText,
+  ArrowRight,
+  LayoutGrid,
+  ShieldCheck,
+  Landmark,
+  Smartphone,
+  CircleCheck,
+} from "lucide-react";
 import type { OfferDTO } from "@/lib/types";
 
 const STEPS = [
@@ -33,47 +43,69 @@ export function Home() {
   const offers = data?.offers ?? [];
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      {/* Compact hero */}
-      <section className="rounded-xl border border-border bg-secondary/40 p-6 sm:p-10">
-        <div className="max-w-3xl">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-positive">
-            Afrique de l&rsquo;Ouest · UEMOA · XOF
-          </p>
-          <h1 className="text-2xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
-            Investir dans les champions de l&rsquo;Afrique de l&rsquo;Ouest
-          </h1>
-          <p className="mt-3 text-sm text-muted-foreground sm:text-base">
-            Financement participatif en dette et en capital pour les
-            entreprises vérifiées de la région UEMOA. À partir de 10 000 FCFA.
-          </p>
-          <div className="mt-6 flex flex-wrap gap-3">
+    <div className="page-shell reveal-in">
+      <section className="relative overflow-hidden rounded-[1.4rem] border border-[#541249]/20 bg-[linear-gradient(135deg,#541249_0%,#380C31_45%,#130410_100%)] px-5 py-7 text-white shadow-[0_24px_70px_rgba(56,12,49,.24)] sm:px-9 sm:py-10 lg:px-12 lg:py-12">
+        <div className="pointer-events-none absolute -right-20 -top-32 h-80 w-80 rounded-full bg-[#A55B98]/25 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 right-0 h-40 w-1/2 bg-[linear-gradient(135deg,transparent,rgba(165,91,152,.12))]" />
+        <div className="relative grid items-end gap-8 lg:grid-cols-[1.45fr_.55fr]">
+          <div className="max-w-3xl">
+            <p className="page-kicker hero-kicker">
+              <span className="h-1.5 w-1.5 rounded-full bg-current" />
+              Investissement privé · Zone UEMOA
+            </p>
+            <h1 className="mt-4 max-w-3xl text-[2.15rem] font-black leading-[.98] tracking-[-.055em] sm:text-5xl lg:text-[3.65rem]">
+              Le capital qui fait grandir l&rsquo;Afrique de l&rsquo;Ouest.
+            </h1>
+            <p className="mt-5 max-w-2xl text-sm leading-6 text-white/68 sm:text-base sm:leading-7">
+              Accédez à des entreprises sélectionnées, analysez chaque
+              opportunité et investissez simplement en dette ou en capital.
+              Dès 10&nbsp;000 FCFA.
+            </p>
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <Button
               onClick={() => setView("explore")}
-              className="btn-nexora"
+              className="btn-nexora w-full sm:w-auto"
               size="lg"
             >
               <Search className="h-4 w-4" />
-              Explorer les offres
+              Voir les opportunités
             </Button>
             <Button
               onClick={() => setView("register")}
               variant="outline"
               size="lg"
+              className="w-full border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white sm:w-auto"
             >
               <Building2 className="h-4 w-4" />
-              Financer mon entreprise
+              Lever des fonds
             </Button>
+          </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-1">
+            {[
+              { icon: ShieldCheck, label: "Dossiers vérifiés", value: "Sélection rigoureuse" },
+              { icon: Landmark, label: "Cadre régional", value: "8 pays UEMOA" },
+              { icon: Smartphone, label: "Paiements", value: "Carte & Mobile Money" },
+            ].map(({ icon: Icon, label, value }) => (
+              <div key={label} className="rounded-xl border border-white/10 bg-white/[.055] p-3.5 backdrop-blur-sm last:col-span-2 lg:last:col-span-1">
+                <div className="flex items-center gap-2 text-[#F2C7EB]">
+                  <Icon className="h-4 w-4" />
+                  <span className="text-[10px] font-bold uppercase tracking-[.12em]">{label}</span>
+                </div>
+                <p className="mt-1.5 text-sm font-semibold text-white">{value}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Offres en cours */}
-      <section className="mt-10">
-        <div className="mb-4 flex items-end justify-between">
+      <section className="mt-9 sm:mt-12">
+        <div className="mb-5 flex items-end justify-between gap-4">
           <div>
-            <h2 className="text-xl font-bold text-foreground">
-              Offres en cours
+            <p className="page-kicker">Marché privé</p>
+            <h2 className="mt-1 text-xl font-extrabold tracking-[-.025em] text-foreground sm:text-2xl">
+              Opportunités ouvertes
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               {loading
@@ -99,10 +131,16 @@ export function Home() {
             ))}
           </div>
         ) : offers.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border p-10 text-center">
-            <p className="text-sm text-muted-foreground">
-              Aucune offre ouverte pour le moment.
+          <div className="surface-card rounded-2xl border border-dashed border-border bg-white/65 px-5 py-8 text-center sm:py-10">
+            <CircleCheck className="mx-auto h-8 w-8 text-positive" />
+            <p className="mt-3 text-sm font-semibold text-foreground">La prochaine sélection est en préparation</p>
+            <p className="mx-auto mt-1 max-w-md text-xs leading-5 text-muted-foreground">
+              Chaque dossier est vérifié avant sa publication. Créez votre compte pour suivre les nouvelles opportunités.
             </p>
+            <Button variant="outline" size="sm" className="mt-4" onClick={() => setView("register")}>
+              Être informé
+              <ArrowRight className="h-4 w-4" />
+            </Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -114,18 +152,17 @@ export function Home() {
       </section>
 
       {/* Comment ça marche */}
-      <section className="mt-12">
-        <h2 className="mb-4 text-xl font-bold text-foreground">
-          Comment ça marche
-        </h2>
+      <section className="mt-10 section-rule pt-9 sm:mt-12 sm:pt-11">
+        <p className="page-kicker">Parcours encadré</p>
+        <h2 className="mb-5 mt-1 text-xl font-extrabold tracking-[-.025em] text-foreground sm:text-2xl">Simple pour investir. Exigeant pour sélectionner.</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {STEPS.map((step, i) => (
             <div
               key={step.title}
-              className="rounded-lg border border-border bg-card p-5"
+              className="surface-card rounded-2xl border border-border bg-white/75 p-5 transition duration-200 hover:-translate-y-0.5 hover:border-black/15"
             >
               <div className="flex items-center gap-3">
-                <span className="flex h-9 w-9 items-center justify-center rounded-md bg-nexora-pale text-positive">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-nexora-pale text-positive">
                   <step.icon className="h-5 w-5" />
                 </span>
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -156,14 +193,16 @@ export function Home() {
       </section>
 
       {/* Secteurs */}
-      <section className="mt-12">
-        <h2 className="mb-4 text-xl font-bold text-foreground">Secteurs</h2>
-        <div className="flex flex-wrap gap-2">
+      <section className="mt-10 section-rule pt-9 sm:mt-12 sm:pt-11">
+        <div className="mb-4 flex items-end justify-between gap-4">
+          <div><p className="page-kicker">Économie réelle</p><h2 className="mt-1 text-xl font-extrabold tracking-[-.025em] text-foreground sm:text-2xl">Secteurs financés</h2></div>
+        </div>
+        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-2 scroll-area-fancy sm:flex-wrap sm:overflow-visible">
           {SECTORS.map((s) => (
             <button
               key={s}
               onClick={() => setView("explore")}
-              className="rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-foreground hover:bg-secondary"
+              className="shrink-0 rounded-full border border-border bg-white/80 px-4 py-2 text-sm font-semibold text-foreground transition-all hover:-translate-y-0.5 hover:border-foreground hover:bg-secondary"
             >
               {s}
             </button>

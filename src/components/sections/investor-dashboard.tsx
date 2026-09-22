@@ -47,7 +47,7 @@ import {
   Clock,
 } from "lucide-react";
 
-const CHART_COLORS = ["#B6FF00", "#166534", "#101010", "#6b6b6b", "#C62828"];
+const CHART_COLORS = ["#541249", "#7A246C", "#250820", "#A55B98", "#C62828"];
 
 interface DashboardUser {
   id: string;
@@ -254,7 +254,7 @@ export function InvestorDashboard() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="page-shell">
         <Skeleton className="mb-6 h-10 w-72" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {[0, 1, 2].map((i) => (
@@ -424,7 +424,7 @@ export function InvestorDashboard() {
   };
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <section className="page-shell reveal-in">
       {/* Top bar — identity */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
@@ -513,7 +513,7 @@ export function InvestorDashboard() {
 
       {/* Prochaine étape banner — pending investments */}
       {pendingCount > 0 && (
-        <div className="mt-6 flex flex-col items-start gap-3 rounded-lg border border-[#B6FF00]/40 bg-nexora-pale p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-6 flex flex-col items-start gap-3 rounded-lg border border-[#541249]/30 bg-nexora-pale p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <Clock className="mt-0.5 h-5 w-5 shrink-0 text-positive" />
             <div>

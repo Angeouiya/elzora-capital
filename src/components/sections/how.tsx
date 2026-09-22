@@ -82,9 +82,10 @@ const PRICING = [
 
 export function HowItWorks() {
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="page-shell reveal-in">
       <div className="mb-8">
-        <h1 className="text-2xl font-black tracking-tight text-foreground sm:text-3xl">
+        <p className="page-kicker">Un parcours lisible</p>
+        <h1 className="page-title mt-1">
           Fonctionnement
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -205,7 +206,7 @@ export function HowItWorks() {
                     variant="outline"
                     className={
                       p.audience === "Investisseur"
-                        ? "border-[#B6FF00] text-positive"
+                        ? "border-[#541249] text-positive"
                         : "border-border text-foreground"
                     }
                   >

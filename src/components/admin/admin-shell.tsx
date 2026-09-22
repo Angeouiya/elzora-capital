@@ -112,6 +112,20 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const logoutAdmin = useAppStore((s) => s.logoutAdmin);
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [mobileOpen]);
+
   // Détection d'un éventuel conflit Préparateur / Approbateur sur un même
   // décaissement (séparation des devoirs — audit warning).
   const [conflictDetected, setConflictDetected] = useState(false);
@@ -294,7 +308,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="flex min-h-screen bg-[#101010]">
+      <div className="flex min-h-screen bg-[#130410]">
         {/* Desktop sidebar */}
         <aside className="hidden w-64 shrink-0 flex-col bg-nexora-black lg:flex">
           {SidebarContent}
@@ -307,7 +321,12 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               className="absolute inset-0 bg-black/60 backdrop-blur-sm"
               onClick={() => setMobileOpen(false)}
             />
-            <aside className="absolute left-0 top-0 flex h-full w-64 flex-col bg-nexora-black shadow-2xl">
+            <aside
+              role="dialog"
+              aria-modal="true"
+              aria-label="Navigation d&rsquo;administration"
+              className="absolute left-0 top-0 flex h-full w-[min(19rem,88vw)] flex-col bg-nexora-black shadow-2xl"
+            >
               <button
                 onClick={() => setMobileOpen(false)}
                 className="absolute right-3 top-5 z-10 flex h-8 w-8 items-center justify-center rounded-md text-white/70 hover:bg-white/10"
@@ -330,6 +349,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 onClick={() => setMobileOpen(true)}
                 className="flex h-9 w-9 items-center justify-center rounded-md text-white hover:bg-white/10 lg:hidden"
                 aria-label="Menu"
+                aria-expanded={mobileOpen}
               >
                 <Menu className="h-5 w-5" />
               </button>
@@ -356,7 +376,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           </header>
 
           {/* Page content */}
-          <main className="flex-1 overflow-y-auto bg-[#F5F5F3]">
+          <main className="flex-1 overflow-y-auto bg-[#F7F8F4]">
             <div className="min-h-full">{children}</div>
           </main>
         </div>

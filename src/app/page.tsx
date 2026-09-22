@@ -60,7 +60,7 @@ export default function Page() {
   const showBottomNav = !!userEmail && !view?.startsWith("admin_");
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="app-shell flex min-h-screen flex-col bg-transparent">
       <Header />
       <main className={`flex-1 ${showBottomNav ? "pb-20 lg:pb-0" : ""}`}>
         {view === "home" && <Home />}

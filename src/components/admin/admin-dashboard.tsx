@@ -314,10 +314,10 @@ export function AdminDashboard() {
   const { stats } = data;
 
   const sectorChartConfig: ChartConfig = {
-    value: { label: "Capital levé", color: "#B6FF00" },
+    value: { label: "Capital levé", color: "#541249" },
   };
   const countryChartConfig: ChartConfig = {
-    value: { label: "Offres", color: "#166534" },
+    value: { label: "Offres", color: "#7A246C" },
   };
 
   return (
@@ -466,7 +466,7 @@ export function AdminDashboard() {
                         />
                       }
                     />
-                    <Bar dataKey="value" fill="#B6FF00" radius={4} />
+                    <Bar dataKey="value" fill="#541249" radius={4} />
                   </BarChart>
                 </ChartContainer>
               ) : (
@@ -500,7 +500,7 @@ export function AdminDashboard() {
                     <ChartTooltip
                       content={<ChartTooltipContent />}
                     />
-                    <Bar dataKey="value" fill="#166534" radius={4} />
+                    <Bar dataKey="value" fill="#7A246C" radius={4} />
                   </BarChart>
                 </ChartContainer>
               ) : (

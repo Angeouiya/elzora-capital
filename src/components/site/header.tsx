@@ -76,16 +76,16 @@ export function Header() {
         />
       )}
     <header
-      className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/80 backdrop-blur-xl"
+      className="sticky top-0 z-50 w-full border-b border-black/[.06] bg-white/85 backdrop-blur-2xl"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-[4.25rem] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <button
           onClick={() => setView("home")}
-          className="flex items-center gap-2 transition-opacity hover:opacity-80"
+          className="flex items-center gap-2.5 rounded-lg outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <span className="flex h-9 w-9 items-center justify-center rounded-md bg-nexora-black text-base font-black text-nexora-lime">
+          <span className="flex h-9 w-9 items-center justify-center rounded-[.65rem] bg-nexora-black text-base font-black text-nexora-lime shadow-[0_6px_16px_rgba(16,16,16,.16)]">
             N
           </span>
           <span className="text-lg font-black tracking-tight text-foreground">
@@ -197,7 +197,7 @@ export function Header() {
         <nav
           id="mobile-navigation"
           aria-label="Navigation mobile"
-          className="border-t border-border/60 bg-background px-4 py-3 shadow-2xl lg:hidden"
+          className="absolute inset-x-0 top-full border-t border-border/70 bg-white px-4 py-4 shadow-[0_24px_50px_rgba(16,16,16,.14)] lg:hidden"
         >
           <div className="flex flex-col gap-1">
             {NAV.map((item) => (
@@ -207,7 +207,7 @@ export function Header() {
                   setView(item.view);
                   setOpen(false);
                 }}
-                className={`rounded-md px-3 py-2.5 text-left text-sm font-medium transition-colors ${
+                className={`rounded-xl px-3 py-3 text-left text-sm font-semibold transition-colors ${
                   view === item.view
                     ? "bg-secondary text-secondary-foreground"
                     : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"

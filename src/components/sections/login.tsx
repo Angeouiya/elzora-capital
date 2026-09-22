@@ -71,7 +71,7 @@ export function Login() {
   };
 
   return (
-    <section className="mx-auto max-w-md px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
+    <section className="page-shell max-w-md py-10 sm:py-14 reveal-in">
       <Card className="border-border/60">
         <CardHeader className="text-center">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-nexora-black">

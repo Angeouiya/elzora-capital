@@ -209,7 +209,7 @@ export function CompanySubmit() {
 
   if (loading) {
     return (
-      <section className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
+      <section className="page-shell max-w-3xl">
         <Skeleton className="mb-6 h-10 w-72" />
         <Skeleton className="mb-4 h-2" />
         <Skeleton className="h-96" />
@@ -408,7 +408,7 @@ export function CompanySubmit() {
   const progressPct = (step / STEPS.length) * 100;
 
   return (
-    <section className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
+    <section className="page-shell max-w-3xl reveal-in">
       {/* Header */}
       <div className="mb-4 flex items-center gap-2">
         <button

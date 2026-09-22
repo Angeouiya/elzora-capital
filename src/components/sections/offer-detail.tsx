@@ -64,7 +64,7 @@ export function OfferDetail() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="page-shell">
         <Skeleton className="mb-6 h-10 w-32" />
         <Skeleton className="mb-6 h-64 w-full rounded-xl" />
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -77,7 +77,7 @@ export function OfferDetail() {
 
   if (!offer) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <div className="page-shell py-10">
         <p className="text-sm text-muted-foreground">Offre introuvable.</p>
         <Button
           variant="ghost"
@@ -150,7 +150,7 @@ export function OfferDetail() {
   const company = offer.project.company;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+    <div className="page-shell reveal-in">
       <Button
         variant="ghost"
         size="sm"
@@ -293,7 +293,7 @@ export function OfferDetail() {
 
           {/* Equity notice */}
           {isEquity && (
-            <div className="rounded-lg border border-[#B6FF00]/40 bg-[#EFFBDD] p-4">
+            <div className="rounded-lg border border-[#541249]/30 bg-[#F7EAF5] p-4">
               <div className="flex items-start gap-3">
                 <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-positive" />
                 <div>
@@ -426,7 +426,7 @@ export function OfferDetail() {
         {/* Right col — Simulateur */}
         <div className="lg:col-span-1">
           <div className="lg:sticky lg:top-20">
-            <Card className="border-2 border-[#B6FF00]">
+            <Card className="border-2 border-[#541249]">
               <CardHeader>
                 <CardTitle className="text-base">
                   Simulateur d&rsquo;investissement

@@ -45,10 +45,11 @@ export function Explore() {
   const offers = data?.offers ?? [];
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="page-shell reveal-in">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-black tracking-tight text-foreground sm:text-3xl">
+        <p className="page-kicker">Marché privé</p>
+        <h1 className="page-title mt-1">
           Explorer les offres
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -59,7 +60,7 @@ export function Explore() {
       </div>
 
       {/* Filters */}
-      <div className="mb-6 rounded-lg border border-border bg-card p-4">
+      <div className="surface-card mb-6 rounded-2xl border border-border bg-white/75 p-4 sm:p-5">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           <SlidersHorizontal className="h-4 w-4" />
           Filtres
@@ -132,7 +133,7 @@ export function Explore() {
           ))}
         </div>
       ) : offers.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border p-12 text-center">
+        <div className="surface-card rounded-2xl border border-dashed border-border bg-white/65 px-5 py-10 text-center sm:p-12">
           <SearchX className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
           <p className="text-sm font-medium text-foreground">
             Aucune offre ne correspond à vos filtres

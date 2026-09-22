@@ -35,11 +35,11 @@ export function OfferCard({ offer }: { offer: OfferDTO }) {
   const isEquity = offer.project.instrumentType === "equity";
 
   return (
-    <Card className="group flex flex-col gap-0 overflow-hidden rounded-lg border border-border p-0 transition-all hover:shadow-md">
+    <Card className="group flex flex-col gap-0 overflow-hidden rounded-2xl border border-border bg-white p-0 transition-all duration-300 hover:-translate-y-1 hover:border-black/15 hover:shadow-[0_20px_45px_rgba(18,20,15,.10)]">
       {/* Image */}
       <button
         onClick={() => openOffer(offer.id)}
-        className="relative block h-40 w-full overflow-hidden"
+        className="relative block h-36 w-full overflow-hidden sm:h-40"
         aria-label={`Voir l'offre ${offer.project.title}`}
       >
         <img
@@ -62,6 +62,7 @@ export function OfferCard({ offer }: { offer: OfferDTO }) {
             </Badge>
           )}
         </div>
+        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/65 to-transparent" />
         <div className="absolute bottom-3 left-3 flex items-center gap-1 text-xs font-medium text-white drop-shadow">
           <MapPin className="h-3.5 w-3.5" />
           {offer.project.city}, {offer.project.country}
@@ -69,7 +70,7 @@ export function OfferCard({ offer }: { offer: OfferDTO }) {
       </button>
 
       {/* Content */}
-      <div className="flex flex-1 flex-col gap-3 p-4">
+      <div className="flex flex-1 flex-col gap-3 p-4 sm:p-5">
         <div>
           <p className="text-xs font-medium text-muted-foreground">
             {offer.project.company.tradeName || offer.project.company.legalName}
@@ -85,7 +86,7 @@ export function OfferCard({ offer }: { offer: OfferDTO }) {
             Rémunération
           </p>
           <p
-            className={`tnum text-sm font-bold ${
+            className={`tnum text-sm font-extrabold ${
               isEquity ? "text-foreground" : "text-positive"
             }`}
           >
