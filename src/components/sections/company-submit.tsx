@@ -23,7 +23,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { simulateDebtFinancing, fmtFCFA } from "@/lib/finance";
+import { simulateDebtFinancing } from "@/lib/finance";
+import { formatDisplayMoney } from "@/lib/display-money";
 import { SECTORS, COUNTRIES } from "@/lib/countries";
 import { toast } from "@/hooks/use-toast";
 import { CompanyOnboarding } from "@/components/company/company-onboarding";
@@ -67,12 +68,37 @@ interface MeResponse {
 }
 
 const STEPS = [
-  { id: 1, label: "Entreprise", icon: Building2 },
-  { id: 2, label: "Projet", icon: Briefcase },
-  { id: 3, label: "Conditions", icon: Landmark },
-  { id: 4, label: "Budget", icon: Wallet },
-  { id: 5, label: "Récapitulatif", icon: CheckCircle2 },
+  { id: 1, label: ["Entreprise", "Company"], icon: Building2 },
+  { id: 2, label: ["Projet", "Project"], icon: Briefcase },
+  { id: 3, label: ["Conditions", "Terms"], icon: Landmark },
+  { id: 4, label: ["Budget", "Budget"], icon: Wallet },
+  { id: 5, label: ["Récapitulatif", "Review"], icon: CheckCircle2 },
 ] as const;
+
+const COPY = {
+  fr: {
+    signInTitle: "Connectez-vous pour soumettre un dossier", signIn: "Se connecter", title: "Soumettre un dossier", back: "Retour", step: "Étape",
+    descriptions: ["Sélectionnez la société pour laquelle vous soumettez ce dossier.", "Décrivez le projet financé et son contexte géographique.", "Définissez l’instrument financier et les conditions proposées.", "Précisez le budget, la source de remboursement et les risques identifiés.", "Vérifiez l’ensemble avant soumission. Notre équipe analysera le dossier."],
+    role: "Votre rôle", mandate: "mandat", projectTitle: "Titre du projet", short: "Description courte", detailed: "Description détaillée", sector: "Secteur", country: "Pays", city: "Ville", image: "Image (URL, optionnel)", select: "Sélectionner", imageNote: "Si vide, une image par défaut sera utilisée.",
+    projectPlaceholder: "Extension du réseau de distribution — Dakar", shortPlaceholder: "Une phrase résumant le projet.", detailedPlaceholder: "Contexte, objectif, utilisation des fonds et source de remboursement…",
+    instrument: "Instrument financier", debt: "Dette", debtDesc: "Remboursement avec intérêts", equity: "Capital", equityDesc: "Prise de participation", rateWarning: "Attention à la lecture du taux", rateExplanation: "8 % total sur 6 mois n’équivaut pas à 8 % par an. Un taux total s’applique une seule fois ; un taux annuel est proratisé selon la durée.", rateExample: "Exemple : 1 000 000 FCFA à 8 % total sur 6 mois produit 80 000 FCFA d’intérêts, contre 40 000 FCFA à 8 % annuel.",
+    goal: "Montant recherché (XOF)", minimum: "Souscription min. (XOF)", contribution: "Apport propre (XOF)", rate: "Taux (%)", ratePeriod: "Période du taux", totalPeriod: "Total sur la durée", annual: "Annuel", totalHelp: "Le taux s’applique une seule fois sur toute la durée du financement.", annualHelp: "Le taux est annualisé et proratisé selon la durée.", duration: "Durée (mois)", repayment: "Type de remboursement", bullet: "In fine (capital à la fin)", amortized: "Amortissement constant", maximum: "Souscription max. (XOF, optionnel)", equityOffered: "% du capital offert", valuation: "Valorisation pré-money (XOF)", equityNotice: "Pour les actions, aucun échéancier de remboursement n’est promis. La sortie peut intervenir par cession secondaire ou rachat, sans garantie.",
+    budget: "Détail du budget", repaymentSource: "Source de remboursement", risks: "Risques identifiés", budgetPlaceholder: "Stock : 600 000 ; aménagement : 250 000 ; fonds de roulement : 150 000…", sourcePlaceholder: "Marge sur ventes, contrats signés et encaissements récurrents…", risksPlaceholder: "Concentration géographique, dépendance fournisseurs, saisonnalité…", company: "Société", project: "Projet", proposed: "Conditions proposées", goalReview: "Montant recherché", durationReview: "Durée", months: "mois", repaymentReview: "Type de remboursement", minimumReview: "Souscription min.", simulation: "Simulation financière", indicative: "À titre indicatif — commissions plateforme de 6 % à l’origine et 2 % par an de suivi.", upfront: "Commission initiale (6 %)", net: "Net versé à l’entreprise", totalCompany: "Total à régler par l’entreprise", platformRevenue: "Revenus plateforme (initial + suivi)", reviewNotice: "Ces conditions sont proposées par votre entreprise. Notre équipe les analysera et pourra demander des révisions. Vous ne publiez jamais directement.",
+    previous: "Précédent", save: "Sauvegarder le brouillon", saving: "Sauvegarde…", next: "Suivant", submit: "Soumettre le dossier", submitting: "Soumission…",
+    companyRequired: "Société requise", companyRequiredText: "Sélectionnez d’abord votre société.", draftFailed: "Brouillon non enregistré", retry: "Réessayez ultérieurement.", draftSaved: "Brouillon enregistré", draftSavedText: "Vous pourrez reprendre votre dossier plus tard.", network: "Erreur réseau", submitFailed: "Soumission échouée", submitted: "Dossier soumis", submittedText: "Notre équipe analyse votre dossier. Vous serez notifié.",
+  },
+  en: {
+    signInTitle: "Sign in to submit an application", signIn: "Sign in", title: "Submit an application", back: "Back", step: "Step",
+    descriptions: ["Select the company submitting this application.", "Describe the funded project and its location.", "Define the financing instrument and proposed terms.", "Provide the budget, repayment source and identified risks.", "Review everything before submission. Our team will assess the application."],
+    role: "Your role", mandate: "mandate", projectTitle: "Project title", short: "Short description", detailed: "Detailed description", sector: "Sector", country: "Country", city: "City", image: "Image (optional URL)", select: "Select", imageNote: "A default image will be used if left blank.",
+    projectPlaceholder: "Distribution network expansion — Dakar", shortPlaceholder: "One sentence summarizing the project.", detailedPlaceholder: "Context, objective, use of funds and repayment source…",
+    instrument: "Financing instrument", debt: "Debt", debtDesc: "Repayment with interest", equity: "Equity", equityDesc: "Ownership interest", rateWarning: "Understand how the rate is applied", rateExplanation: "8% total over 6 months is not the same as 8% per year. A total rate applies once; an annual rate is prorated over the term.", rateExample: "Example: XOF 1,000,000 at 8% total over 6 months generates XOF 80,000 interest, compared with XOF 40,000 at 8% per year.",
+    goal: "Amount sought (XOF)", minimum: "Minimum investment (XOF)", contribution: "Company contribution (XOF)", rate: "Rate (%)", ratePeriod: "Rate period", totalPeriod: "Total over the term", annual: "Annual", totalHelp: "The rate applies once over the full financing term.", annualHelp: "The annual rate is prorated over the financing term.", duration: "Term (months)", repayment: "Repayment type", bullet: "Bullet (principal at maturity)", amortized: "Constant amortization", maximum: "Maximum investment (optional, XOF)", equityOffered: "Equity offered (%)", valuation: "Pre-money valuation (XOF)", equityNotice: "Equity has no promised repayment schedule. An exit may occur through a secondary sale or buyback, without any guarantee.",
+    budget: "Budget breakdown", repaymentSource: "Repayment source", risks: "Identified risks", budgetPlaceholder: "Inventory: 600,000; fit-out: 250,000; working capital: 150,000…", sourcePlaceholder: "Sales margin, signed contracts and recurring collections…", risksPlaceholder: "Geographic concentration, supplier dependency, seasonality…", company: "Company", project: "Project", proposed: "Proposed terms", goalReview: "Amount sought", durationReview: "Term", months: "months", repaymentReview: "Repayment type", minimumReview: "Minimum investment", simulation: "Financial simulation", indicative: "Indicative only — platform fees of 6% upfront and 2% annual monitoring.", upfront: "Upfront fee (6%)", net: "Net amount paid to the company", totalCompany: "Total payable by the company", platformRevenue: "Platform revenue (upfront + monitoring)", reviewNotice: "These terms are proposed by your company. Our team will assess them and may request changes. You never publish an offer directly.",
+    previous: "Previous", save: "Save draft", saving: "Saving…", next: "Next", submit: "Submit application", submitting: "Submitting…",
+    companyRequired: "Company required", companyRequiredText: "Select your company first.", draftFailed: "Draft not saved", retry: "Try again later.", draftSaved: "Draft saved", draftSavedText: "You can resume your application later.", network: "Network error", submitFailed: "Submission failed", submitted: "Application submitted", submittedText: "Our team is reviewing your application. You will be notified.",
+  },
+} as const;
 
 type InstrumentType = "debt" | "equity";
 type RatePeriod = "total" | "annual";
@@ -134,6 +160,24 @@ const INITIAL_FORM: FormState = {
 export function CompanySubmit() {
   const setView = useAppStore((s) => s.setView);
   const userEmail = useAppStore((s) => s.userEmail);
+  const locale = useAppStore((s) => s.locale);
+  const displayCurrency = useAppStore((s) => s.displayCurrency);
+  const copy = COPY[locale];
+  const money = (value: bigint | number) =>
+    formatDisplayMoney(value, displayCurrency, locale);
+  const stepLabel = (index: number) => STEPS[index].label[locale === "fr" ? 0 : 1];
+  const roleLabel = (role: string) => {
+    const labels: Record<string, [string, string]> = {
+      owner: ["Propriétaire", "Owner"], administrator: ["Administrateur", "Administrator"], finance: ["Responsable financier", "Finance manager"], member: ["Membre", "Member"],
+    };
+    return labels[role]?.[locale === "fr" ? 0 : 1] ?? (locale === "fr" ? "Représentant" : "Representative");
+  };
+  const mandateLabel = (mandate: string) => {
+    const labels: Record<string, [string, string]> = {
+      manage: ["Gestion complète", "Full management"], sign: ["Signature autorisée", "Authorized signer"], submit: ["Dépôt de dossier", "Application submission"], view: ["Consultation", "Read only"],
+    };
+    return labels[mandate]?.[locale === "fr" ? 0 : 1] ?? (locale === "fr" ? "Accès autorisé" : "Authorized access");
+  };
 
   const [me, setMe] = useState<MeResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -196,13 +240,13 @@ export function CompanySubmit() {
         <Card className="p-8">
           <Building2 className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
           <h1 className="text-lg font-bold text-foreground">
-            Connectez-vous pour soumettre un dossier
+            {copy.signInTitle}
           </h1>
           <Button
             className="btn-nexora mt-4"
             onClick={() => setView("login")}
           >
-            Se connecter
+            {copy.signIn}
           </Button>
         </Card>
       </section>
@@ -319,8 +363,8 @@ export function CompanySubmit() {
   const handleSaveDraft = async () => {
     if (!form.companyId) {
       toast({
-        title: "Société requise",
-        description: "Sélectionnez d'abord votre société.",
+        title: copy.companyRequired,
+        description: copy.companyRequiredText,
         variant: "destructive",
       });
       return;
@@ -338,21 +382,21 @@ export function CompanySubmit() {
       };
       if (!res.ok) {
         toast({
-          title: "Brouillon non enregistré",
-          description: body?.error || "Réessayez ultérieurement.",
+          title: copy.draftFailed,
+          description: body?.error || copy.retry,
           variant: "destructive",
         });
         return;
       }
       if (body.project?.id) setDraftProjectId(body.project.id);
       toast({
-        title: "Brouillon enregistré",
-        description: "Vous pourrez reprendre votre dossier plus tard.",
+        title: copy.draftSaved,
+        description: copy.draftSavedText,
       });
     } catch {
       toast({
-        title: "Erreur réseau",
-        description: "Réessayez ultérieurement.",
+        title: copy.network,
+        description: copy.retry,
         variant: "destructive",
       });
     } finally {
@@ -371,21 +415,21 @@ export function CompanySubmit() {
       const body = (await res.json().catch(() => ({}))) as { error?: string; message?: string };
       if (!res.ok) {
         toast({
-          title: "Soumission échouée",
-          description: body?.error || "Réessayez ultérieurement.",
+          title: copy.submitFailed,
+          description: body?.error || copy.retry,
           variant: "destructive",
         });
         return;
       }
       toast({
-        title: "Dossier soumis",
-        description: "Notre équipe analyse votre dossier. Vous serez notifié.",
+        title: copy.submitted,
+        description: copy.submittedText,
       });
       setView("company_dashboard");
     } catch {
       toast({
-        title: "Erreur réseau",
-        description: "Réessayez ultérieurement.",
+        title: copy.network,
+        description: copy.retry,
         variant: "destructive",
       });
     } finally {
@@ -406,12 +450,12 @@ export function CompanySubmit() {
         <button
           onClick={() => setView("company_dashboard")}
           className="rounded-md p-1 text-muted-foreground hover:bg-secondary/60"
-          aria-label="Retour"
+          aria-label={copy.back}
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
         <h1 className="text-lg font-bold tracking-tight text-foreground sm:text-xl">
-          Soumettre un dossier
+          {copy.title}
         </h1>
       </div>
 
@@ -443,7 +487,7 @@ export function CompanySubmit() {
                     }`}
                   >
                     <Icon className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">{s.label}</span>
+                    <span className="hidden sm:inline">{s.label[locale === "fr" ? 0 : 1]}</span>
                     <span className="sm:hidden">{s.id}</span>
                   </button>
                 </li>
@@ -457,19 +501,10 @@ export function CompanySubmit() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">
-            Étape {step} / {STEPS.length} — {STEPS[step - 1].label}
+            {copy.step} {step} / {STEPS.length} — {stepLabel(step - 1)}
           </CardTitle>
           <CardDescription className="text-xs">
-            {step === 1 &&
-              "Sélectionnez la société pour laquelle vous soumettez ce dossier."}
-            {step === 2 &&
-              "Décrivez le projet financé et son contexte géographique."}
-            {step === 3 &&
-              "Définissez l'instrument financier et les conditions proposées."}
-            {step === 4 &&
-              "Précisez le budget, la source de remboursement et les risques identifiés."}
-            {step === 5 &&
-              "Vérifiez l'ensemble avant soumission. Notre équipe analysera le dossier."}
+            {copy.descriptions[step - 1]}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -503,7 +538,7 @@ export function CompanySubmit() {
                         {c.legalForm} · {c.country} · {c.activity}
                       </p>
                       <p className="mt-1 text-[11px] text-muted-foreground">
-                        Votre rôle : {m.role} (mandat : {m.mandate})
+                        {copy.role} : {roleLabel(m.role)} ({copy.mandate} : {mandateLabel(m.mandate)})
                       </p>
                     </div>
                     {isSelected && (
@@ -520,53 +555,53 @@ export function CompanySubmit() {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="title" className="text-xs">
-                  Titre du projet *
+                  {copy.projectTitle} *
                 </Label>
                 <Input
                   id="title"
                   value={form.title}
                   onChange={(e) => set("title", e.target.value)}
-                  placeholder="Extension réseau de distribution — Dakar"
+                  placeholder={copy.projectPlaceholder}
                   required
                 />
               </div>
               <div>
                 <Label htmlFor="description" className="text-xs">
-                  Description courte *
+                  {copy.short} *
                 </Label>
                 <Textarea
                   id="description"
                   value={form.description}
                   onChange={(e) => set("description", e.target.value)}
                   rows={2}
-                  placeholder="Une phrase résumant le projet."
+                  placeholder={copy.shortPlaceholder}
                   required
                 />
               </div>
               <div>
                 <Label htmlFor="longDescription" className="text-xs">
-                  Description détaillée *
+                  {copy.detailed} *
                 </Label>
                 <Textarea
                   id="longDescription"
                   value={form.longDescription}
                   onChange={(e) => set("longDescription", e.target.value)}
                   rows={5}
-                  placeholder="Contexte, objectif, utilisation des fonds, source de remboursement..."
+                  placeholder={copy.detailedPlaceholder}
                   required
                 />
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <Label htmlFor="sector" className="text-xs">
-                    Secteur *
+                    {copy.sector} *
                   </Label>
                   <Select
                     value={form.sector}
                     onValueChange={(v) => set("sector", v)}
                   >
                     <SelectTrigger id="sector">
-                      <SelectValue placeholder="Sélectionner" />
+                      <SelectValue placeholder={copy.select} />
                     </SelectTrigger>
                     <SelectContent>
                       {SECTORS.map((s) => (
@@ -579,14 +614,14 @@ export function CompanySubmit() {
                 </div>
                 <div>
                   <Label htmlFor="country" className="text-xs">
-                    Pays *
+                    {copy.country} *
                   </Label>
                   <Select
                     value={form.country}
                     onValueChange={(v) => set("country", v)}
                   >
                     <SelectTrigger id="country">
-                      <SelectValue placeholder="Sélectionner" />
+                      <SelectValue placeholder={copy.select} />
                     </SelectTrigger>
                     <SelectContent>
                       {COUNTRIES.map((c) => (
@@ -600,7 +635,7 @@ export function CompanySubmit() {
               </div>
               <div>
                 <Label htmlFor="city" className="text-xs">
-                  Ville *
+                  {copy.city} *
                 </Label>
                 <Input
                   id="city"
@@ -612,7 +647,7 @@ export function CompanySubmit() {
               </div>
               <div>
                 <Label htmlFor="imageUrl" className="text-xs">
-                  Image (URL, optionnel)
+                  {copy.image}
                 </Label>
                 <Input
                   id="imageUrl"
@@ -621,7 +656,7 @@ export function CompanySubmit() {
                   placeholder="https://..."
                 />
                 <p className="mt-1 text-[11px] text-muted-foreground">
-                  Si vide, une image par défaut sera utilisée.
+                  {copy.imageNote}
                 </p>
               </div>
             </div>
@@ -631,7 +666,7 @@ export function CompanySubmit() {
           {step === 3 && (
             <div className="space-y-4">
               <div>
-                <Label className="text-xs">Instrument financier *</Label>
+                <Label className="text-xs">{copy.instrument} *</Label>
                 <RadioGroup
                   value={form.instrumentType}
                   onValueChange={(v) => set("instrumentType", v as InstrumentType)}
@@ -647,9 +682,9 @@ export function CompanySubmit() {
                   >
                     <RadioGroupItem id="debt" value="debt" />
                     <div>
-                      <p className="text-sm font-semibold">Dette</p>
+                      <p className="text-sm font-semibold">{copy.debt}</p>
                       <p className="text-[11px] text-muted-foreground">
-                        Remboursement avec intérêts
+                        {copy.debtDesc}
                       </p>
                     </div>
                   </Label>
@@ -663,9 +698,9 @@ export function CompanySubmit() {
                   >
                     <RadioGroupItem id="equity" value="equity" />
                     <div>
-                      <p className="text-sm font-semibold">Capital</p>
+                      <p className="text-sm font-semibold">{copy.equity}</p>
                       <p className="text-[11px] text-muted-foreground">
-                        Prise de participation
+                        {copy.equityDesc}
                       </p>
                     </div>
                   </Label>
@@ -679,24 +714,13 @@ export function CompanySubmit() {
                     <Info className="mt-0.5 h-4 w-4 shrink-0 text-foreground" />
                     <div className="text-[11px] leading-relaxed text-muted-foreground">
                       <p className="font-semibold text-foreground">
-                        Attention à la lecture du taux
+                        {copy.rateWarning}
                       </p>
                       <p className="mt-1">
-                        « 8 % total sur 6 mois » ≠ « 8 % par an ». Un taux
-                        total s&apos;applique une seule fois sur toute la
-                        durée. Un taux annuel est proratisé par la durée.
+                        {copy.rateExplanation}
                       </p>
                       <p className="mt-1">
-                        Exemple : 1 000 000 FCFA à 8 % total sur 6 mois →
-                        intérêts ={" "}
-                        <span className="tnum font-semibold text-foreground">
-                          80 000 FCFA
-                        </span>
-                        . À 8 % par an sur 6 mois → intérêts ={" "}
-                        <span className="tnum font-semibold text-foreground">
-                          40 000 FCFA
-                        </span>
-                        .
+                        {copy.rateExample}
                       </p>
                     </div>
                   </div>
@@ -707,7 +731,7 @@ export function CompanySubmit() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <Label htmlFor="fundingGoal" className="text-xs">
-                    Montant recherché (FCFA) *
+                    {copy.goal} *
                   </Label>
                   <Input
                     id="fundingGoal"
@@ -722,7 +746,7 @@ export function CompanySubmit() {
                 </div>
                 <div>
                   <Label htmlFor="minInvestment" className="text-xs">
-                    Souscription min. (FCFA) *
+                    {copy.minimum} *
                   </Label>
                   <Input
                     id="minInvestment"
@@ -743,7 +767,7 @@ export function CompanySubmit() {
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                       <Label htmlFor="companyContribution" className="text-xs">
-                        Apport propre (FCFA)
+                        {copy.contribution}
                       </Label>
                       <Input
                         id="companyContribution"
@@ -759,7 +783,7 @@ export function CompanySubmit() {
                     </div>
                     <div>
                       <Label htmlFor="annualRate" className="text-xs">
-                        Taux (%) *
+                        {copy.rate} *
                       </Label>
                       <Input
                         id="annualRate"
@@ -776,7 +800,7 @@ export function CompanySubmit() {
                   </div>
                   <div>
                     <Label htmlFor="ratePeriod" className="text-xs">
-                      Période du taux *
+                      {copy.ratePeriod} *
                     </Label>
                     <Select
                       value={form.ratePeriod}
@@ -787,21 +811,21 @@ export function CompanySubmit() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="total">
-                          Total sur la durée
+                          {copy.totalPeriod}
                         </SelectItem>
-                        <SelectItem value="annual">Annuel</SelectItem>
+                        <SelectItem value="annual">{copy.annual}</SelectItem>
                       </SelectContent>
                     </Select>
                     <p className="mt-1 text-[11px] text-muted-foreground">
                       {form.ratePeriod === "total"
-                        ? "Le taux s'applique une seule fois sur toute la durée du financement."
-                        : "Le taux est annualisé et proratisé selon la durée."}
+                        ? copy.totalHelp
+                        : copy.annualHelp}
                     </p>
                   </div>
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                       <Label htmlFor="durationMonths" className="text-xs">
-                        Durée (mois) *
+                        {copy.duration} *
                       </Label>
                       <Input
                         id="durationMonths"
@@ -818,7 +842,7 @@ export function CompanySubmit() {
                     </div>
                     <div>
                       <Label htmlFor="repaymentType" className="text-xs">
-                        Type de remboursement *
+                        {copy.repayment} *
                       </Label>
                       <Select
                         value={form.repaymentType}
@@ -831,10 +855,10 @@ export function CompanySubmit() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="bullet">
-                            In fine (capital à la fin)
+                            {copy.bullet}
                           </SelectItem>
                           <SelectItem value="amortized">
-                            Amortissement constant
+                            {copy.amortized}
                           </SelectItem>
                         </SelectContent>
                       </Select>
@@ -842,7 +866,7 @@ export function CompanySubmit() {
                   </div>
                   <div>
                     <Label htmlFor="maxInvestment" className="text-xs">
-                      Souscription max. (FCFA, optionnel)
+                      {copy.maximum}
                     </Label>
                     <Input
                       id="maxInvestment"
@@ -865,7 +889,7 @@ export function CompanySubmit() {
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                       <Label htmlFor="equityOfferedPct" className="text-xs">
-                        % du capital offert *
+                        {copy.equityOffered} *
                       </Label>
                       <Input
                         id="equityOfferedPct"
@@ -883,7 +907,7 @@ export function CompanySubmit() {
                     </div>
                     <div>
                       <Label htmlFor="valuationPre" className="text-xs">
-                        Valorisation pré-money (FCFA) *
+                        {copy.valuation} *
                       </Label>
                       <Input
                         id="valuationPre"
@@ -901,9 +925,7 @@ export function CompanySubmit() {
                   </div>
                   <div className="rounded-md bg-nexora-pale p-3">
                     <p className="text-[11px] leading-relaxed text-positive">
-                      Pour les actions : aucun échéancier de remboursement. La
-                      sortie est envisagée à terme par cession secondaire ou
-                      rachat, non garantie.
+                      {copy.equityNotice}
                     </p>
                   </div>
                 </>
@@ -916,40 +938,40 @@ export function CompanySubmit() {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="budgetDetail" className="text-xs">
-                  Détail du budget *
+                  {copy.budget} *
                 </Label>
                 <Textarea
                   id="budgetDetail"
                   value={form.budgetDetail}
                   onChange={(e) => set("budgetDetail", e.target.value)}
                   rows={4}
-                  placeholder="Stock 600k, Aménagement 250k, FdR 150k..."
+                  placeholder={copy.budgetPlaceholder}
                   required
                 />
               </div>
               <div>
                 <Label htmlFor="repaymentSource" className="text-xs">
-                  Source de remboursement *
+                  {copy.repaymentSource} *
                 </Label>
                 <Textarea
                   id="repaymentSource"
                   value={form.repaymentSource}
                   onChange={(e) => set("repaymentSource", e.target.value)}
                   rows={3}
-                  placeholder="Marge sur ventes (20%), encaissements quotidiens..."
+                  placeholder={copy.sourcePlaceholder}
                   required
                 />
               </div>
               <div>
                 <Label htmlFor="risksIdentified" className="text-xs">
-                  Risques identifiés *
+                  {copy.risks} *
                 </Label>
                 <Textarea
                   id="risksIdentified"
                   value={form.risksIdentified}
                   onChange={(e) => set("risksIdentified", e.target.value)}
                   rows={3}
-                  placeholder="Concentration géographique, dépendance fournisseurs..."
+                  placeholder={copy.risksPlaceholder}
                   required
                 />
               </div>
@@ -961,7 +983,7 @@ export function CompanySubmit() {
             <div className="space-y-4">
               <div className="rounded-md border border-border bg-secondary/40 p-4">
                 <p className="text-xs font-semibold text-foreground">
-                  Société
+                  {copy.company}
                 </p>
                 <p className="mt-1 text-sm">
                   {selectedCompany?.tradeName || selectedCompany?.legalName} ·{" "}
@@ -970,7 +992,7 @@ export function CompanySubmit() {
               </div>
 
               <div className="rounded-md border border-border p-4">
-                <p className="text-xs font-semibold text-foreground">Projet</p>
+                <p className="text-xs font-semibold text-foreground">{copy.project}</p>
                 <p className="mt-1 text-sm font-medium">{form.title}</p>
                 <p className="mt-1 text-xs text-muted-foreground line-clamp-3">
                   {form.description}
@@ -986,40 +1008,40 @@ export function CompanySubmit() {
 
               <div className="rounded-md border border-border p-4">
                 <p className="text-xs font-semibold text-foreground">
-                  Conditions proposées
+                  {copy.proposed}
                 </p>
                 <dl className="mt-2 space-y-1 text-xs">
                   <div className="flex justify-between gap-3">
-                    <dt className="text-muted-foreground">Montant recherché</dt>
+                    <dt className="text-muted-foreground">{copy.goalReview}</dt>
                     <dd className="tnum font-medium text-foreground">
-                      {fmtFCFA(Number(form.fundingGoal) || 0)}
+                      {money(Number(form.fundingGoal) || 0)}
                     </dd>
                   </div>
                   {form.instrumentType === "debt" && (
                     <>
                       <div className="flex justify-between gap-3">
-                        <dt className="text-muted-foreground">Taux</dt>
+                        <dt className="text-muted-foreground">{copy.rate}</dt>
                         <dd className="tnum font-medium text-foreground">
                           {form.annualRate} %{" "}
                           {form.ratePeriod === "total"
-                            ? "(total sur la durée)"
-                            : "(annuel)"}
+                            ? `(${copy.totalPeriod.toLocaleLowerCase()})`
+                            : `(${copy.annual.toLocaleLowerCase()})`}
                         </dd>
                       </div>
                       <div className="flex justify-between gap-3">
-                        <dt className="text-muted-foreground">Durée</dt>
+                        <dt className="text-muted-foreground">{copy.durationReview}</dt>
                         <dd className="tnum font-medium text-foreground">
-                          {form.durationMonths} mois
+                          {form.durationMonths} {copy.months}
                         </dd>
                       </div>
                       <div className="flex justify-between gap-3">
                         <dt className="text-muted-foreground">
-                          Type de remboursement
+                          {copy.repaymentReview}
                         </dt>
                         <dd className="font-medium text-foreground">
                           {form.repaymentType === "bullet"
-                            ? "In fine"
-                            : "Amortissement constant"}
+                            ? copy.bullet
+                            : copy.amortized}
                         </dd>
                       </div>
                     </>
@@ -1028,7 +1050,7 @@ export function CompanySubmit() {
                     <>
                       <div className="flex justify-between gap-3">
                         <dt className="text-muted-foreground">
-                          % du capital offert
+                          {copy.equityOffered}
                         </dt>
                         <dd className="tnum font-medium text-foreground">
                           {form.equityOfferedPct} %
@@ -1036,18 +1058,18 @@ export function CompanySubmit() {
                       </div>
                       <div className="flex justify-between gap-3">
                         <dt className="text-muted-foreground">
-                          Valorisation pré-money
+                          {copy.valuation}
                         </dt>
                         <dd className="tnum font-medium text-foreground">
-                          {fmtFCFA(Number(form.valuationPre) || 0)}
+                          {money(Number(form.valuationPre) || 0)}
                         </dd>
                       </div>
                     </>
                   )}
                   <div className="flex justify-between gap-3">
-                    <dt className="text-muted-foreground">Souscription min.</dt>
+                    <dt className="text-muted-foreground">{copy.minimumReview}</dt>
                     <dd className="tnum font-medium text-foreground">
-                      {fmtFCFA(Number(form.minInvestment) || 0)}
+                      {money(Number(form.minInvestment) || 0)}
                     </dd>
                   </div>
                 </dl>
@@ -1057,43 +1079,42 @@ export function CompanySubmit() {
               {form.instrumentType === "debt" && debtSim && (
                 <div className="rounded-md border border-border p-4">
                   <p className="text-xs font-semibold text-foreground">
-                    Simulation financière
+                    {copy.simulation}
                   </p>
                   <p className="mt-1 text-[11px] text-muted-foreground">
-                    À titre indicatif — basé sur les commissions plateforme
-                    (6% initial, 2%/an de suivi).
+                    {copy.indicative}
                   </p>
                   <dl className="mt-2 space-y-1 text-xs">
                     <div className="flex justify-between gap-3">
                       <dt className="text-muted-foreground">
-                        Commission initiale (6%)
+                        {copy.upfront}
                       </dt>
                       <dd className="tnum font-medium text-foreground">
-                        {fmtFCFA(debtSim.upfrontCommission)}
+                        {money(debtSim.upfrontCommission)}
                       </dd>
                     </div>
                     <div className="flex justify-between gap-3">
                       <dt className="text-muted-foreground">
-                        Net versé à l&apos;entreprise
+                        {copy.net}
                       </dt>
                       <dd className="tnum font-medium text-foreground">
-                        {fmtFCFA(debtSim.netToCompany)}
+                        {money(debtSim.netToCompany)}
                       </dd>
                     </div>
                     <div className="flex justify-between gap-3">
                       <dt className="text-muted-foreground">
-                        Total à régler par l&apos;entreprise
+                        {copy.totalCompany}
                       </dt>
                       <dd className="tnum font-semibold text-foreground">
-                        {fmtFCFA(debtSim.totalCompanyPayment)}
+                        {money(debtSim.totalCompanyPayment)}
                       </dd>
                     </div>
                     <div className="flex justify-between gap-3 border-t border-border pt-1">
                       <dt className="text-muted-foreground">
-                        CA plateforme (initial + suivi)
+                        {copy.platformRevenue}
                       </dt>
                       <dd className="tnum font-medium text-foreground">
-                        {fmtFCFA(debtSim.platformRevenue)}
+                        {money(debtSim.platformRevenue)}
                       </dd>
                     </div>
                   </dl>
@@ -1105,9 +1126,7 @@ export function CompanySubmit() {
                 <div className="flex items-start gap-2">
                   <Info className="mt-0.5 h-4 w-4 shrink-0 text-positive" />
                   <p className="text-[11px] leading-relaxed text-positive">
-                    Ces conditions sont proposées par votre entreprise. Notre
-                    équipe les analysera et peut demander des révisions. Vous
-                    ne publiez pas directement.
+                    {copy.reviewNotice}
                   </p>
                 </div>
               </div>
@@ -1124,7 +1143,7 @@ export function CompanySubmit() {
               disabled={step === 1 || submitting}
             >
               <ArrowLeft className="mr-1.5 h-4 w-4" />
-              Précédent
+              {copy.previous}
             </Button>
 
             <div className="flex flex-col gap-2 sm:flex-row">
@@ -1138,12 +1157,12 @@ export function CompanySubmit() {
                 {savingDraft ? (
                   <>
                     <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                    Sauvegarde…
+                    {copy.saving}
                   </>
                 ) : (
                   <>
                     <Save className="mr-1.5 h-3.5 w-3.5" />
-                    Sauvegarder le brouillon
+                    {copy.save}
                   </>
                 )}
               </Button>
@@ -1156,7 +1175,7 @@ export function CompanySubmit() {
                   onClick={() => setStep((s) => Math.min(STEPS.length, s + 1))}
                   disabled={!stepValid()}
                 >
-                  Suivant
+                  {copy.next}
                   <ArrowRight className="ml-1.5 h-4 w-4" />
                 </Button>
               ) : (
@@ -1170,12 +1189,12 @@ export function CompanySubmit() {
                   {submitting ? (
                     <>
                       <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                      Soumission…
+                      {copy.submitting}
                     </>
                   ) : (
                     <>
                       <Send className="mr-1.5 h-3.5 w-3.5" />
-                      Soumettre le dossier
+                      {copy.submit}
                     </>
                   )}
                 </Button>

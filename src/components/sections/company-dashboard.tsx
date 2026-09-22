@@ -24,7 +24,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { fmtFCFA, fmtCompact, simulateDebtFinancing } from "@/lib/finance";
+import { simulateDebtFinancing } from "@/lib/finance";
+import { formatDisplayMoney } from "@/lib/display-money";
 import { CompanyOnboarding } from "@/components/company/company-onboarding";
 import {
   Building2,
@@ -44,57 +45,70 @@ import {
 // 15 statuts du modèle Project (prisma/schema.prisma)
 const STATUS_META: Record<
   string,
-  { label: string; className: string }
+  { label: [string, string]; className: string }
 > = {
-  draft: { label: "Brouillon", className: "bg-secondary text-muted-foreground" },
+  draft: { label: ["Brouillon", "Draft"], className: "bg-secondary text-muted-foreground" },
   submitted: {
-    label: "Soumis",
+    label: ["Soumis", "Submitted"],
     className: "bg-[#FFF8E1] text-[#8a6d00]",
   },
   under_review: {
-    label: "En analyse",
+    label: ["En analyse", "Under review"],
     className: "bg-[#FFF8E1] text-[#8a6d00]",
   },
   complement_requested: {
-    label: "Complément demandé",
+    label: ["Complément demandé", "Additional information required"],
     className: "bg-[#FFF8E1] text-[#8a6d00]",
   },
-  rejected: { label: "Rejeté", className: "bg-[#FFF5F5] text-nexora-danger" },
-  approved: { label: "Approuvé", className: "bg-nexora-pale text-positive" },
-  offer_prepared: { label: "Offre préparée", className: "bg-nexora-pale text-positive" },
-  offer_confirmed: { label: "Offre confirmée", className: "bg-nexora-pale text-positive" },
-  published: { label: "Publié", className: "bg-nexora-pale text-positive" },
-  funding: { label: "En collecte", className: "bg-nexora-pale text-positive" },
-  funded: { label: "Financé", className: "bg-nexora-lime text-nexora-black" },
-  repaying: { label: "Remboursement", className: "bg-nexora-lime text-nexora-black" },
-  completed: { label: "Terminé", className: "bg-nexora-pale text-positive" },
-  defaulted: { label: "Défaut", className: "bg-[#FFF5F5] text-nexora-danger" },
-  closed: { label: "Clôturé", className: "bg-secondary text-muted-foreground" },
+  rejected: { label: ["Rejeté", "Rejected"], className: "bg-[#FFF5F5] text-nexora-danger" },
+  approved: { label: ["Approuvé", "Approved"], className: "bg-nexora-pale text-positive" },
+  offer_prepared: { label: ["Offre préparée", "Offer prepared"], className: "bg-nexora-pale text-positive" },
+  offer_confirmed: { label: ["Offre confirmée", "Offer confirmed"], className: "bg-nexora-pale text-positive" },
+  published: { label: ["Publié", "Published"], className: "bg-nexora-pale text-positive" },
+  funding: { label: ["En collecte", "Fundraising"], className: "bg-nexora-pale text-positive" },
+  funded: { label: ["Financé", "Funded"], className: "bg-nexora-lime text-nexora-black" },
+  repaying: { label: ["Remboursement", "Repaying"], className: "bg-nexora-lime text-nexora-black" },
+  completed: { label: ["Terminé", "Completed"], className: "bg-nexora-pale text-positive" },
+  defaulted: { label: ["Défaut", "Default"], className: "bg-[#FFF5F5] text-nexora-danger" },
+  closed: { label: ["Clôturé", "Closed"], className: "bg-secondary text-muted-foreground" },
 };
 
-function NotLoggedIn() {
+const COPY = {
+  fr: {
+    workspace: "Espace entreprise", signInIntro: "Connectez-vous pour accéder à l’espace entreprise : vos dossiers, vos financements et le règlement de vos échéances.", signIn: "Se connecter", create: "Créer un compte entreprise", loadError: "Impossible de charger votre espace entreprise", retry: "Réessayer", select: "Sélectionnez une société", personal: "Compte personnel",
+    nextDue: "Prochaine échéance", due: "Échéance", noDue: "Aucune échéance", afterFunding: "Sera créée après financement complet", activeFiles: "Dossiers actifs", totalFiles: "dossier(s) au total", fundedCapital: "Capital financé", raised: "Collecté auprès des investisseurs", newFile: "Nouveau dossier", myFiles: "Mes dossiers", noFiles: "Aucun dossier pour cette société", firstFile: "Soumettez un premier dossier de financement.", submitFile: "Soumettre un dossier", debt: "Dette", equity: "Capital", target: "Objectif", submitted: "Soumis le", fundraising: "Collecte", investors: "souscripteurs", investor: "souscripteur", closing: "Clôture",
+    financing: "Mes financements", privacy: "Vous n’avez pas accès aux données personnelles des investisseurs. Les remboursements sont collectés globalement (capital + intérêts + suivi) par carte ou Mobile Money via un prestataire agréé.", noFinancing: "Aucun financement actif. Vos échéances apparaîtront ici une fois votre offre financée.", bullet: "Remboursement in fine", amortized: "Remboursement amortissable", months: "mois", principal: "Capital", interest: "Intérêts", followUp: "Suivi plateforme", totalDue: "Total à régler", bulletNote: "Échéance unique — paiement global à effectuer à la fin de la période de", paid: "Échéance réglée", verifying: "Paiement déclaré — en cours de vérification", pay: "Régler l’échéance", soon: "Paiement bientôt disponible", provider: "Paiement par carte et Mobile Money en cours d’activation avec un prestataire agréé.", paymentAfterFunding: "L’échéance sera créée après financement complet de l’offre.", noPayment: "Aucune échéance déclarée pour ce dossier.", offerNotFunded: "L’offre n’est pas encore financée. L’échéance sera créée automatiquement une fois le financement complet.", paymentUnavailable: "L’échéance n’est pas encore disponible. Contactez notre équipe.",
+  },
+  en: {
+    workspace: "Company workspace", signInIntro: "Sign in to manage your applications, financing and repayments.", signIn: "Sign in", create: "Create a company account", loadError: "Unable to load your company workspace", retry: "Try again", select: "Select a company", personal: "Personal account",
+    nextDue: "Next payment", due: "Payment", noDue: "No payment due", afterFunding: "Created once funding is complete", activeFiles: "Active applications", totalFiles: "application(s) in total", fundedCapital: "Capital funded", raised: "Raised from investors", newFile: "New application", myFiles: "My applications", noFiles: "No application for this company", firstFile: "Submit your first financing application.", submitFile: "Submit an application", debt: "Debt", equity: "Equity", target: "Target", submitted: "Submitted on", fundraising: "Fundraising", investors: "investors", investor: "investor", closing: "Closes",
+    financing: "My financing", privacy: "You cannot access investors’ personal data. Repayments are collected globally (principal + interest + monitoring fee) by card or Mobile Money through an authorized provider.", noFinancing: "No active financing. Repayments will appear here once your offer is funded.", bullet: "Bullet repayment", amortized: "Amortizing repayment", months: "months", principal: "Principal", interest: "Interest", followUp: "Platform monitoring", totalDue: "Total payable", bulletNote: "Single payment — the full amount is payable at the end of the", paid: "Payment completed", verifying: "Payment declared — verification in progress", pay: "Make payment", soon: "Payment coming soon", provider: "Card and Mobile Money payments are being activated with an authorized provider.", paymentAfterFunding: "The payment will be created once the offer is fully funded.", noPayment: "No payment has been scheduled for this application.", offerNotFunded: "The offer is not funded yet. The payment will be created automatically once funding is complete.", paymentUnavailable: "The payment is not available yet. Contact our team.",
+  },
+} as const;
+
+function NotLoggedIn({ locale }: { locale: "fr" | "en" }) {
   const setView = useAppStore((s) => s.setView);
+  const copy = COPY[locale];
   return (
     <section className="mx-auto max-w-md px-4 py-16 sm:px-6 lg:px-8">
       <div className="rounded-xl border border-border/60 bg-card p-8 text-center">
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-nexora-pale">
           <Building2 className="h-7 w-7 text-positive" />
         </div>
-        <h1 className="text-xl font-bold text-foreground">Espace entreprise</h1>
+        <h1 className="text-xl font-bold text-foreground">{copy.workspace}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Connectez-vous pour accéder à l&apos;espace entreprise : vos dossiers,
-          vos financements et le règlement de vos échéances.
+          {copy.signInIntro}
         </p>
         <div className="mt-6 flex flex-col gap-2">
           <Button onClick={() => setView("login")} className="btn-nexora w-full">
-            Se connecter
+            {copy.signIn}
           </Button>
           <Button
             variant="ghost"
             onClick={() => setView("register")}
             className="w-full"
           >
-            Créer un compte entreprise
+            {copy.create}
           </Button>
         </div>
       </div>
@@ -202,6 +216,12 @@ interface PaymentsResponse {
 export function CompanyDashboard() {
   const userEmail = useAppStore((s) => s.userEmail);
   const setView = useAppStore((s) => s.setView);
+  const locale = useAppStore((s) => s.locale);
+  const displayCurrency = useAppStore((s) => s.displayCurrency);
+  const copy = COPY[locale];
+  const money = (value: bigint | number, compact = false) =>
+    formatDisplayMoney(value, displayCurrency, locale, compact);
+  const dateLocale = locale === "fr" ? "fr-FR" : "en-GB";
 
   const [me, setMe] = useState<MeResponse | null>(null);
   const [projects, setProjects] = useState<CompanyProject[]>([]);
@@ -243,17 +263,17 @@ export function CompanyDashboard() {
         setLoading(false);
       })
       .catch((e) => {
-        setError(e.message || "Erreur réseau");
+        setError(e.message || (locale === "fr" ? "Erreur réseau" : "Network error"));
         setLoading(false);
       });
-  }, []);
+  }, [locale]);
 
   useEffect(() => {
     if (!userEmail) return;
     void fetchData();
   }, [userEmail, reloadKey, fetchData]);
 
-  if (!userEmail) return <NotLoggedIn />;
+  if (!userEmail) return <NotLoggedIn locale={locale} />;
 
   if (loading) {
     return (
@@ -276,7 +296,7 @@ export function CompanyDashboard() {
         <div className="rounded-xl border border-nexora-danger/30 bg-[#FFF5F5] p-6">
           <ShieldAlert className="mx-auto mb-3 h-8 w-8 text-nexora-danger" />
           <p className="text-sm font-semibold text-nexora-danger">
-            Impossible de charger votre espace entreprise
+            {copy.loadError}
           </p>
           <Button
             variant="outline"
@@ -288,7 +308,7 @@ export function CompanyDashboard() {
             }}
           >
             <RefreshCw className="mr-2 h-4 w-4" />
-            Réessayer
+            {copy.retry}
           </Button>
         </div>
       </section>
@@ -347,12 +367,12 @@ export function CompanyDashboard() {
           </div>
           <div>
             <h1 className="text-lg font-bold tracking-tight text-foreground sm:text-xl">
-              Espace entreprise
+              {copy.workspace}
             </h1>
             <p className="text-xs text-muted-foreground">
               {selectedCompany
                 ? `${selectedCompany.tradeName || selectedCompany.legalName} · ${selectedCompany.legalForm} · ${selectedCompany.country}`
-                : "Sélectionnez une société"}
+                : copy.select}
             </p>
           </div>
         </div>
@@ -362,10 +382,10 @@ export function CompanyDashboard() {
             onValueChange={(v) => setSelectedCompanyId(v)}
           >
             <SelectTrigger size="sm" className="w-[220px]">
-              <SelectValue placeholder="Compte personnel" />
+              <SelectValue placeholder={copy.personal} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="personal">Compte personnel</SelectItem>
+              <SelectItem value="personal">{copy.personal}</SelectItem>
               {memberships.map((m) => (
                 <SelectItem key={m.company.id} value={m.company.id}>
                   {m.company.tradeName || m.company.legalName}
@@ -382,27 +402,27 @@ export function CompanyDashboard() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-muted-foreground">
-              Prochaine échéance
+              {copy.nextDue}
             </span>
             <CalendarClock className="h-4 w-4 text-foreground" />
           </div>
           {nextPayment ? (
             <>
               <p className="tnum mt-2 text-xl font-bold text-foreground">
-                {fmtFCFA(nextPayment.totalDue)}
+                {money(nextPayment.totalDue)}
               </p>
               <p className="mt-0.5 text-[11px] text-muted-foreground">
-                Échéance n°{nextPayment.installmentNo} ·{" "}
-                {new Date(nextPayment.dueDate).toLocaleDateString("fr-FR")}
+                {copy.due} n°{nextPayment.installmentNo} ·{" "}
+                {new Date(nextPayment.dueDate).toLocaleDateString(dateLocale)}
               </p>
             </>
           ) : (
             <>
               <p className="mt-2 text-sm font-semibold text-muted-foreground">
-                Aucune échéance
+                {copy.noDue}
               </p>
               <p className="mt-0.5 text-[11px] text-muted-foreground">
-                Sera créée après financement complet
+                {copy.afterFunding}
               </p>
             </>
           )}
@@ -412,7 +432,7 @@ export function CompanyDashboard() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-muted-foreground">
-              Dossiers actifs
+              {copy.activeFiles}
             </span>
             <Briefcase className="h-4 w-4 text-foreground" />
           </div>
@@ -420,7 +440,7 @@ export function CompanyDashboard() {
             {activeProjects.length}
           </p>
           <p className="mt-0.5 text-[11px] text-muted-foreground">
-            {companyProjects.length} dossier(s) au total
+            {companyProjects.length} {copy.totalFiles}
           </p>
         </Card>
 
@@ -428,15 +448,15 @@ export function CompanyDashboard() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-muted-foreground">
-              Capital financé
+              {copy.fundedCapital}
             </span>
             <Wallet className="h-4 w-4 text-foreground" />
           </div>
           <p className="tnum mt-2 text-2xl font-bold text-foreground">
-            {fmtCompact(capitalFunded)}
+            {money(capitalFunded, true)}
           </p>
           <p className="mt-0.5 text-[11px] text-muted-foreground">
-            Collecté auprès des investisseurs
+            {copy.raised}
           </p>
         </Card>
       </div>
@@ -448,7 +468,7 @@ export function CompanyDashboard() {
           onClick={() => setView("company_submit")}
         >
           <Plus className="mr-1.5 h-4 w-4" />
-          Nouveau dossier
+          {copy.newFile}
         </Button>
       </div>
 
@@ -456,16 +476,16 @@ export function CompanyDashboard() {
       <div className="mt-6">
         <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-foreground">
           <Briefcase className="h-4 w-4" />
-          Mes dossiers
+          {copy.myFiles}
         </h2>
         {companyProjects.length === 0 ? (
           <Card className="p-8 text-center">
             <Briefcase className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
             <p className="text-sm font-medium text-foreground">
-              Aucun dossier pour cette société
+              {copy.noFiles}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Soumettez un premier dossier de financement.
+              {copy.firstFile}
             </p>
             <Button
               className="btn-nexora mt-4"
@@ -473,14 +493,14 @@ export function CompanyDashboard() {
               onClick={() => setView("company_submit")}
             >
               <Plus className="mr-1.5 h-4 w-4" />
-              Soumettre un dossier
+              {copy.submitFile}
             </Button>
           </Card>
         ) : (
           <div className="space-y-3">
             {companyProjects.map((p) => {
               const sm = STATUS_META[p.status] || {
-                label: p.status,
+                label: [p.status, p.status] as [string, string],
                 className: "bg-secondary text-muted-foreground",
               };
               const hasOffer = !!p.offer;
@@ -505,22 +525,22 @@ export function CompanyDashboard() {
                         {p.sector} · {p.city}, {p.country}
                       </p>
                       <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <Badge className={sm.className}>{sm.label}</Badge>
+                        <Badge className={sm.className}>{sm.label[locale === "fr" ? 0 : 1]}</Badge>
                         <Badge variant="outline">
-                          {isDebt ? "Dette" : "Capital"}
+                          {isDebt ? copy.debt : copy.equity}
                         </Badge>
                         <span className="tnum text-[11px] text-muted-foreground">
-                          Objectif {fmtCompact(p.fundingGoal)}
+                          {copy.target} {money(p.fundingGoal, true)}
                         </span>
                       </div>
                     </div>
                     <div className="shrink-0 text-right">
                       <p className="text-[11px] text-muted-foreground">
-                        Soumis le
+                        {copy.submitted}
                       </p>
                       <p className="tnum text-xs font-medium text-foreground">
                         {p.submittedAt
-                          ? new Date(p.submittedAt).toLocaleDateString("fr-FR")
+                          ? new Date(p.submittedAt).toLocaleDateString(dateLocale)
                           : "—"}
                       </p>
                     </div>
@@ -531,22 +551,22 @@ export function CompanyDashboard() {
                     <div className="mt-3">
                       <div className="mb-1 flex items-center justify-between text-xs">
                         <span className="text-muted-foreground">
-                          Collecte
+                          {copy.fundraising}
                         </span>
                         <span className="tnum font-medium text-foreground">
-                          {fundingPct}% · {fmtCompact(p.offer!.raisedAmount)}
+                          {fundingPct}% · {money(p.offer!.raisedAmount, true)}
                         </span>
                       </div>
                       <Progress value={fundingPct} className="h-2" />
                       <div className="mt-1 flex items-center justify-between text-[11px] text-muted-foreground">
                         <span>
                           {p.offer!.backersCount}{" "}
-                          {p.offer!.backersCount > 1 ? "souscripteurs" : "souscripteur"}
+                          {p.offer!.backersCount > 1 ? copy.investors : copy.investor}
                         </span>
                         <span>
-                          Clôture{" "}
+                          {copy.closing}{" "}
                           {new Date(p.offer!.closingDate).toLocaleDateString(
-                            "fr-FR"
+                            dateLocale
                           )}
                         </span>
                       </div>
@@ -563,17 +583,14 @@ export function CompanyDashboard() {
       <div className="mt-8">
         <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-foreground">
           <HandCoins className="h-4 w-4" />
-          Mes financements
+          {copy.financing}
         </h2>
 
         {/* Notice: pas d'accès aux données investisseurs */}
         <div className="mb-3 flex items-start gap-2 rounded-md border border-border bg-secondary/60 p-3">
           <Lock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
           <p className="text-[11px] leading-relaxed text-muted-foreground">
-            Vous n&apos;avez pas accès aux données personnelles des
-            investisseurs. Les remboursements seront collectés globalement
-            (capital + intérêts + suivi) par carte ou Mobile Money via un
-            prestataire agréé. Aucune coordonnée fictive n&apos;est affichée.
+            {copy.privacy}
           </p>
         </div>
 
@@ -581,8 +598,7 @@ export function CompanyDashboard() {
           (p) => p.offer && p.instrumentType === "debt"
         ).length === 0 ? (
           <Card className="p-8 text-center text-sm text-muted-foreground">
-            Aucun financement actif. Vos échéances apparaîtront ici une fois
-            votre offre financée.
+            {copy.noFinancing}
           </Card>
         ) : (
           <div className="space-y-4">
@@ -609,7 +625,7 @@ export function CompanyDashboard() {
                   p.status
                 );
                 const statusMeta = STATUS_META[p.status] || {
-                  label: p.status,
+                  label: [p.status, p.status] as [string, string],
                   className: "bg-secondary text-muted-foreground",
                 };
                 return (
@@ -621,13 +637,13 @@ export function CompanyDashboard() {
                         </p>
                         <p className="mt-0.5 text-xs text-muted-foreground">
                           {(p.offer!.repaymentType || "bullet") === "bullet"
-                            ? "Remboursement in fine"
-                            : "Remboursement amortissable"}{" "}
-                          · {p.offer!.durationMonths} mois
+                            ? copy.bullet
+                            : copy.amortized}{" "}
+                          · {p.offer!.durationMonths} {copy.months}
                         </p>
                       </div>
                       <Badge className={statusMeta.className}>
-                        {statusMeta.label}
+                        {statusMeta.label[locale === "fr" ? 0 : 1]}
                       </Badge>
                     </div>
 
@@ -636,42 +652,40 @@ export function CompanyDashboard() {
                       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                         <div>
                           <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                            Capital
+                            {copy.principal}
                           </p>
                           <p className="tnum mt-0.5 text-sm font-semibold text-foreground">
-                            {fmtFCFA(sim.principal)}
+                            {money(sim.principal)}
                           </p>
                         </div>
                         <div>
                           <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                            Intérêts
+                            {copy.interest}
                           </p>
                           <p className="tnum mt-0.5 text-sm font-semibold text-foreground">
-                            {fmtFCFA(sim.investorInterest)}
+                            {money(sim.investorInterest)}
                           </p>
                         </div>
                         <div>
                           <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                            Suivi plateforme
+                            {copy.followUp}
                           </p>
                           <p className="tnum mt-0.5 text-sm font-semibold text-foreground">
-                            {fmtFCFA(sim.followUpCommission)}
+                            {money(sim.followUpCommission)}
                           </p>
                         </div>
                         <div>
                           <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                            Total à régler
+                            {copy.totalDue}
                           </p>
                           <p className="tnum mt-0.5 text-sm font-bold text-foreground">
-                            {fmtFCFA(sim.totalCompanyPayment)}
+                            {money(sim.totalCompanyPayment)}
                           </p>
                         </div>
                       </div>
                       <div className="mt-2 border-t border-border/60 pt-2">
                         <p className="text-[11px] text-muted-foreground">
-                          Échéance unique (bullet) — paiement global à effectuer
-                          à la fin de la période de{" "}
-                          {p.offer!.durationMonths} mois.
+                          {copy.bulletNote}{" "}{p.offer!.durationMonths} {copy.months}.
                         </p>
                       </div>
                     </div>
@@ -684,19 +698,19 @@ export function CompanyDashboard() {
                             {projPayments[0].status === "paid" ? (
                               <span className="flex items-center gap-1 text-positive">
                                 <CheckCircle2 className="h-3.5 w-3.5" />
-                                Échéance réglée
+                                {copy.paid}
                               </span>
                             ) : projPayments[0].status === "verifying" ? (
                               <span className="flex items-center gap-1 text-[#8a6d00]">
                                 <Info className="h-3.5 w-3.5" />
-                                Paiement déclaré — en cours de vérification
+                                {copy.verifying}
                               </span>
                             ) : (
                               <span>
-                                Échéance n°{projPayments[0].installmentNo} ·{" "}
+                                {copy.due} n°{projPayments[0].installmentNo} ·{" "}
                                 {new Date(
                                   projPayments[0].dueDate
-                                ).toLocaleDateString("fr-FR")}
+                                ).toLocaleDateString(dateLocale)}
                               </span>
                             )}
                           </div>
@@ -713,17 +727,15 @@ export function CompanyDashboard() {
                                       >
                                         <HandCoins className="mr-1.5 h-3.5 w-3.5" />
                                         {collectionsEnabled
-                                          ? "Régler l'échéance"
-                                          : "Paiement bientôt disponible"}
+                                          ? copy.pay
+                                          : copy.soon}
                                       </Button>
                                     </span>
                                   </TooltipTrigger>
                                   {!collectionsEnabled && (
                                     <TooltipContent className="max-w-xs">
                                       <p className="text-xs">
-                                        Paiement par carte et Mobile Money en
-                                        cours d&apos;activation avec un prestataire
-                                        agréé.
+                                        {copy.provider}
                                       </p>
                                     </TooltipContent>
                                   )}
@@ -735,8 +747,8 @@ export function CompanyDashboard() {
                         <>
                           <div className="text-xs text-muted-foreground">
                             {!isFunded
-                              ? "L'échéance sera créée après financement complet de l'offre."
-                              : "Aucune échéance déclarée pour ce dossier."}
+                              ? copy.paymentAfterFunding
+                              : copy.noPayment}
                           </div>
                           <TooltipProvider delayDuration={150}>
                             <Tooltip>
@@ -748,15 +760,15 @@ export function CompanyDashboard() {
                                     disabled
                                   >
                                     <HandCoins className="mr-1.5 h-3.5 w-3.5" />
-                                    Régler l&apos;échéance
+                                    {copy.pay}
                                   </Button>
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs">
                                 <p className="text-xs">
                                   {!isFunded
-                                    ? "L'offre n'est pas encore financée. L'échéance sera créée automatiquement une fois le financement complet."
-                                    : "L'échéance n'est pas encore disponible. Contactez notre équipe."}
+                                    ? copy.offerNotFunded
+                                    : copy.paymentUnavailable}
                                 </p>
                               </TooltipContent>
                             </Tooltip>
