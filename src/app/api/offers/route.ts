@@ -31,6 +31,8 @@ export async function GET(req: NextRequest) {
     INNER JOIN Project p ON p.id = o.projectId
     INNER JOIN Company c ON c.id = p.companyId
     WHERE o.status = 'open'
+      AND o.visibility = 'public'
+      AND datetime(o.closingDate) > datetime('now')
     ORDER BY o.publishedAt DESC
   `).all<OfferRow>();
 

@@ -1,26 +1,60 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { ser } from "@/lib/serialize";
 import { requireUser } from "@/lib/auth";
-import { getBalance } from "@/lib/ledger";
+import { getD1 } from "@/lib/d1";
 import { simulateDebtFinancing } from "@/lib/finance";
 
-// ============================================================================
-// GET /api/investor/dashboard
-// ----------------------------------------------------------------------------
-// Tableau de bord investisseur — basé UNIQUEMENT sur la session courante.
-// AUCUN paramètre `email` (fix IDOR). Tout est dérivé de la session + ledger.
-//
-// Données renvoyées:
-// - user (id, email, firstName, lastName, country, kycStatus)
-// - investments[] (toutes — confirmed + pending + cancelled), avec pour chaque:
-//     - expectedRepayment (pour dette : perInvestorRepayment)
-//     - receivedToDate (somme des distributions reçues sur cet investissement)
-//     - remainingDue (expected - received)
-//     - availableBalance (solde du wallet — global à l'investisseur)
-// - portfolio: { totalInvested, availableBalance, receivedTotal, bySector }
-// - notifications[]
-// ============================================================================
+interface UserRow extends Record<string, unknown> {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  country: string;
+  language: string;
+  kycStatus: string;
+}
+
+interface InvestmentDashboardRow extends Record<string, unknown> {
+  id: string;
+  offerId: string;
+  investorType: string;
+  investorId: string;
+  investorName: string;
+  investorEmail: string;
+  amount: number;
+  sharePct: number;
+  status: string;
+  signedAt: string | null;
+  paymentConfirmedAt: string | null;
+  createdAt: string;
+  projectId: string;
+  projectTitle: string;
+  projectSector: string;
+  projectCountry: string;
+  projectCity: string;
+  instrumentType: string;
+  companyLegalName: string;
+  companyTradeName: string | null;
+  companyLegalForm: string;
+  fundingGoal: number;
+  annualRate: number | null;
+  ratePeriod: string | null;
+  durationMonths: number | null;
+  repaymentType: string | null;
+  upfrontCommissionPct: number;
+  annualFollowUpPct: number;
+  receivedToDate: number;
+}
+
+interface NotificationRow extends Record<string, unknown> {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  read: number;
+  actionUrl: string | null;
+  createdAt: string;
+}
+
 export async function GET(req: Request) {
   let session;
   try {
@@ -29,135 +63,151 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   }
 
-  const user = await db.user.findUnique({
-    where: { id: session.userId },
-    select: {
-      id: true,
-      email: true,
-      firstName: true,
-      lastName: true,
-      country: true,
-      language: true,
-      kycStatus: true,
-    },
-  });
+  const database = getD1();
+  const [user, investmentResult, balanceRow, notificationResult] = await Promise.all([
+    database
+      .prepare(
+        `SELECT id, email, firstName, lastName, country, language, kycStatus
+         FROM User WHERE id = ? LIMIT 1`
+      )
+      .bind(session.userId)
+      .first<UserRow>(),
+    database
+      .prepare(
+        `SELECT
+           i.id, i.offerId, i.investorType, i.investorId, i.investorName,
+           i.investorEmail, i.amount, i.sharePct, i.status, i.signedAt,
+           i.paymentConfirmedAt, i.createdAt,
+           p.id AS projectId, p.title AS projectTitle, p.sector AS projectSector,
+           p.country AS projectCountry, p.city AS projectCity,
+           p.instrumentType AS instrumentType,
+           c.legalName AS companyLegalName, c.tradeName AS companyTradeName,
+           c.legalForm AS companyLegalForm,
+           o.fundingGoal, o.annualRate, o.ratePeriod, o.durationMonths,
+           o.repaymentType, o.upfrontCommissionPct, o.annualFollowUpPct,
+           COALESCE(SUM(d.amount), 0) AS receivedToDate
+         FROM Investment i
+         JOIN Project p ON p.id = i.projectId
+         JOIN Company c ON c.id = p.companyId
+         JOIN Offer o ON o.id = i.offerId
+         LEFT JOIN Distribution d ON d.investmentId = i.id
+         WHERE i.investorId = ?
+         GROUP BY i.id
+         ORDER BY i.createdAt DESC`
+      )
+      .bind(session.userId)
+      .all<InvestmentDashboardRow>(),
+    database
+      .prepare(
+        `SELECT COALESCE(SUM(amount), 0) AS balance
+         FROM LedgerEntry
+         WHERE accountType = 'investor_wallet' AND accountId = ?`
+      )
+      .bind(session.userId)
+      .first<{ balance: number }>(),
+    database
+      .prepare(
+        `SELECT id, type, title, message, read, actionUrl, createdAt
+         FROM Notification WHERE userId = ?
+         ORDER BY createdAt DESC LIMIT 8`
+      )
+      .bind(session.userId)
+      .all<NotificationRow>(),
+  ]);
+
   if (!user) {
-    return NextResponse.json({ user: null, investments: [], portfolio: null });
+    return NextResponse.json({ user: null, investments: [], portfolio: null, notifications: [] });
   }
 
-  // Tous les investissements de l'utilisateur (peu importe le statut — l'UI peut distinguer)
-  const investments = await db.investment.findMany({
-    where: { investorId: user.id },
-    include: { project: { include: { company: true } }, offer: true },
-    orderBy: { createdAt: "desc" },
-  });
+  const availableBalance = Number(balanceRow?.balance || 0);
+  let receivedTotal = 0;
+  let totalInvested = 0;
+  let pendingPayments = 0;
+  let activeDeals = 0;
+  const bySector = new Map<string, number>();
 
-  // Solde disponible du wallet via ledger
-  const availableBalance = await getBalance("investor_wallet", user.id);
+  const investments = investmentResult.results.map((row) => {
+    const amount = Number(row.amount);
+    const receivedToDate = Number(row.receivedToDate || 0);
+    receivedTotal += receivedToDate;
+    if (row.status === "pending_payment") pendingPayments += 1;
+    if (row.status === "confirmed") {
+      totalInvested += amount;
+      activeDeals += 1;
+      bySector.set(row.projectSector, (bySector.get(row.projectSector) || 0) + amount);
+    }
 
-  // Distributions reçues par investissement
-  const investmentIds = investments.map((i) => i.id);
-  const distributions = investmentIds.length
-    ? await db.distribution.findMany({
-        where: { investmentId: { in: investmentIds } },
-        select: {
-          investmentId: true,
-          amount: true,
-          capitalPortion: true,
-          interestPortion: true,
-        },
-      })
-    : [];
-
-  // Regrouper les distributions par investmentId
-  const distByInv: Record<string, bigint> = {};
-  let receivedTotal = 0n;
-  for (const d of distributions) {
-    if (!distByInv[d.investmentId]) distByInv[d.investmentId] = 0n;
-    distByInv[d.investmentId] += d.amount;
-    receivedTotal += d.amount;
-  }
-
-  // Calculer pour chaque investissement : expectedRepayment / receivedToDate / remainingDue
-  const enrichedInvestments = investments.map((inv) => {
-    const receivedToDate = distByInv[inv.id] || 0n;
-    let expectedRepayment: bigint | null = null;
-    let remainingDue: bigint | null = null;
-    let projection: string | null = null;
-
-    if (inv.project.instrumentType === "debt" && inv.offer) {
-      const sim = simulateDebtFinancing({
-        principal: inv.offer.fundingGoal,
-        annualRate: inv.offer.annualRate || 0,
-        ratePeriod: (inv.offer.ratePeriod as "total" | "annual") || "total",
-        durationMonths: inv.offer.durationMonths || 0,
-        repaymentType:
-          (inv.offer.repaymentType as "bullet" | "amortized") || "bullet",
-        upfrontCommissionPct: inv.offer.upfrontCommissionPct,
-        annualFollowUpPct: inv.offer.annualFollowUpPct,
+    let expectedRepayment: number | null = null;
+    let remainingDue: number | null = null;
+    let projectionLabel: string | null = null;
+    if (row.instrumentType === "debt") {
+      const simulation = simulateDebtFinancing({
+        principal: BigInt(Number(row.fundingGoal)),
+        annualRate: Number(row.annualRate || 0),
+        ratePeriod: row.ratePeriod === "annual" ? "annual" : "total",
+        durationMonths: Number(row.durationMonths || 0),
+        repaymentType: row.repaymentType === "amortized" ? "amortized" : "bullet",
+        upfrontCommissionPct: Number(row.upfrontCommissionPct),
+        annualFollowUpPct: Number(row.annualFollowUpPct),
       });
-      expectedRepayment = sim.perInvestorRepayment(inv.amount);
-      remainingDue = expectedRepayment - receivedToDate;
-      if (remainingDue < 0n) remainingDue = 0n;
-      projection = "attendu"; // explicitement "attendu" — projeté, pas reçu
-    } else if (inv.project.instrumentType === "equity") {
-      // Pour les actions : pas de schedule de remboursement — sortie à terme non garantie
-      projection = "equity_no_schedule";
+      expectedRepayment = Number(simulation.perInvestorRepayment(BigInt(amount)));
+      remainingDue = Math.max(0, expectedRepayment - receivedToDate);
+      projectionLabel = "Montant attendu, sous réserve du remboursement de l'entreprise";
+    } else {
+      projectionLabel = "Valeur de sortie et liquidité non garanties";
     }
 
     return {
-      ...ser(inv),
-      expectedRepayment: expectedRepayment !== null ? Number(expectedRepayment) : null,
-      receivedToDate: Number(receivedToDate),
-      remainingDue: remainingDue !== null ? Number(remainingDue) : null,
-      availableBalance: Number(availableBalance),
-      projectionLabel:
-        inv.project.instrumentType === "equity"
-          ? "Sortie à terme, non garantie"
-          : projection,
+      id: row.id,
+      offerId: row.offerId,
+      investorType: row.investorType,
+      investorId: row.investorId,
+      investorName: row.investorName,
+      investorEmail: row.investorEmail,
+      amount,
+      sharePct: Number(row.sharePct),
+      status: row.status,
+      signedAt: row.signedAt,
+      paymentConfirmedAt: row.paymentConfirmedAt,
+      createdAt: row.createdAt,
+      expectedRepayment,
+      receivedToDate,
+      remainingDue,
+      availableBalance,
+      projectionLabel,
+      project: {
+        id: row.projectId,
+        title: row.projectTitle,
+        sector: row.projectSector,
+        country: row.projectCountry,
+        city: row.projectCity,
+        instrumentType: row.instrumentType,
+        company: {
+          legalName: row.companyLegalName,
+          tradeName: row.companyTradeName,
+          legalForm: row.companyLegalForm,
+        },
+      },
     };
   });
 
-  // Total investi = somme des investissements confirmés
-  const totalInvested = investments
-    .filter((i) => i.status === "confirmed")
-    .reduce((acc, i) => acc + i.amount, 0n);
-
-  // Répartition par secteur (investissements confirmés)
-  const bySectorMap: Record<string, bigint> = {};
-  for (const inv of investments) {
-    if (inv.status !== "confirmed" || !inv.project) continue;
-    const sec = inv.project.sector;
-    if (!bySectorMap[sec]) bySectorMap[sec] = 0n;
-    bySectorMap[sec] += inv.amount;
-  }
-
-  // Pending payments count
-  const pendingPayments = investments.filter(
-    (i) => i.status === "pending_payment"
-  ).length;
-
-  // Notifications
-  const notifications = await db.notification.findMany({
-    where: { userId: user.id },
-    orderBy: { createdAt: "desc" },
-    take: 8,
-  });
-
-  return NextResponse.json({
-    user: ser(user),
-    investments: enrichedInvestments,
-    portfolio: {
-      totalInvested: Number(totalInvested),
-      availableBalance: Number(availableBalance),
-      receivedTotal: Number(receivedTotal),
-      pendingPayments,
-      activeDeals: investments.filter((i) => i.status === "confirmed").length,
-      bySector: Object.entries(bySectorMap).map(([name, value]) => ({
-        name,
-        value: Number(value),
+  return NextResponse.json(
+    {
+      user,
+      investments,
+      portfolio: {
+        totalInvested,
+        availableBalance,
+        receivedTotal,
+        pendingPayments,
+        activeDeals,
+        bySector: Array.from(bySector, ([name, value]) => ({ name, value })),
+      },
+      notifications: notificationResult.results.map((notification) => ({
+        ...notification,
+        read: Boolean(notification.read),
       })),
     },
-    notifications: ser(notifications),
-  });
+    { headers: { "Cache-Control": "private, no-store" } }
+  );
 }

@@ -1,33 +1,130 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { ser } from "@/lib/serialize";
+import { NextResponse } from "next/server";
+import { getD1 } from "@/lib/d1";
+
+type Row = Record<string, string | number | null>;
 
 export async function GET(
-  req: NextRequest,
+  _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const offer = await db.offer.findUnique({
-    where: { id },
-    include: {
+  const database = getD1();
+  const offer = await database
+    .prepare(
+      `SELECT
+         o.*,
+         p.title AS projectTitle, p.description AS projectDescription,
+         p.longDescription AS projectLongDescription, p.sector AS projectSector,
+         p.country AS projectCountry, p.city AS projectCity, p.imageUrl AS projectImageUrl,
+         p.instrumentType AS projectInstrumentType, p.companyId AS projectCompanyId,
+         p.fundingGoal AS projectFundingGoal, p.companyContribution,
+         p.minInvestment AS projectMinInvestment, p.risksIdentified,
+         p.repaymentSource, p.budgetDetail,
+         c.legalName AS companyLegalName, c.tradeName AS companyTradeName,
+         c.legalForm AS companyLegalForm, c.country AS companyCountry,
+         c.activity AS companyActivity, c.foundedYear AS companyFoundedYear,
+         c.verificationStatus AS companyVerificationStatus
+       FROM Offer o
+       JOIN Project p ON p.id = o.projectId
+       JOIN Company c ON c.id = p.companyId
+       WHERE o.id = ? AND o.visibility = 'public'
+       LIMIT 1`
+    )
+    .bind(id)
+    .first<Row>();
+
+  if (!offer) return NextResponse.json({ error: "Offre introuvable" }, { status: 404 });
+
+  const [documents, timeline, investments] = await Promise.all([
+    database
+      .prepare(
+        `SELECT id, projectId, type, fileName, fileUrl, uploadedAt
+         FROM ProjectDocument WHERE projectId = ? ORDER BY uploadedAt DESC`
+      )
+      .bind(offer.projectId)
+      .all<Row>(),
+    database
+      .prepare(
+        `SELECT id, projectId, eventType, description, actor, createdAt
+         FROM ProjectEvent WHERE projectId = ? ORDER BY createdAt DESC LIMIT 10`
+      )
+      .bind(offer.projectId)
+      .all<Row>(),
+    database
+      .prepare(
+        `SELECT id, offerId, investorType, amount, sharePct, status,
+                signedAt, paymentConfirmedAt, createdAt
+         FROM Investment
+         WHERE offerId = ? AND status = 'confirmed'
+         ORDER BY createdAt DESC LIMIT 20`
+      )
+      .bind(id)
+      .all<Row>(),
+  ]);
+
+  return NextResponse.json({
+    offer: {
+      id: offer.id,
+      projectId: offer.projectId,
+      version: Number(offer.version),
+      fundingGoal: Number(offer.fundingGoal),
+      minInvestment: Number(offer.minInvestment),
+      maxInvestment: nullableNumber(offer.maxInvestment),
+      annualRate: nullableNumber(offer.annualRate),
+      ratePeriod: offer.ratePeriod,
+      durationMonths: nullableNumber(offer.durationMonths),
+      repaymentType: offer.repaymentType,
+      equityOfferedPct: nullableNumber(offer.equityOfferedPct),
+      valuationPre: nullableNumber(offer.valuationPre),
+      upfrontCommissionPct: Number(offer.upfrontCommissionPct),
+      annualFollowUpPct: Number(offer.annualFollowUpPct),
+      raisedAmount: Number(offer.raisedAmount),
+      committedAmount: Number(offer.committedAmount),
+      backersCount: Number(offer.backersCount),
+      publishedAt: offer.publishedAt,
+      closingDate: offer.closingDate,
+      visibility: offer.visibility,
+      status: offer.status,
+      createdAt: offer.createdAt,
       project: {
-        include: {
-          company: true,
-          documents: true,
-          timeline: { orderBy: { createdAt: "desc" }, take: 10 },
+        id: offer.projectId,
+        companyId: offer.projectCompanyId,
+        title: offer.projectTitle,
+        description: offer.projectDescription,
+        longDescription: offer.projectLongDescription,
+        sector: offer.projectSector,
+        country: offer.projectCountry,
+        city: offer.projectCity,
+        imageUrl: offer.projectImageUrl,
+        instrumentType: offer.projectInstrumentType,
+        fundingGoal: Number(offer.projectFundingGoal),
+        companyContribution: Number(offer.companyContribution),
+        minInvestment: Number(offer.projectMinInvestment),
+        risksIdentified: offer.risksIdentified,
+        repaymentSource: offer.repaymentSource,
+        budgetDetail: offer.budgetDetail,
+        documents: documents.results,
+        timeline: timeline.results,
+        company: {
+          id: offer.projectCompanyId,
+          legalName: offer.companyLegalName,
+          tradeName: offer.companyTradeName,
+          legalForm: offer.companyLegalForm,
+          country: offer.companyCountry,
+          activity: offer.companyActivity,
+          foundedYear: nullableNumber(offer.companyFoundedYear),
+          verificationStatus: offer.companyVerificationStatus,
         },
       },
-      investments: {
-        where: { status: "confirmed" },
-        orderBy: { createdAt: "desc" },
-        take: 20,
-      },
+      investments: investments.results.map((investment) => ({
+        ...investment,
+        amount: Number(investment.amount),
+        sharePct: Number(investment.sharePct),
+      })),
     },
   });
+}
 
-  if (!offer) {
-    return NextResponse.json({ error: "Offre introuvable" }, { status: 404 });
-  }
-
-  return NextResponse.json({ offer: ser(offer) });
+function nullableNumber(value: string | number | null | undefined): number | null {
+  return value === null || value === undefined ? null : Number(value);
 }

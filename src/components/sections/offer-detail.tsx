@@ -46,8 +46,6 @@ export function OfferDetail() {
   const minInv = offer?.minInvestment ?? 0;
   const maxInv = offer?.maxInvestment ?? null;
   const [amount, setAmount] = useState<number>(minInv);
-  const [investorName, setInvestorName] = useState("");
-  const [investorEmail, setInvestorEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   // Reset amount when offer changes
@@ -105,28 +103,22 @@ export function OfferDetail() {
       });
       return;
     }
-    if (!investorName.trim() || !investorEmail.trim()) {
-      toast({
-        title: "Informations manquantes",
-        description: "Indiquez votre nom et votre email.",
-        variant: "destructive",
-      });
-      return;
-    }
     setSubmitting(true);
     try {
       const res = await fetch(`/api/offers/${offerId}/subscribe`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount,
-          investorName: investorName.trim(),
-          investorEmail: investorEmail.trim(),
-          investorType: "individual",
-          investorId: "guest",
-        }),
+        body: JSON.stringify({ amount }),
       });
       const json = (await res.json()) as { error?: string };
+      if (res.status === 401) {
+        toast({
+          title: "Connexion requise",
+          description: "Connectez-vous pour enregistrer votre engagement.",
+        });
+        setView("login");
+        return;
+      }
       if (!res.ok) {
         throw new Error(json.error || "Souscription échouée");
       }
@@ -519,33 +511,14 @@ export function OfferDetail() {
                   )}
                 </div>
 
-                {/* Investor info */}
-                <div className="space-y-2">
-                  <div>
-                    <Label htmlFor="name" className="text-xs">
-                      Nom complet
-                    </Label>
-                    <Input
-                      id="name"
-                      value={investorName}
-                      onChange={(e) => setInvestorName(e.target.value)}
-                      placeholder="Aïssatou Diallo"
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="email" className="text-xs">
-                      Email
-                    </Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={investorEmail}
-                      onChange={(e) => setInvestorEmail(e.target.value)}
-                      placeholder="vous@exemple.com"
-                      className="mt-1"
-                    />
-                  </div>
+                <div className="rounded-md border border-border/70 bg-background p-3">
+                  <p className="text-xs font-semibold text-foreground">
+                    Souscription nominative et sécurisée
+                  </p>
+                  <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                    Votre identité vérifiée et votre adresse de contact sont
+                    reprises automatiquement depuis votre espace personnel.
+                  </p>
                 </div>
 
                 <Button
@@ -553,7 +526,7 @@ export function OfferDetail() {
                   disabled={submitting}
                   className="btn-nexora w-full"
                 >
-                  {submitting ? "Traitement…" : "Souscrire"}
+                  {submitting ? "Enregistrement…" : "Enregistrer mon engagement"}
                 </Button>
 
                 <div className="flex items-start gap-2 rounded-md bg-nexora-pale p-3">
