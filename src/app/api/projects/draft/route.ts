@@ -1,16 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { ser } from "@/lib/serialize";
 import { requireUser } from "@/lib/auth";
-import { isEditableByCompany } from "@/lib/workflow";
+import { getD1, isoNow, requestIp } from "@/lib/d1";
+import { parseProjectInput } from "@/lib/project-input";
 
-// ============================================================================
-// POST /api/projects/draft
-// ----------------------------------------------------------------------------
-// Sauvegarde un brouillon (status="draft") sans soumettre.
-// Si projectId présent → met à jour le brouillon existant (PUT sémantique).
-// L'utilisateur doit être membre de la société cible.
-// ============================================================================
+type Row = Record<string, string | number | null>;
+
 export async function POST(req: NextRequest) {
   let session;
   try {
@@ -19,154 +13,141 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   }
 
-  let body: any = {};
+  let body: Record<string, unknown>;
   try {
-    body = await req.json();
+    body = (await req.json()) as Record<string, unknown>;
   } catch {
     return NextResponse.json({ error: "Payload invalide" }, { status: 400 });
   }
-
-  const companyId = String(body.companyId || "");
-  if (!companyId) {
-    return NextResponse.json({ error: "companyId requis" }, { status: 400 });
+  const parsed = parseProjectInput(body, false);
+  if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
+  const input = parsed.value;
+  const database = getD1();
+  const membership = await database
+    .prepare(`SELECT id, mandate FROM CompanyMember WHERE userId = ? AND companyId = ? LIMIT 1`)
+    .bind(session.userId, input.companyId)
+    .first<{ id: string; mandate: string }>();
+  if (!membership) return NextResponse.json({ error: "Accès refusé à cette entreprise" }, { status: 403 });
+  if (!new Set(["submit", "sign", "manage"]).has(membership.mandate)) {
+    return NextResponse.json({ error: "Votre mandat ne permet pas de modifier ce dossier" }, { status: 403 });
   }
 
-  const membership = await db.companyMember.findFirst({
-    where: { userId: session.userId, companyId },
-    select: { id: true },
-  });
-  if (!membership) {
-    return NextResponse.json(
-      { error: "Vous n'êtes pas membre de cette entreprise" },
-      { status: 403 }
-    );
-  }
-
-  // Mise à jour d'un brouillon existant ?
-  const projectId = body.projectId ? String(body.projectId) : null;
-  if (projectId) {
-    const existing = await db.project.findUnique({
-      where: { id: projectId },
-      select: { id: true, companyId: true, status: true },
-    });
-    if (!existing) {
-      return NextResponse.json(
-        { error: "Projet introuvable" },
-        { status: 404 }
-      );
+  const now = isoNow();
+  const projectId = input.projectId || crypto.randomUUID();
+  let status = "draft";
+  const creating = !input.projectId;
+  if (input.projectId) {
+    const existing = await database
+      .prepare(`SELECT companyId, submittedBy, status FROM Project WHERE id = ? LIMIT 1`)
+      .bind(input.projectId)
+      .first<{ companyId: string; submittedBy: string; status: string }>();
+    if (!existing) return NextResponse.json({ error: "Dossier introuvable" }, { status: 404 });
+    if (existing.companyId !== input.companyId || existing.submittedBy !== session.userId) {
+      return NextResponse.json({ error: "Accès refusé à ce dossier" }, { status: 403 });
     }
-    if (existing.companyId !== companyId) {
-      return NextResponse.json(
-        { error: "Projet non rattaché à cette entreprise" },
-        { status: 403 }
-      );
+    if (!new Set(["draft", "complement_requested"]).has(existing.status)) {
+      return NextResponse.json({ error: "Ce dossier n'est plus modifiable" }, { status: 409 });
     }
-    // On ne peut éditer qu'un brouillon ou un dossier en complément demandé
-    if (!isEditableByCompany(existing.status)) {
-      return NextResponse.json(
-        {
-          error: `Dossier non éditable au statut « ${existing.status} »`,
-        },
-        { status: 400 }
-      );
-    }
+    status = existing.status;
   }
 
-  const instrumentType = String(body.instrumentType || "debt");
-  const fundingGoal = body.fundingGoal
-    ? toBigInt(body.fundingGoal, "fundingGoal")
-    : 0n;
-  const minInvestment = body.minInvestment
-    ? toBigInt(body.minInvestment, "minInvestment")
-    : 0n;
+  const mutation = creating
+    ? database
+        .prepare(
+          `INSERT INTO Project
+            (id, companyId, submittedBy, title, description, longDescription, sector, country, city,
+             imageUrl, instrumentType, fundingGoal, companyContribution, annualRate, ratePeriod,
+             durationMonths, repaymentType, equityOfferedPct, valuationPre, minInvestment, maxInvestment,
+             budgetDetail, repaymentSource, risksIdentified, status, createdAt, updatedAt)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        )
+        .bind(
+          projectId, input.companyId, session.userId, input.title, input.description,
+          input.longDescription, input.sector, input.country, input.city, input.imageUrl,
+          input.instrumentType, input.fundingGoal, input.companyContribution, input.annualRate,
+          input.ratePeriod, input.durationMonths, input.repaymentType, input.equityOfferedPct,
+          input.valuationPre, input.minInvestment, input.maxInvestment, input.budgetDetail,
+          input.repaymentSource, input.risksIdentified, status, now, now
+        )
+    : database
+        .prepare(
+          `UPDATE Project SET
+             title = ?, description = ?, longDescription = ?, sector = ?, country = ?, city = ?,
+             imageUrl = ?, instrumentType = ?, fundingGoal = ?, companyContribution = ?, annualRate = ?,
+             ratePeriod = ?, durationMonths = ?, repaymentType = ?, equityOfferedPct = ?, valuationPre = ?,
+             minInvestment = ?, maxInvestment = ?, budgetDetail = ?, repaymentSource = ?, risksIdentified = ?,
+             updatedAt = ?
+           WHERE id = ?`
+        )
+        .bind(
+          input.title, input.description, input.longDescription, input.sector, input.country,
+          input.city, input.imageUrl, input.instrumentType, input.fundingGoal,
+          input.companyContribution, input.annualRate, input.ratePeriod, input.durationMonths,
+          input.repaymentType, input.equityOfferedPct, input.valuationPre, input.minInvestment,
+          input.maxInvestment, input.budgetDetail, input.repaymentSource, input.risksIdentified,
+          now, projectId
+        );
 
-  const data: any = {
-    title: String(body.title || ""),
-    description: String(body.description || ""),
-    longDescription: String(body.longDescription || ""),
-    sector: String(body.sector || ""),
-    country: String(body.country || ""),
-    city: String(body.city || ""),
-    imageUrl:
-      String(body.imageUrl || "") ||
-      "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&q=80",
-    instrumentType,
-    fundingGoal,
-    companyContribution: body.companyContribution
-      ? toBigInt(body.companyContribution, "companyContribution")
-      : 0n,
-    annualRate:
-      body.annualRate !== undefined && body.annualRate !== null && body.annualRate !== ""
-        ? Number(body.annualRate)
-        : null,
-    ratePeriod: body.ratePeriod ? String(body.ratePeriod) : null,
-    durationMonths: body.durationMonths ? Number(body.durationMonths) : null,
-    repaymentType: body.repaymentType ? String(body.repaymentType) : null,
-    equityOfferedPct:
-      body.equityOfferedPct !== undefined && body.equityOfferedPct !== null && body.equityOfferedPct !== ""
-        ? Number(body.equityOfferedPct)
-        : null,
-    valuationPre: body.valuationPre
-      ? toBigInt(body.valuationPre, "valuationPre")
-      : null,
-    minInvestment,
-    maxInvestment: body.maxInvestment
-      ? toBigInt(body.maxInvestment, "maxInvestment")
-      : null,
-    budgetDetail: body.budgetDetail ? String(body.budgetDetail) : null,
-    repaymentSource: body.repaymentSource
-      ? String(body.repaymentSource)
-      : null,
-    risksIdentified: body.risksIdentified
-      ? String(body.risksIdentified)
-      : null,
-    status: "draft",
-  };
-
-  let project;
-  if (projectId) {
-    project = await db.project.update({
-      where: { id: projectId },
-      data,
-      include: { company: true },
-    });
-  } else {
-    project = await db.project.create({
-      data: {
-        ...data,
-        companyId,
-        submittedBy: session.userId,
-      },
-      include: { company: true },
-    });
+  try {
+    await database.batch([
+      mutation,
+      database
+        .prepare(
+          `INSERT INTO AuditLog
+             (id, actorType, actorId, action, entityType, entityId, metadata, ipAddress, createdAt)
+           VALUES (?, 'user', ?, ?, 'project', ?, ?, ?, ?)`
+        )
+        .bind(
+          crypto.randomUUID(),
+          session.userId,
+          creating ? "project_draft_created" : "project_draft_updated",
+          projectId,
+          JSON.stringify({ companyId: input.companyId, title: input.title }),
+          requestIp(req),
+          now
+        ),
+    ]);
+  } catch (error) {
+    console.error("project_draft_save_failed", error);
+    return NextResponse.json({ error: "Enregistrement temporairement indisponible" }, { status: 503 });
   }
 
-  await db.auditLog.create({
-    data: {
-      actorType: "user",
-      actorId: session.userId,
-      action: projectId ? "project_draft_updated" : "project_draft_created",
-      entityType: "project",
-      entityId: project.id,
-      metadata: JSON.stringify({ companyId, title: project.title }),
-      ipAddress: req.headers.get("x-forwarded-for") || "unknown",
-    },
-  });
+  const project = await database
+    .prepare(
+      `SELECT p.*, c.legalName AS companyLegalName, c.tradeName AS companyTradeName,
+              c.legalForm AS companyLegalForm, c.country AS companyCountry,
+              c.activity AS companyActivity, c.verificationStatus AS companyVerificationStatus
+       FROM Project p JOIN Company c ON c.id = p.companyId WHERE p.id = ? LIMIT 1`
+    )
+    .bind(projectId)
+    .first<Row>();
 
-  return NextResponse.json({ project: ser(project) });
+  return NextResponse.json({ project: project ? normalize(project) : null }, { status: creating ? 201 : 200 });
 }
 
-function toBigInt(v: unknown, field: string): bigint {
-  if (typeof v === "bigint") return v;
-  if (typeof v === "number") {
-    if (!Number.isInteger(v)) throw new Error(`${field} doit être entier`);
-    return BigInt(v);
-  }
-  if (typeof v === "string") {
-    const n = Number(v);
-    if (!Number.isFinite(n) || !Number.isInteger(n))
-      throw new Error(`${field} invalide`);
-    return BigInt(n);
-  }
-  throw new Error(`${field} invalide`);
+function normalize(row: Row) {
+  return {
+    ...row,
+    fundingGoal: Number(row.fundingGoal),
+    companyContribution: Number(row.companyContribution),
+    annualRate: nullableNumber(row.annualRate),
+    durationMonths: nullableNumber(row.durationMonths),
+    equityOfferedPct: nullableNumber(row.equityOfferedPct),
+    valuationPre: nullableNumber(row.valuationPre),
+    minInvestment: Number(row.minInvestment),
+    maxInvestment: nullableNumber(row.maxInvestment),
+    company: {
+      id: row.companyId,
+      legalName: row.companyLegalName,
+      tradeName: row.companyTradeName,
+      legalForm: row.companyLegalForm,
+      country: row.companyCountry,
+      activity: row.companyActivity,
+      verificationStatus: row.companyVerificationStatus,
+    },
+  };
+}
+
+function nullableNumber(value: string | number | null | undefined) {
+  return value === null || value === undefined ? null : Number(value);
 }

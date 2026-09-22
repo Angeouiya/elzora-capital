@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/tooltip";
 import { fmtFCFA, fmtCompact, simulateDebtFinancing } from "@/lib/finance";
 import { toast } from "@/hooks/use-toast";
+import { CompanyOnboarding } from "@/components/company/company-onboarding";
 import {
   Building2,
   Wallet,
@@ -298,25 +299,8 @@ export function CompanyDashboard() {
 
   if (memberships.length === 0) {
     return (
-      <section className="mx-auto max-w-md px-4 py-16 text-center">
-        <div className="rounded-xl border border-border/60 bg-card p-8">
-          <Building2 className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
-          <h1 className="text-lg font-bold text-foreground">
-            Vous n&apos;êtes rattaché à aucune entreprise
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Pour soumettre un dossier de financement, votre compte doit être
-            lié à une entreprise vérifiée. Contactez notre équipe pour
-            formaliser un rattachement.
-          </p>
-          <Button
-            variant="outline"
-            className="mt-4"
-            onClick={() => setView("home")}
-          >
-            Retour à l&apos;accueil
-          </Button>
-        </div>
+      <section className="page-shell py-10">
+        <CompanyOnboarding onCreated={() => setReloadKey((key) => key + 1)} />
       </section>
     );
   }

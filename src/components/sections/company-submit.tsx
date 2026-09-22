@@ -26,6 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { simulateDebtFinancing, fmtFCFA } from "@/lib/finance";
 import { SECTORS, COUNTRIES } from "@/lib/countries";
 import { toast } from "@/hooks/use-toast";
+import { CompanyOnboarding } from "@/components/company/company-onboarding";
 import {
   Building2,
   ArrowRight,
@@ -138,6 +139,7 @@ export function CompanySubmit() {
   const [loading, setLoading] = useState(true);
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
+  const [draftProjectId, setDraftProjectId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
 
@@ -219,29 +221,14 @@ export function CompanySubmit() {
 
   if (memberships.length === 0) {
     return (
-      <section className="mx-auto max-w-md px-4 py-16 text-center">
-        <Card className="p-8">
-          <AlertTriangle className="mx-auto mb-3 h-10 w-10 text-nexora-danger" />
-          <h1 className="text-lg font-bold text-foreground">
-            Aucune entreprise rattachée
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Pour soumettre un dossier de financement, votre compte doit être
-            lié à une entreprise vérifiée.
-          </p>
-          <Button
-            variant="outline"
-            className="mt-4"
-            onClick={() => setView("company_dashboard")}
-          >
-            Retour
-          </Button>
-        </Card>
+      <section className="page-shell py-10">
+        <CompanyOnboarding onCreated={fetchMe} />
       </section>
     );
   }
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) => {
+    if (key === "companyId" && value !== form.companyId) setDraftProjectId(null);
     setForm((f) => ({ ...f, [key]: value }));
   };
 
@@ -289,6 +276,7 @@ export function CompanySubmit() {
         ? Number(form.valuationPre)
         : null;
     return {
+      projectId: draftProjectId,
       companyId: form.companyId,
       title: form.title,
       description: form.description,
@@ -344,7 +332,10 @@ export function CompanySubmit() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(buildPayload(true)),
       });
-      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      const body = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        project?: { id?: string };
+      };
       if (!res.ok) {
         toast({
           title: "Brouillon non enregistré",
@@ -353,6 +344,7 @@ export function CompanySubmit() {
         });
         return;
       }
+      if (body.project?.id) setDraftProjectId(body.project.id);
       toast({
         title: "Brouillon enregistré",
         description: "Vous pourrez reprendre votre dossier plus tard.",
@@ -376,7 +368,7 @@ export function CompanySubmit() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(buildPayload(false)),
       });
-      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      const body = (await res.json().catch(() => ({}))) as { error?: string; message?: string };
       if (!res.ok) {
         toast({
           title: "Soumission échouée",
