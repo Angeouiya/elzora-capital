@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { COUNTRIES } from "@/lib/countries";
 import { getD1, isoNow, requestIp } from "@/lib/d1";
 import { hashPassword } from "@/lib/password";
+import { LEGAL_VERSIONS } from "@/lib/legal";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -45,6 +46,7 @@ export async function POST(req: NextRequest) {
     const sessionId = crypto.randomUUID();
     const now = isoNow();
     const ipAddress = requestIp(req);
+    const userAgent = req.headers.get("user-agent") || "unknown";
     const passwordHash = await hashPassword(password);
     await database.batch([
       database
@@ -72,7 +74,20 @@ export async function POST(req: NextRequest) {
           `INSERT INTO UserSession (id, userId, deviceInfo, ipAddress, createdAt, lastActiveAt, revoked)
            VALUES (?, ?, ?, ?, ?, ?, 0)`
         )
-        .bind(sessionId, userId, req.headers.get("user-agent") || "unknown", ipAddress, now, now),
+        .bind(sessionId, userId, userAgent, ipAddress, now, now),
+      ...([
+        ["terms", LEGAL_VERSIONS.terms],
+        ["privacy", LEGAL_VERSIONS.privacy],
+        ["risk", LEGAL_VERSIONS.risk],
+      ] as const).map(([documentType, version]) =>
+        database
+          .prepare(
+            `INSERT INTO LegalAcceptance
+               (id, userId, documentType, version, acceptedAt, ipAddress, userAgent)
+             VALUES (?, ?, ?, ?, ?, ?, ?)`
+          )
+          .bind(crypto.randomUUID(), userId, documentType, version, now, ipAddress, userAgent)
+      ),
       database
         .prepare(
           `INSERT INTO AuditLog (id, actorType, actorId, action, entityType, entityId, metadata, ipAddress, createdAt)
@@ -82,7 +97,14 @@ export async function POST(req: NextRequest) {
           crypto.randomUUID(),
           userId,
           userId,
-          JSON.stringify({ acceptedTerms: now, acceptedRisks: now, accountKind: body.kind }),
+          JSON.stringify({
+            acceptedTerms: now,
+            acceptedRisks: now,
+            termsVersion: LEGAL_VERSIONS.terms,
+            privacyVersion: LEGAL_VERSIONS.privacy,
+            riskNoticeVersion: LEGAL_VERSIONS.risk,
+            accountKind: body.kind,
+          }),
           ipAddress,
           now
         ),

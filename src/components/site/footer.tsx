@@ -10,7 +10,7 @@ const COPY = {
     product: "Produit",
     productItems: [["Explorer", "explore"], ["Fonctionnement", "how"], ["Tarification", "fees"], ["Risques", "risks"]] as const,
     legal: "Légal",
-    legalItems: ["CGU", "Confidentialité", "Conformité BCEAO"],
+    legalItems: [["CGU", "/legal/terms"], ["Confidentialité", "/legal/privacy"], ["Cadre réglementaire", "/legal/compliance"]] as const,
     contact: "Contact",
     rights: "Tous droits réservés.",
     warning: "Investir comporte un risque de perte en capital.",
@@ -21,7 +21,7 @@ const COPY = {
     product: "Product",
     productItems: [["Explore", "explore"], ["How it works", "how"], ["Pricing", "fees"], ["Risks", "risks"]] as const,
     legal: "Legal",
-    legalItems: ["Terms", "Privacy", "BCEAO compliance"],
+    legalItems: [["Terms", "/legal/terms"], ["Privacy", "/legal/privacy"], ["Regulatory framework", "/legal/compliance"]] as const,
     contact: "Contact",
     rights: "All rights reserved.",
     warning: "Investing involves a risk of capital loss.",
@@ -34,6 +34,7 @@ export function Footer() {
   const locale = useAppStore((s) => s.locale);
   const copy = COPY[locale];
   const productItems: ReadonlyArray<readonly [string, PortalView]> = copy.productItems;
+  const legalItems: ReadonlyArray<readonly [string, string]> = copy.legalItems;
 
   return (
     <footer className="mt-auto bg-[linear-gradient(135deg,#250820_0%,#130410_58%,#090208_100%)] text-white">
@@ -78,11 +79,12 @@ export function Footer() {
               {copy.legal}
             </h4>
             <ul className="space-y-2 text-sm text-white/55">
-              {copy.legalItems.map((item) => (
-                <li key={item}>
-                  <span className="cursor-default transition-colors hover:text-white">
-                    {item}
-                  </span>
+              {legalItems.map(([label, href]) => (
+                <li key={href}>
+                  <a href={href} className="inline-flex items-center gap-1 transition-colors hover:text-white">
+                    {label}
+                    <ArrowUpRight className="h-3.5 w-3.5" />
+                  </a>
                 </li>
               ))}
             </ul>
