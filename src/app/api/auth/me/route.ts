@@ -28,7 +28,12 @@ interface MembershipRow {
 export async function GET(req: Request) {
   try {
     const session = await getUserSession(req);
-    if (!session) return NextResponse.json({ user: null, memberships: [] });
+    if (!session) {
+      return NextResponse.json(
+        { user: null, memberships: [] },
+        { headers: { "Cache-Control": "private, no-store" } }
+      );
+    }
     const database = getD1();
     const user = await database
       .prepare(
@@ -37,7 +42,12 @@ export async function GET(req: Request) {
       )
       .bind(session.userId)
       .first<UserRow>();
-    if (!user) return NextResponse.json({ user: null, memberships: [] });
+    if (!user) {
+      return NextResponse.json(
+        { user: null, memberships: [] },
+        { headers: { "Cache-Control": "private, no-store" } }
+      );
+    }
 
     const memberships = await database
       .prepare(
@@ -49,26 +59,32 @@ export async function GET(req: Request) {
       .bind(user.id)
       .all<MembershipRow>();
 
-    return NextResponse.json({
-      user,
-      memberships: memberships.results.map((entry) => ({
-        id: entry.id,
-        role: entry.role,
-        mandate: entry.mandate,
-        companyId: entry.companyId,
-        company: {
-          id: entry.companyId,
-          legalName: entry.legalName,
-          tradeName: entry.tradeName,
-          legalForm: entry.legalForm,
-          country: entry.country,
-          activity: entry.activity,
-          verificationStatus: entry.verificationStatus,
-        },
-      })),
-    });
+    return NextResponse.json(
+      {
+        user,
+        memberships: memberships.results.map((entry) => ({
+          id: entry.id,
+          role: entry.role,
+          mandate: entry.mandate,
+          companyId: entry.companyId,
+          company: {
+            id: entry.companyId,
+            legalName: entry.legalName,
+            tradeName: entry.tradeName,
+            legalForm: entry.legalForm,
+            country: entry.country,
+            activity: entry.activity,
+            verificationStatus: entry.verificationStatus,
+          },
+        })),
+      },
+      { headers: { "Cache-Control": "private, no-store" } }
+    );
   } catch (error) {
     console.error("auth_me_failed", error);
-    return NextResponse.json({ user: null, memberships: [] }, { status: 503 });
+    return NextResponse.json(
+      { user: null, memberships: [] },
+      { status: 503, headers: { "Cache-Control": "private, no-store" } }
+    );
   }
 }

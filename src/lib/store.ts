@@ -62,6 +62,7 @@ interface AppState {
   setLocale: (locale: Locale) => void;
   setDisplayCurrency: (currency: DisplayCurrency) => void;
   hydratePreferences: () => void;
+  restoreUser: (email: string) => void;
   login: (email: string) => void;
   loginAdmin: (
     email: string,
@@ -134,6 +135,8 @@ export const useAppStore = create<AppState>((set) => ({
     document.documentElement.lang = locale;
     set({ locale, displayCurrency });
   },
+  restoreUser: (email) =>
+    set({ userEmail: email, authContext: "individual" }),
   login: (email) =>
     set({ userEmail: email, authContext: "individual", view: "investor_dashboard" }),
   loginAdmin: (email, role, firstName, lastName) =>

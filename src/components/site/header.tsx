@@ -60,7 +60,7 @@ const COPY = {
   },
 };
 
-export function Header() {
+export function Header({ sessionPending = false }: { sessionPending?: boolean }) {
   const {
     view,
     setView,
@@ -117,7 +117,7 @@ export function Header() {
 
   return (
     <>
-      {open && !userEmail && (
+      {open && !userEmail && !sessionPending && (
         <button
           type="button"
           aria-label={copy.closeMenu}
@@ -199,7 +199,13 @@ export function Header() {
               ) : null}
             </DropdownMenuContent>
           </DropdownMenu>
-          {userEmail ? (
+          {sessionPending ? (
+            <div
+              className="h-10 w-[7.25rem] animate-pulse rounded-xl border border-[#541249]/8 bg-[#F7EAF5]/70"
+              aria-label={locale === "fr" ? "Vérification de la session" : "Checking session"}
+              role="status"
+            />
+          ) : userEmail ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex h-10 items-center gap-2 rounded-xl border border-[#541249]/12 bg-white/88 pl-1.5 pr-3 text-sm font-semibold shadow-[0_4px_14px_rgba(56,12,49,.06)] hover:-translate-y-0.5 hover:border-[#541249]/25 hover:bg-[#FAF4F9]">
@@ -265,7 +271,7 @@ export function Header() {
           )}
 
           {/* Mobile hamburger (only when not logged in — otherwise bottom-nav takes over) */}
-          {!userEmail && (
+          {!userEmail && !sessionPending && (
             <button
               onClick={() => setOpen(!open)}
               className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#541249]/10 bg-white/80 text-[#541249] shadow-[0_4px_14px_rgba(56,12,49,.06)] hover:bg-[#F7EAF5] lg:hidden"
@@ -280,7 +286,7 @@ export function Header() {
       </div>
 
       {/* Mobile nav (guest only) */}
-      {open && !userEmail && (
+      {open && !userEmail && !sessionPending && (
         <nav
           id="mobile-navigation"
           aria-label={copy.mobileNavigation}
