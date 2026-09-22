@@ -19,21 +19,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { fmtFCFA, fmtCompact, simulateDebtFinancing } from "@/lib/finance";
-import { toast } from "@/hooks/use-toast";
 import { CompanyOnboarding } from "@/components/company/company-onboarding";
 import {
   Building2,
@@ -47,7 +38,6 @@ import {
   ShieldAlert,
   CheckCircle2,
   RefreshCw,
-  Landmark,
   Lock,
 } from "lucide-react";
 
@@ -204,6 +194,9 @@ interface ProjectsResponse {
 interface PaymentsResponse {
   payments: CompanyPayment[];
   projects: { id: string; title: string; companyId: string }[];
+  collectionsEnabled: boolean;
+  providerName: string | null;
+  collectionMethods: string[];
 }
 
 export function CompanyDashboard() {
@@ -217,29 +210,35 @@ export function CompanyDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
-
-  const [payDialogOpen, setPayDialogOpen] = useState(false);
-  const [payDialogPayment, setPayDialogPayment] = useState<CompanyPayment | null>(null);
-  const [declaringPayment, setDeclaringPayment] = useState(false);
+  const [collectionsEnabled, setCollectionsEnabled] = useState(false);
 
   const fetchData = useCallback(() => {
-    setLoading(true);
-    setError(null);
     Promise.all([
       fetch("/api/auth/me").then((r) => r.json() as Promise<MeResponse>),
       fetch("/api/projects?mine=true").then((r) =>
         r.ok ? (r.json() as Promise<ProjectsResponse>) : { projects: [] }
       ),
       fetch("/api/company/payments").then((r) =>
-        r.ok ? (r.json() as Promise<PaymentsResponse>) : { payments: [], projects: [] }
+        r.ok
+          ? (r.json() as Promise<PaymentsResponse>)
+          : {
+              payments: [],
+              projects: [],
+              collectionsEnabled: false,
+              providerName: null,
+              collectionMethods: [],
+            }
       ),
     ])
       .then(([meData, projData, payData]: [MeResponse, ProjectsResponse, PaymentsResponse]) => {
         setMe(meData);
         setProjects(projData.projects || []);
         setPayments(payData.payments || []);
-        if (!selectedCompanyId && meData.memberships?.length > 0) {
-          setSelectedCompanyId(meData.memberships[0].company.id);
+        setCollectionsEnabled(Boolean(payData.collectionsEnabled));
+        if (meData.memberships?.length > 0) {
+          setSelectedCompanyId(
+            (current) => current ?? meData.memberships[0].company.id
+          );
         }
         setLoading(false);
       })
@@ -247,13 +246,10 @@ export function CompanyDashboard() {
         setError(e.message || "Erreur réseau");
         setLoading(false);
       });
-  }, [reloadKey, selectedCompanyId]);
+  }, []);
 
   useEffect(() => {
-    if (!userEmail) {
-      setLoading(false);
-      return;
-    }
+    if (!userEmail) return;
     void fetchData();
   }, [userEmail, reloadKey, fetchData]);
 
@@ -285,7 +281,11 @@ export function CompanyDashboard() {
           <Button
             variant="outline"
             className="mt-4"
-            onClick={() => setReloadKey((k) => k + 1)}
+            onClick={() => {
+              setLoading(true);
+              setError(null);
+              setReloadKey((k) => k + 1);
+            }}
           >
             <RefreshCw className="mr-2 h-4 w-4" />
             Réessayer
@@ -300,7 +300,13 @@ export function CompanyDashboard() {
   if (memberships.length === 0) {
     return (
       <section className="page-shell py-10">
-        <CompanyOnboarding onCreated={() => setReloadKey((key) => key + 1)} />
+        <CompanyOnboarding
+          onCreated={() => {
+            setLoading(true);
+            setError(null);
+            setReloadKey((key) => key + 1);
+          }}
+        />
       </section>
     );
   }
@@ -330,54 +336,6 @@ export function CompanyDashboard() {
     .filter((p) => ["upcoming", "due", "verifying"].includes(p.status))
     .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
   const nextPayment = upcomingPayments[0] ?? null;
-
-  const handleDeclarePayment = async () => {
-    if (!payDialogPayment) return;
-    setDeclaringPayment(true);
-    try {
-      const res = await fetch("/api/company/payments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paymentId: payDialogPayment.id }),
-      });
-      const body = (await res.json().catch(() => ({}))) as {
-        error?: string;
-        notice?: string;
-        instructions?: { paymentRef?: string };
-      };
-      if (!res.ok) {
-        toast({
-          title: "Déclaration échouée",
-          description: body?.error || "Réessayez ultérieurement.",
-          variant: "destructive",
-        });
-        return;
-      }
-      toast({
-        title: "Paiement déclaré",
-        description: body?.notice || "Votre déclaration est enregistrée.",
-      });
-      if (body?.instructions?.paymentRef) {
-        setPayDialogPayment({
-          ...payDialogPayment,
-          status: "verifying",
-          paymentRef: body.instructions.paymentRef,
-        });
-      } else {
-        setPayDialogOpen(false);
-        setPayDialogPayment(null);
-      }
-      setReloadKey((k) => k + 1);
-    } catch {
-      toast({
-        title: "Erreur réseau",
-        description: "Réessayez ultérieurement.",
-        variant: "destructive",
-      });
-    } finally {
-      setDeclaringPayment(false);
-    }
-  };
 
   return (
     <section className="page-shell reveal-in">
@@ -613,8 +571,9 @@ export function CompanyDashboard() {
           <Lock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
           <p className="text-[11px] leading-relaxed text-muted-foreground">
             Vous n&apos;avez pas accès aux données personnelles des
-            investisseurs. Les remboursements sont à effectuer globalement
-            (capital + intérêts + suivi) via le compte séquestre NEXORA.
+            investisseurs. Les remboursements seront collectés globalement
+            (capital + intérêts + suivi) par carte ou Mobile Money via un
+            prestataire agréé. Aucune coordonnée fictive n&apos;est affichée.
           </p>
         </div>
 
@@ -743,17 +702,33 @@ export function CompanyDashboard() {
                           </div>
                           {projPayments[0].status !== "paid" &&
                             projPayments[0].status !== "verifying" && (
-                              <Button
-                                size="sm"
-                                className="btn-nexora"
-                                onClick={() => {
-                                  setPayDialogPayment(projPayments[0]);
-                                  setPayDialogOpen(true);
-                                }}
-                              >
-                                <HandCoins className="mr-1.5 h-3.5 w-3.5" />
-                                Régler l&apos;échéance
-                              </Button>
+                              <TooltipProvider delayDuration={150}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span>
+                                      <Button
+                                        size="sm"
+                                        className="btn-nexora"
+                                        disabled={!collectionsEnabled}
+                                      >
+                                        <HandCoins className="mr-1.5 h-3.5 w-3.5" />
+                                        {collectionsEnabled
+                                          ? "Régler l'échéance"
+                                          : "Paiement bientôt disponible"}
+                                      </Button>
+                                    </span>
+                                  </TooltipTrigger>
+                                  {!collectionsEnabled && (
+                                    <TooltipContent className="max-w-xs">
+                                      <p className="text-xs">
+                                        Paiement par carte et Mobile Money en
+                                        cours d&apos;activation avec un prestataire
+                                        agréé.
+                                      </p>
+                                    </TooltipContent>
+                                  )}
+                                </Tooltip>
+                              </TooltipProvider>
                             )}
                         </>
                       ) : (
@@ -795,139 +770,6 @@ export function CompanyDashboard() {
           </div>
         )}
       </div>
-
-      {/* Régler l'échéance — dialog */}
-      <Dialog open={payDialogOpen} onOpenChange={setPayDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Landmark className="h-5 w-5" />
-              Régler une échéance
-            </DialogTitle>
-            <DialogDescription>
-              Effectuez un virement global (capital + intérêts + suivi
-              plateforme) vers le compte séquestre NEXORA. Puis déclarez votre
-              paiement pour vérification.
-            </DialogDescription>
-          </DialogHeader>
-
-          {payDialogPayment && (
-            <div className="space-y-3">
-              <div className="rounded-md border border-border bg-secondary/40 p-3">
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                      Capital
-                    </p>
-                    <p className="tnum text-sm font-semibold text-foreground">
-                      {fmtFCFA(payDialogPayment.capitalDue)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                      Intérêts
-                    </p>
-                    <p className="tnum text-sm font-semibold text-foreground">
-                      {fmtFCFA(payDialogPayment.interestDue)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                      Suivi
-                    </p>
-                    <p className="tnum text-sm font-semibold text-foreground">
-                      {fmtFCFA(payDialogPayment.followUpFeeDue)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                      Total
-                    </p>
-                    <p className="tnum text-sm font-bold text-foreground">
-                      {fmtFCFA(payDialogPayment.totalDue)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-md border border-border p-3 text-xs">
-                <p className="font-medium text-foreground">
-                  Coordonnées de paiement
-                </p>
-                <ul className="mt-2 space-y-1 text-muted-foreground">
-                  <li>
-                    Bénéficiaire :{" "}
-                    <span className="font-medium text-foreground">
-                      NEXORA Capital — Compte séquestre
-                    </span>
-                  </li>
-                  <li>
-                    IBAN :{" "}
-                    <span className="tnum font-medium text-foreground">
-                      SN12 0060 0000 1234 5678 9012
-                    </span>
-                  </li>
-                  <li>
-                    Banque : Banque de l&apos;Afrique Occidentale (BAO)
-                  </li>
-                  <li className="text-nexora-danger">
-                    DÉMONSTRATION — IBAN fictif, n&apos;effectuez aucun virement
-                    réel.
-                  </li>
-                </ul>
-              </div>
-
-              {payDialogPayment.paymentRef && (
-                <div className="rounded-md border border-border p-3 text-xs">
-                  <p className="text-muted-foreground">
-                    Référence unique à indiquer dans le libellé du virement :
-                  </p>
-                  <p className="tnum mt-1 font-mono text-sm font-semibold text-foreground">
-                    {payDialogPayment.paymentRef}
-                  </p>
-                </div>
-              )}
-
-              <div className="rounded-md bg-nexora-pale p-3">
-                <p className="text-[11px] leading-relaxed text-positive">
-                  Paiement à effectuer globalement. L&apos;échéance n&apos;est
-                  pas réglée tant que le paiement n&apos;est pas confirmé par
-                  notre équipe. Vous recevrez une notification de confirmation.
-                </p>
-              </div>
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setPayDialogOpen(false);
-                setPayDialogPayment(null);
-              }}
-              disabled={declaringPayment}
-            >
-              {payDialogPayment?.paymentRef ? "Fermer" : "Annuler"}
-            </Button>
-            {payDialogPayment && !payDialogPayment.paymentRef && (
-              <Button
-                className="btn-nexora"
-                onClick={handleDeclarePayment}
-                disabled={declaringPayment}
-              >
-                {declaringPayment ? (
-                  <>
-                    <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                    Enregistrement…
-                  </>
-                ) : (
-                  "J'ai effectué le paiement"
-                )}
-              </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
     </section>
   );

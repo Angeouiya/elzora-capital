@@ -11,16 +11,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
   PieChart,
   Pie,
   Cell,
@@ -41,8 +31,6 @@ import {
   Calendar,
   AlertTriangle,
   RefreshCw,
-  Lock,
-  Landmark,
   Clock,
 } from "lucide-react";
 
@@ -112,6 +100,9 @@ interface InvestorDashboardData {
     pendingPayments: number;
     activeDeals: number;
     bySector: { name: string; value: number }[];
+    payoutsEnabled: boolean;
+    payoutProviderName: string | null;
+    payoutMethods: string[];
   } | null;
 }
 
@@ -211,14 +202,7 @@ export function InvestorDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
-  const [payoutOpen, setPayoutOpen] = useState(false);
-  const [payoutAmount, setPayoutAmount] = useState("");
-  const [payoutAccount, setPayoutAccount] = useState("");
-  const [payoutSubmitting, setPayoutSubmitting] = useState(false);
-
   const reload = useCallback(() => {
-    setLoading(true);
-    setError(null);
     fetch("/api/investor/dashboard")
       .then(async (r) => {
         if (r.status === 401) {
@@ -238,13 +222,10 @@ export function InvestorDashboard() {
         setError(e.message || "Erreur réseau");
         setLoading(false);
       });
-  }, [reloadKey]);
+  }, []);
 
   useEffect(() => {
-    if (!userEmail) {
-      setLoading(false);
-      return;
-    }
+    if (!userEmail) return;
     void reload();
   }, [userEmail, reloadKey, reload]);
 
@@ -271,6 +252,8 @@ export function InvestorDashboard() {
     return (
       <ErrorState
         onRetry={() => {
+          setLoading(true);
+          setError(null);
           setReloadKey((k) => k + 1);
         }}
       />
@@ -283,13 +266,6 @@ export function InvestorDashboard() {
         <p className="text-sm text-muted-foreground">
           Aucun compte investisseur trouvé pour{" "}
           <strong className="text-foreground">{userEmail}</strong>.
-        </p>
-        <p className="mt-2 text-xs text-muted-foreground">
-          Astuce : utilisez{" "}
-          <code className="rounded bg-secondary px-1 py-0.5 font-mono">
-            investisseur@demo.nexora
-          </code>{" "}
-          pour cet accès pilote.
         </p>
         <Button
           variant="outline"
@@ -317,76 +293,6 @@ export function InvestorDashboard() {
   const pendingCount = investments.filter(
     (i) => i.status === "pending_payment"
   ).length;
-
-  const handlePayoutSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const amount = Number(payoutAmount);
-    if (!Number.isFinite(amount) || amount <= 0) {
-      toast({
-        title: "Montant invalide",
-        description: "Saisissez un montant entier supérieur à 0.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (!payoutAccount.trim()) {
-      toast({
-        title: "Compte bénéficiaire requis",
-        description: "Indiquez votre IBAN ou numéro de compte Mobile Money.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (amount > availableBalance) {
-      toast({
-        title: "Solde insuffisant",
-        description: `Disponible : ${fmtFCFA(availableBalance)}.`,
-        variant: "destructive",
-      });
-      return;
-    }
-    setPayoutSubmitting(true);
-    try {
-      const res = await fetch("/api/investor/payouts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount,
-          beneficiaryAccount: payoutAccount.trim(),
-        }),
-      });
-      const body = (await res.json().catch(() => ({}))) as {
-        error?: string;
-        notice?: string;
-      };
-      if (!res.ok) {
-        toast({
-          title: "Demande refusée",
-          description: body?.error || "Réessayez ultérieurement.",
-          variant: "destructive",
-        });
-        return;
-      }
-      toast({
-        title: "Demande enregistrée",
-        description:
-          body?.notice ||
-          "Votre demande de versement est en cours de traitement.",
-      });
-      setPayoutOpen(false);
-      setPayoutAmount("");
-      setPayoutAccount("");
-      setReloadKey((k) => k + 1);
-    } catch {
-      toast({
-        title: "Erreur réseau",
-        description: "Réessayez ultérieurement.",
-        variant: "destructive",
-      });
-    } finally {
-      setPayoutSubmitting(false);
-    }
-  };
 
   return (
     <section className="page-shell reveal-in">
@@ -459,15 +365,24 @@ export function InvestorDashboard() {
           <p className="tnum mt-2 text-2xl font-bold text-foreground">
             {fmtFCFA(availableBalance)}
           </p>
-          {availableBalance > 0 ? (
+          {availableBalance > 0 && portfolio?.payoutsEnabled ? (
             <Button
               size="sm"
               className="btn-nexora mt-2 h-7 px-3 text-xs"
-              onClick={() => setPayoutOpen(true)}
+              onClick={() =>
+                toast({
+                  title: "Versement sécurisé",
+                  description: "Sélectionnez votre moyen de versement vérifié.",
+                })
+              }
             >
               <ArrowDownToLine className="mr-1.5 h-3.5 w-3.5" />
               Demander un versement
             </Button>
+          ) : availableBalance > 0 ? (
+            <p className="mt-1 text-[11px] font-medium text-positive">
+              Versements par banque et Mobile Money en cours d&apos;activation
+            </p>
           ) : (
             <p className="mt-0.5 text-[11px] text-muted-foreground">
               Vos revenus apparaîtront ici après distribution
@@ -490,7 +405,8 @@ export function InvestorDashboard() {
                 de confirmation de paiement.
               </p>
               <p className="mt-0.5 text-xs text-positive/90">
-                Confirmez le paiement pour finaliser votre souscription.
+                La confirmation sera appliquée automatiquement après
+                validation du prestataire de paiement.
               </p>
             </div>
           </div>
@@ -795,88 +711,6 @@ export function InvestorDashboard() {
           </div>
         </div>
       </div>
-
-      {/* Payout dialog */}
-      <Dialog open={payoutOpen} onOpenChange={setPayoutOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Landmark className="h-5 w-5" />
-              Demander un versement
-            </DialogTitle>
-            <DialogDescription>
-              Indiquez le montant à retirer et le compte bénéficiaire vérifié.
-              Le versement est traité par notre partenaire habilité. Délai 2-3
-              jours ouvrés.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handlePayoutSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="payout-amount" className="text-xs">
-                Montant (FCFA)
-              </Label>
-              <Input
-                id="payout-amount"
-                type="number"
-                inputMode="numeric"
-                min={1}
-                max={availableBalance}
-                step={1}
-                required
-                value={payoutAmount}
-                onChange={(e) => setPayoutAmount(e.target.value)}
-                placeholder="50000"
-                disabled={payoutSubmitting}
-                className="tnum"
-              />
-              <p className="mt-1 text-[11px] text-muted-foreground">
-                Disponible :{" "}
-                <span className="tnum font-medium text-foreground">
-                  {fmtFCFA(availableBalance)}
-                </span>
-              </p>
-            </div>
-            <div>
-              <Label htmlFor="payout-account" className="text-xs">
-                Compte bénéficiaire (IBAN ou Mobile Money)
-              </Label>
-              <Input
-                id="payout-account"
-                type="text"
-                required
-                value={payoutAccount}
-                onChange={(e) => setPayoutAccount(e.target.value)}
-                placeholder="SN12 0060 0000 1234 5678 9012"
-                disabled={payoutSubmitting}
-              />
-            </div>
-            <div className="flex items-start gap-2 rounded-md bg-secondary/60 p-3">
-              <Lock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-              <p className="text-[11px] leading-relaxed text-muted-foreground">
-                Aucune commission investisseur. Le versement est effectué vers
-                un compte à votre nom préalablement vérifié.
-              </p>
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setPayoutOpen(false)}
-                disabled={payoutSubmitting}
-              >
-                Annuler
-              </Button>
-              <Button
-                type="submit"
-                className="btn-nexora"
-                disabled={payoutSubmitting}
-              >
-                {payoutSubmitting ? "Envoi…" : "Confirmer la demande"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
 
     </section>
   );

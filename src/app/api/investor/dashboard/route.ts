@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { getD1 } from "@/lib/d1";
 import { simulateDebtFinancing } from "@/lib/finance";
+import { getPaymentCapabilities } from "@/lib/payment-capabilities";
 
 interface UserRow extends Record<string, unknown> {
   id: string;
@@ -64,6 +65,7 @@ export async function GET(req: Request) {
   }
 
   const database = getD1();
+  const paymentCapabilities = getPaymentCapabilities();
   const [user, investmentResult, balanceRow, notificationResult] = await Promise.all([
     database
       .prepare(
@@ -202,6 +204,9 @@ export async function GET(req: Request) {
         pendingPayments,
         activeDeals,
         bySector: Array.from(bySector, ([name, value]) => ({ name, value })),
+        payoutsEnabled: paymentCapabilities.payoutsEnabled,
+        payoutProviderName: paymentCapabilities.providerName,
+        payoutMethods: paymentCapabilities.payoutMethods,
       },
       notifications: notificationResult.results.map((notification) => ({
         ...notification,

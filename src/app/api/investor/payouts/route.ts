@@ -1,14 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { ser } from "@/lib/serialize";
 import { requireUser } from "@/lib/auth";
-import { postLedgerEntry, genIdemKey, getBalance } from "@/lib/ledger";
+import { getD1, isoNow, requestIp } from "@/lib/d1";
+import { getPaymentCapabilities } from "@/lib/payment-capabilities";
 
-// ============================================================================
-// GET /api/investor/payouts
-// ----------------------------------------------------------------------------
-// Liste les demandes de retrait de l'investisseur courant.
-// ============================================================================
+interface PayoutRow extends Record<string, unknown> {
+  id: string;
+  amount: number;
+  fees: number;
+  netAmount: number;
+  status: string;
+  partnerRef: string | null;
+  createdAt: string;
+  completedAt: string | null;
+}
+
+interface UserKycRow extends Record<string, unknown> {
+  kycStatus: string;
+}
+
 export async function GET(req: Request) {
   let session;
   try {
@@ -17,35 +26,40 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   }
 
-  // Solde disponible (wallet)
-  const availableBalance = await getBalance("investor_wallet", session.userId);
+  const database = getD1();
+  const capabilities = getPaymentCapabilities();
+  const [balance, payouts] = await Promise.all([
+    database
+      .prepare(
+        `SELECT COALESCE(SUM(amount), 0) AS balance
+         FROM LedgerEntry
+         WHERE accountType = 'investor_wallet' AND accountId = ?`
+      )
+      .bind(session.userId)
+      .first<{ balance: number }>(),
+    database
+      .prepare(
+        `SELECT id, amount, fees, netAmount, status,
+                partnerRef, createdAt, completedAt
+         FROM Payout WHERE investorId = ?
+         ORDER BY createdAt DESC LIMIT 30`
+      )
+      .bind(session.userId)
+      .all<PayoutRow>(),
+  ]);
 
-  const payouts = await db.payout.findMany({
-    where: {
-      investorType: "individual",
-      investorId: session.userId,
+  return NextResponse.json(
+    {
+      payouts: payouts.results,
+      availableBalance: Number(balance?.balance || 0),
+      payoutsEnabled: capabilities.payoutsEnabled,
+      providerName: capabilities.providerName,
+      payoutMethods: capabilities.payoutMethods,
     },
-    orderBy: { createdAt: "desc" },
-  });
-
-  return NextResponse.json({
-    payouts: ser(payouts),
-    availableBalance: ser({ amount: availableBalance }),
-  });
+    { headers: { "Cache-Control": "private, no-store" } }
+  );
 }
 
-// ============================================================================
-// POST /api/investor/payouts
-// Body: { amount, beneficiaryAccount }
-// ----------------------------------------------------------------------------
-// Demande de retrait depuis le wallet investisseur.
-// - requireUser(req)
-// - Vérifie solde via getBalance("investor_wallet", userId)
-// - Idempotence : pas de demande identique (même montant) dans les 5 dernières min
-// - Crée Payout (status="pending", fees=0, netAmount=amount)
-// - Ledger: investor_wallet → investor_external
-// - Notification
-// ============================================================================
 export async function POST(req: NextRequest) {
   let session;
   try {
@@ -54,135 +68,163 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   }
 
-  let body: any = {};
+  const capabilities = getPaymentCapabilities();
+  if (!capabilities.payoutsEnabled) {
+    return NextResponse.json(
+      {
+        error:
+          "Les versements sont en cours d'activation avec un prestataire de paiement agréé. Aucun compte bancaire ou Mobile Money n'est collecté pour le moment.",
+        code: "PAYOUTS_NOT_CONFIGURED",
+      },
+      { status: 503 }
+    );
+  }
+
+  let body: Record<string, unknown>;
   try {
-    body = await req.json();
+    body = (await req.json()) as Record<string, unknown>;
   } catch {
     return NextResponse.json({ error: "Payload invalide" }, { status: 400 });
   }
 
-  const amount = toBigIntSafe(body.amount);
-  const beneficiaryAccount = String(body.beneficiaryAccount || "");
-  if (!amount || amount <= 0n) {
-    return NextResponse.json({ error: "Montant invalide" }, { status: 400 });
-  }
-  if (!beneficiaryAccount) {
+  const amount = Number(body.amount);
+  const providerRecipientId = String(body.providerRecipientId || "").trim();
+  if (!Number.isSafeInteger(amount) || amount <= 0) {
     return NextResponse.json(
-      { error: "Compte bénéficiaire requis" },
+      { error: "Le montant doit être un entier strictement positif." },
+      { status: 400 }
+    );
+  }
+  if (!/^[A-Za-z0-9_-]{8,160}$/.test(providerRecipientId)) {
+    return NextResponse.json(
+      { error: "Sélectionnez un moyen de versement préalablement vérifié." },
       { status: 400 }
     );
   }
 
-  // Vérification du solde disponible
-  const balance = await getBalance("investor_wallet", session.userId);
-  if (amount > balance) {
-    return NextResponse.json({ error: "Solde insuffisant" }, { status: 400 });
+  const database = getD1();
+  const [user, balance, openPayout] = await Promise.all([
+    database
+      .prepare(`SELECT kycStatus FROM User WHERE id = ? LIMIT 1`)
+      .bind(session.userId)
+      .first<UserKycRow>(),
+    database
+      .prepare(
+        `SELECT COALESCE(SUM(amount), 0) AS balance
+         FROM LedgerEntry
+         WHERE accountType = 'investor_wallet' AND accountId = ?`
+      )
+      .bind(session.userId)
+      .first<{ balance: number }>(),
+    database
+      .prepare(
+        `SELECT id FROM Payout
+         WHERE investorId = ? AND status IN ('pending', 'ordered', 'uncertain')
+         LIMIT 1`
+      )
+      .bind(session.userId)
+      .first<{ id: string }>(),
+  ]);
+
+  if (!user || user.kycStatus !== "verified") {
+    return NextResponse.json(
+      { error: "Votre identité doit être vérifiée avant tout versement." },
+      { status: 403 }
+    );
+  }
+  if (openPayout) {
+    return NextResponse.json(
+      { error: "Une demande de versement est déjà en cours de traitement." },
+      { status: 409 }
+    );
+  }
+  if (amount > Number(balance?.balance || 0)) {
+    return NextResponse.json({ error: "Solde disponible insuffisant." }, { status: 409 });
   }
 
-  // Idempotence : pas de demande identique dans les 5 dernières minutes
-  const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
-  const recent = await db.payout.findFirst({
-    where: {
-      investorType: "individual",
-      investorId: session.userId,
-      amount,
-      status: "pending",
-      createdAt: { gte: fiveMinAgo },
-    },
-  });
-  if (recent) {
-    return NextResponse.json({
-      payout: ser(recent),
-      idempotent: true,
-      message: "Une demande similaire est déjà en cours de traitement.",
-    });
+  const payoutId = crypto.randomUUID();
+  const now = isoNow();
+  const auditId = crypto.randomUUID();
+  const notificationId = crypto.randomUUID();
+  try {
+    await database.batch([
+      database
+        .prepare(
+          `INSERT INTO Payout
+           (id, investorType, investorId, amount, fees, netAmount, status,
+            beneficiaryAccount, partnerRef, createdAt, completedAt)
+           VALUES (?, 'individual', ?, ?, 0, ?, 'pending', ?, NULL, ?, NULL)`
+        )
+        .bind(payoutId, session.userId, amount, amount, providerRecipientId, now),
+      database
+        .prepare(
+          `INSERT INTO LedgerEntry
+           (id, idemKey, accountType, accountId, counterpartyType, counterpartyId,
+            amount, currency, sourceType, sourceId, description, createdAt)
+           VALUES (?, ?, 'investor_wallet', ?, 'investor_withdrawal_pending', ?,
+                   ?, 'XOF', 'payout', ?, 'Réservation pour versement', ?)`
+        )
+        .bind(
+          crypto.randomUUID(),
+          `payout:${payoutId}:wallet`,
+          session.userId,
+          payoutId,
+          -amount,
+          payoutId,
+          now
+        ),
+      database
+        .prepare(
+          `INSERT INTO LedgerEntry
+           (id, idemKey, accountType, accountId, counterpartyType, counterpartyId,
+            amount, currency, sourceType, sourceId, description, createdAt)
+           VALUES (?, ?, 'investor_withdrawal_pending', ?, 'investor_wallet', ?,
+                   ?, 'XOF', 'payout', ?, 'Versement en attente du prestataire', ?)`
+        )
+        .bind(
+          crypto.randomUUID(),
+          `payout:${payoutId}:pending`,
+          payoutId,
+          session.userId,
+          amount,
+          payoutId,
+          now
+        ),
+      database
+        .prepare(
+          `INSERT INTO AuditLog
+           (id, actorType, actorId, action, entityType, entityId, metadata, ipAddress, createdAt)
+           VALUES (?, 'user', ?, 'payout_requested', 'payout', ?, ?, ?, ?)`
+        )
+        .bind(
+          auditId,
+          session.userId,
+          payoutId,
+          JSON.stringify({ amount, provider: capabilities.providerName }),
+          requestIp(req),
+          now
+        ),
+      database
+        .prepare(
+          `INSERT INTO Notification
+           (id, userId, type, title, message, read, actionUrl, createdAt)
+           VALUES (?, ?, 'payout', 'Versement demandé',
+                   'Votre demande est transmise au prestataire de paiement.', 0, NULL, ?)`
+        )
+        .bind(notificationId, session.userId, now),
+    ]);
+  } catch {
+    return NextResponse.json(
+      { error: "Une demande de versement est déjà en cours ou n'a pas pu être réservée." },
+      { status: 409 }
+    );
   }
 
-  // Création du payout (0% de commission investisseur)
-  const payout = await db.payout.create({
-    data: {
-      investorType: "individual",
-      investorId: session.userId,
-      amount,
-      fees: 0n,
-      netAmount: amount,
-      status: "pending",
-      beneficiaryAccount,
-    },
-  });
-
-  // Ledger : investor_wallet → investor_external
-  const payIdem = genIdemKey("wtd", payout.id);
-  await postLedgerEntry(
+  return NextResponse.json(
     {
-      accountType: "investor_wallet",
-      accountId: session.userId,
-      amount,
-      counterpartyType: "investor_external",
-      counterpartyId: session.userId,
-      sourceType: "payout",
-      sourceId: payout.id,
-      description: `Retrait demandé - ${amount} FCFA vers ${beneficiaryAccount}`,
-      idemKey: payIdem,
+      payout: { id: payoutId, amount, status: "pending", createdAt: now },
+      notice: "Votre demande a été transmise au prestataire de paiement.",
     },
-    {
-      accountType: "investor_external",
-      accountId: session.userId,
-      amount,
-      counterpartyType: "investor_wallet",
-      counterpartyId: session.userId,
-      sourceType: "payout",
-      sourceId: payout.id,
-      description: `Versement en cours - ${amount} FCFA`,
-      idemKey: payIdem + ":credit",
-    }
+    { status: 201 }
   );
-
-  // AuditLog
-  await db.auditLog.create({
-    data: {
-      actorType: "user",
-      actorId: session.userId,
-      action: "payout_requested",
-      entityType: "payout",
-      entityId: payout.id,
-      metadata: JSON.stringify({
-        amount: amount.toString(),
-        beneficiaryAccount,
-      }),
-      ipAddress: req.headers.get("x-forwarded-for") || "unknown",
-    },
-  });
-
-  // Notification
-  await db.notification.create({
-    data: {
-      userId: session.userId,
-      type: "payment",
-      title: "Demande de retrait enregistrée",
-      message: `Votre demande de retrait de ${amount} FCFA a été enregistrée. Versement en cours de traitement par notre partenaire.`,
-      actionUrl: "investor_dashboard",
-    },
-  });
-
-  return NextResponse.json({
-    payout: ser(payout),
-    notice:
-      "Versement en cours de traitement par notre partenaire. " +
-      "Vous recevrez une notification dès que le virement sera effectué.",
-  });
-}
-
-function toBigIntSafe(v: unknown): bigint | null {
-  if (typeof v === "bigint") return v;
-  if (typeof v === "number") {
-    if (!Number.isInteger(v)) return null;
-    return BigInt(v);
-  }
-  if (typeof v === "string") {
-    const n = Number(v);
-    if (!Number.isFinite(n) || !Number.isInteger(n)) return null;
-    return BigInt(n);
-  }
-  return null;
 }

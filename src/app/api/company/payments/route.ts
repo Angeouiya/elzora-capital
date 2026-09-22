@@ -1,14 +1,31 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { ser } from "@/lib/serialize";
+import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
-import { genIdemKey } from "@/lib/ledger";
+import { getD1 } from "@/lib/d1";
+import { getPaymentCapabilities } from "@/lib/payment-capabilities";
 
-// ============================================================================
-// GET /api/company/payments
-// ----------------------------------------------------------------------------
-// Liste les CompanyPayment (échéances) des projets de l'entreprise courante.
-// ============================================================================
+interface CompanyPaymentRow extends Record<string, unknown> {
+  id: string;
+  projectId: string;
+  installmentNo: number;
+  dueDate: string;
+  capitalDue: number;
+  interestDue: number;
+  followUpFeeDue: number;
+  totalDue: number;
+  status: string;
+  paidAt: string | null;
+  paidAmount: number;
+  remaining: number;
+  paymentRef: string | null;
+  createdAt: string;
+}
+
+interface ProjectRow extends Record<string, unknown> {
+  id: string;
+  title: string;
+  companyId: string;
+}
+
 export async function GET(req: Request) {
   let session;
   try {
@@ -17,141 +34,69 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   }
 
-  const memberships = await db.companyMember.findMany({
-    where: { userId: session.userId },
-    select: { companyId: true },
-  });
-  if (memberships.length === 0) {
-    return NextResponse.json({ payments: [], projects: [] });
-  }
-  const companyIds = memberships.map((m) => m.companyId);
+  const database = getD1();
+  const capabilities = getPaymentCapabilities();
+  const [payments, projects] = await Promise.all([
+    database
+      .prepare(
+        `SELECT cp.id, cp.projectId, cp.installmentNo, cp.dueDate,
+                cp.capitalDue, cp.interestDue, cp.followUpFeeDue, cp.totalDue,
+                cp.status, cp.paidAt, cp.paidAmount, cp.remaining,
+                cp.paymentRef, cp.createdAt
+         FROM CompanyPayment cp
+         JOIN Project p ON p.id = cp.projectId
+         JOIN CompanyMember cm ON cm.companyId = p.companyId
+         WHERE cm.userId = ?
+         ORDER BY cp.dueDate ASC`
+      )
+      .bind(session.userId)
+      .all<CompanyPaymentRow>(),
+    database
+      .prepare(
+        `SELECT DISTINCT p.id, p.title, p.companyId
+         FROM Project p
+         JOIN CompanyMember cm ON cm.companyId = p.companyId
+         WHERE cm.userId = ?
+         ORDER BY p.createdAt DESC`
+      )
+      .bind(session.userId)
+      .all<ProjectRow>(),
+  ]);
 
-  const projects = await db.project.findMany({
-    where: { companyId: { in: companyIds } },
-    select: { id: true, title: true, companyId: true },
-  });
-  const projectIds = projects.map((p) => p.id);
-  if (projectIds.length === 0) {
-    return NextResponse.json({ payments: [], projects: [] });
-  }
-
-  const payments = await db.companyPayment.findMany({
-    where: { projectId: { in: projectIds } },
-    include: { project: { include: { company: true } } },
-    orderBy: { dueDate: "asc" },
-  });
-
-  return NextResponse.json({ payments: ser(payments), projects: ser(projects) });
+  return NextResponse.json(
+    {
+      payments: payments.results,
+      projects: projects.results,
+      collectionsEnabled: capabilities.collectionsEnabled,
+      providerName: capabilities.providerName,
+      collectionMethods: capabilities.collectionMethods,
+    },
+    { headers: { "Cache-Control": "private, no-store" } }
+  );
 }
 
-// ============================================================================
-// POST /api/company/payments
-// Body: { paymentId }
-// ----------------------------------------------------------------------------
-// L'entreprise DÉCLARE avoir payé une échéance. Le paiement N'est PAS confirmé
-// (spec 17 : "Une échéance ne devient pas payée simplement parce que
-// l'entreprise déclare l'avoir réglée"). La confirmation viendra de l'admin
-// après vérification de la réception bancaire.
-//
-// - requireUser(req) + vérification de l'appartenance à la société du projet
-// - Update CompanyPayment: status="verifying", paymentRef unique
-// - Retourne les instructions + notice
-// ============================================================================
-export async function POST(req: NextRequest) {
-  let session;
+/**
+ * A company cannot self-certify a repayment. The future provider adapter will
+ * create a signed card or Mobile Money collection intent, and a verified
+ * webhook will be the only entry point allowed to move this payment forward.
+ */
+export async function POST(req: Request) {
   try {
-    session = await requireUser(req);
+    await requireUser(req);
   } catch {
     return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   }
 
-  let body: any = {};
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Payload invalide" }, { status: 400 });
-  }
-
-  const paymentId = String(body.paymentId || "");
-  if (!paymentId) {
-    return NextResponse.json({ error: "paymentId requis" }, { status: 400 });
-  }
-
-  const payment = await db.companyPayment.findUnique({
-    where: { id: paymentId },
-    include: { project: { include: { company: true } } },
-  });
-  if (!payment) {
-    return NextResponse.json({ error: "Échéance introuvable" }, { status: 404 });
-  }
-
-  // Vérification d'appartenance à la société du projet
-  const membership = await db.companyMember.findFirst({
-    where: { userId: session.userId, companyId: payment.project.companyId },
-    select: { id: true },
-  });
-  if (!membership) {
-    return NextResponse.json(
-      { error: "Vous n'êtes pas membre de cette entreprise" },
-      { status: 403 }
-    );
-  }
-
-  // Idempotence : déjà payée / en vérification
-  if (payment.status === "paid") {
-    return NextResponse.json({
-      payment: ser(payment),
-      idempotent: true,
-      message: "Échéance déjà confirmée comme payée.",
-    });
-  }
-  if (payment.status === "verifying" && payment.paymentRef) {
-    return NextResponse.json({
-      payment: ser(payment),
-      idempotent: true,
-      message: "Échéance déjà déclarée comme payée, en attente de vérification.",
-    });
-  }
-
-  const paymentRef = genIdemKey("ech", payment.id);
-  const updated = await db.companyPayment.update({
-    where: { id: payment.id },
-    data: {
-      status: "verifying",
-      paymentRef,
-      paidAmount: payment.totalDue,
+  const capabilities = getPaymentCapabilities();
+  return NextResponse.json(
+    {
+      error: capabilities.collectionsEnabled
+        ? "L'adaptateur du prestataire de paiement n'est pas encore disponible. Aucun paiement n'a été enregistré."
+        : "Les paiements par carte et Mobile Money sont en cours d'activation avec un prestataire agréé. Aucun paiement n'a été enregistré.",
+      code: capabilities.collectionsEnabled
+        ? "PAYMENT_ADAPTER_NOT_AVAILABLE"
+        : "COLLECTIONS_NOT_CONFIGURED",
     },
-    include: { project: { include: { company: true } } },
-  });
-
-  await db.auditLog.create({
-    data: {
-      actorType: "user",
-      actorId: session.userId,
-      action: "company_payment_declared",
-      entityType: "company_payment",
-      entityId: payment.id,
-      metadata: JSON.stringify({
-        projectId: payment.projectId,
-        totalDue: payment.totalDue.toString(),
-        paymentRef,
-      }),
-      ipAddress: req.headers.get("x-forwarded-for") || "unknown",
-    },
-  });
-
-  return NextResponse.json({
-    payment: ser(updated),
-    notice:
-      "Votre déclaration de paiement a été enregistrée. " +
-      "L'échéance ne sera considérée comme réglée qu'après vérification " +
-      "de la réception effective des fonds par notre équipe. " +
-      "Vous recevrez une notification de confirmation.",
-    instructions: {
-      paymentRef,
-      amount: Number(payment.totalDue),
-      bankAccount: "DÉMONSTRATION — IBAN fictif",
-      nextStep: "Notre équipe confirme la réception des fonds.",
-    },
-  });
+    { status: 503 }
+  );
 }
