@@ -152,7 +152,7 @@ export const useAppStore = create<AppState>((set) => ({
       adminRole: null,
       adminFirstName: null,
       adminLastName: null,
-      view: "home",
+      view: "admin_login",
     }),
   setCompany: (id) => set({ selectedCompanyId: id, authContext: id ? "company" : "individual" }),
 }));

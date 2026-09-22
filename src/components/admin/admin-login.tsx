@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { useAppStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import {
@@ -50,7 +51,6 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export function AdminLogin() {
-  const setView = useAppStore((s) => s.setView);
   const loginAdmin = useAppStore((s) => s.loginAdmin);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -229,14 +229,13 @@ export function AdminLogin() {
             </div>
 
             {/* Retour au portail public */}
-            <button
-              type="button"
-              onClick={() => setView("home")}
+            <Link
+              href="/"
               className="mx-auto mt-6 flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               Retour au portail
-            </button>
+            </Link>
           </CardContent>
         </Card>
 
