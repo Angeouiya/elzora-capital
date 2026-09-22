@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SlidersHorizontal, SearchX } from "lucide-react";
-import { SECTORS } from "@/lib/countries";
+import { COUNTRIES, SECTORS, getCountryLabel, getSectorLabel } from "@/lib/countries";
 import type { OfferDTO } from "@/lib/types";
 import { useAppStore } from "@/lib/store";
 
@@ -54,15 +54,6 @@ const COPY = {
   },
 };
 
-const COUNTRIES = [
-  { code: "SN", name: "Sénégal" },
-  { code: "CI", name: "Côte d'Ivoire" },
-  { code: "ML", name: "Mali" },
-  { code: "BF", name: "Burkina Faso" },
-  { code: "TG", name: "Togo" },
-  { code: "BJ", name: "Bénin" },
-];
-
 const INSTRUMENTS = [
   { code: "debt", name: "Dette" },
   { code: "equity", name: "Capital" },
@@ -70,7 +61,8 @@ const INSTRUMENTS = [
 
 export function Explore() {
   const locale = useAppStore((state) => state.locale);
-  const [sector, setSector] = useState("all");
+  const initialSector = useAppStore((state) => state.exploreSector);
+  const [sector, setSector] = useState(initialSector ?? "all");
   const [country, setCountry] = useState("all");
   const [instrument, setInstrument] = useState("all");
 
@@ -120,7 +112,7 @@ export function Explore() {
                 <SelectItem value="all">{copy.allSectors}</SelectItem>
                 {SECTORS.map((s) => (
                   <SelectItem key={s} value={s}>
-                    {s}
+                    {getSectorLabel(s, locale)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -139,7 +131,7 @@ export function Explore() {
                 <SelectItem value="all">{copy.allCountries}</SelectItem>
                 {COUNTRIES.map((c) => (
                   <SelectItem key={c.code} value={c.code}>
-                    {c.name}
+                    {getCountryLabel(c.code, locale)}
                   </SelectItem>
                 ))}
               </SelectContent>

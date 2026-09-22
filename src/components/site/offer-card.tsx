@@ -9,6 +9,7 @@ import { fmtPct } from "@/lib/finance";
 import { formatDisplayMoney } from "@/lib/display-money";
 import { Bookmark, Users, MapPin } from "lucide-react";
 import type { OfferDTO } from "@/lib/types";
+import { getCountryLabel, getSectorLabel } from "@/lib/countries";
 
 function progressPct(raised: number, goal: number): number {
   if (!goal || goal <= 0) return 0;
@@ -58,7 +59,7 @@ export function OfferCard({ offer }: { offer: OfferDTO }) {
         />
         <div className="absolute left-3 top-3 flex gap-1.5">
           <Badge className="bg-background/95 text-foreground shadow-sm">
-            {offer.project.sector}
+            {getSectorLabel(offer.project.sector, locale)}
           </Badge>
           {isEquity ? (
             <Badge className="bg-nexora-black text-nexora-lime shadow-sm">
@@ -73,7 +74,7 @@ export function OfferCard({ offer }: { offer: OfferDTO }) {
         <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/65 to-transparent" />
         <div className="absolute bottom-3 left-3 flex items-center gap-1 text-xs font-medium text-white drop-shadow">
           <MapPin className="h-3.5 w-3.5" />
-          {offer.project.city}, {offer.project.country}
+          {offer.project.city}, {getCountryLabel(offer.project.country, locale)}
         </div>
       </button>
 

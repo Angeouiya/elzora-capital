@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { COUNTRIES } from "@/lib/countries";
+import { COUNTRIES, getCountryLabel } from "@/lib/countries";
 import {
   UserRound,
   Building2,
@@ -454,7 +454,7 @@ export function Register() {
                     <SelectContent>
                       {COUNTRIES.map((c) => (
                         <SelectItem key={c.code} value={c.code}>
-                          {c.name} ({c.currencyDisplay})
+                          {getCountryLabel(c.code, locale)} ({c.currencyDisplay})
                         </SelectItem>
                       ))}
                     </SelectContent>

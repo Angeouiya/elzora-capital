@@ -14,6 +14,7 @@ const COPY = {
     contact: "Contact",
     rights: "Tous droits réservés.",
     warning: "Investir comporte un risque de perte en capital.",
+    location: "Dakar · Sénégal",
   },
   en: {
     tagline: "Connecting private capital with the businesses transforming West Africa.",
@@ -24,6 +25,7 @@ const COPY = {
     contact: "Contact",
     rights: "All rights reserved.",
     warning: "Investing involves a risk of capital loss.",
+    location: "Dakar · Senegal",
   },
 };
 
@@ -91,7 +93,7 @@ export function Footer() {
               {copy.contact}
             </h4>
             <ul className="space-y-2 text-sm text-white/55">
-              <li>Dakar · Sénégal</li>
+              <li>{copy.location}</li>
               <li>
                 <a
                   href="mailto:contact@nexora.capital"

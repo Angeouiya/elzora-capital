@@ -27,6 +27,7 @@ import {
 import { simulateDebtFinancing } from "@/lib/finance";
 import { formatDisplayMoney } from "@/lib/display-money";
 import { CompanyOnboarding } from "@/components/company/company-onboarding";
+import { getCountryLabel, getSectorLabel } from "@/lib/countries";
 import {
   Building2,
   Wallet,
@@ -371,7 +372,7 @@ export function CompanyDashboard() {
             </h1>
             <p className="text-xs text-muted-foreground">
               {selectedCompany
-                ? `${selectedCompany.tradeName || selectedCompany.legalName} · ${selectedCompany.legalForm} · ${selectedCompany.country}`
+                ? `${selectedCompany.tradeName || selectedCompany.legalName} · ${selectedCompany.legalForm} · ${getCountryLabel(selectedCompany.country, locale)}`
                 : copy.select}
             </p>
           </div>
@@ -522,7 +523,7 @@ export function CompanyDashboard() {
                         {p.title}
                       </p>
                       <p className="mt-0.5 text-xs text-muted-foreground">
-                        {p.sector} · {p.city}, {p.country}
+                        {getSectorLabel(p.sector, locale)} · {p.city}, {getCountryLabel(p.country, locale)}
                       </p>
                       <div className="mt-2 flex flex-wrap items-center gap-2">
                         <Badge className={sm.className}>{sm.label[locale === "fr" ? 0 : 1]}</Badge>

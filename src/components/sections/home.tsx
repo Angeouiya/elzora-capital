@@ -4,7 +4,7 @@ import { useFetch } from "@/hooks/use-fetch";
 import { OfferCard } from "@/components/site/offer-card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SECTORS } from "@/lib/countries";
+import { SECTORS, getSectorLabel } from "@/lib/countries";
 import {
   Search,
   Building2,
@@ -88,6 +88,7 @@ const STEP_ICONS = [Building2, FileText, LayoutGrid];
 
 export function Home() {
   const setView = useAppStore((s) => s.setView);
+  const openExploreSector = useAppStore((s) => s.openExploreSector);
   const locale = useAppStore((s) => s.locale);
   const displayCurrency = useAppStore((s) => s.displayCurrency);
   const { data, loading } = useFetch<{ offers: OfferDTO[] }>("/api/offers");
@@ -256,10 +257,10 @@ export function Home() {
           {SECTORS.map((s) => (
             <button
               key={s}
-              onClick={() => setView("explore")}
+              onClick={() => openExploreSector(s)}
               className="shrink-0 rounded-full border border-border bg-white/80 px-4 py-2 text-sm font-semibold text-foreground transition-all hover:-translate-y-0.5 hover:border-foreground hover:bg-secondary"
             >
-              {s}
+              {getSectorLabel(s, locale)}
             </button>
           ))}
         </div>

@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fmtPct } from "@/lib/finance";
 import { formatDisplayMoney } from "@/lib/display-money";
+import { getCountryLabel, getSectorLabel } from "@/lib/countries";
 import {
   ArrowLeft,
   MapPin,
@@ -179,7 +180,7 @@ export function OfferDetail() {
         <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-8">
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <Badge className="bg-background/95 text-foreground">
-              {offer.project.sector}
+              {getSectorLabel(offer.project.sector, locale)}
             </Badge>
             {isEquity ? (
               <Badge className="bg-nexora-lime text-nexora-black">
@@ -192,7 +193,7 @@ export function OfferDetail() {
             )}
             <Badge className="bg-background/80 text-white backdrop-blur">
               <MapPin className="mr-1 h-3 w-3" />
-              {offer.project.city}, {offer.project.country}
+              {offer.project.city}, {getCountryLabel(offer.project.country, locale)}
             </Badge>
           </div>
           <h1 className="text-xl font-black tracking-tight text-white sm:text-3xl">
@@ -367,7 +368,7 @@ export function OfferDetail() {
                 <div>
                   <p className="text-muted-foreground">{text.country}</p>
                   <p className="font-medium text-foreground">
-                    {company.country}
+                    {getCountryLabel(company.country, locale)}
                   </p>
                 </div>
                 <div>

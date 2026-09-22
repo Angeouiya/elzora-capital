@@ -18,6 +18,7 @@ import {
   Tooltip as RTooltip,
 } from "recharts";
 import { formatDisplayMoney } from "@/lib/display-money";
+import { getCountryLabel, getSectorLabel } from "@/lib/countries";
 import type { Locale } from "@/lib/store";
 import { toast } from "@/hooks/use-toast";
 import {
@@ -479,13 +480,13 @@ export function InvestorDashboard() {
                           {p?.city && (
                             <>
                               <span className="mx-1">·</span>
-                              {p.city}, {p.country}
+                              {p.city}, {getCountryLabel(p.country, locale)}
                             </>
                           )}
                         </p>
                         <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                           {p?.sector && (
-                            <Badge variant="outline">{p.sector}</Badge>
+                            <Badge variant="outline">{getSectorLabel(p.sector, locale)}</Badge>
                           )}
                           {instrumentBadge(p?.instrumentType, locale)}
                           {statusBadge(inv.status, locale)}

@@ -25,7 +25,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { simulateDebtFinancing } from "@/lib/finance";
 import { formatDisplayMoney } from "@/lib/display-money";
-import { SECTORS, COUNTRIES } from "@/lib/countries";
+import { SECTORS, COUNTRIES, getCountryLabel, getSectorLabel } from "@/lib/countries";
 import { toast } from "@/hooks/use-toast";
 import { CompanyOnboarding } from "@/components/company/company-onboarding";
 import {
@@ -535,7 +535,7 @@ export function CompanySubmit() {
                         {c.tradeName || c.legalName}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {c.legalForm} · {c.country} · {c.activity}
+                        {c.legalForm} · {getCountryLabel(c.country, locale)} · {c.activity}
                       </p>
                       <p className="mt-1 text-[11px] text-muted-foreground">
                         {copy.role} : {roleLabel(m.role)} ({copy.mandate} : {mandateLabel(m.mandate)})
@@ -606,7 +606,7 @@ export function CompanySubmit() {
                     <SelectContent>
                       {SECTORS.map((s) => (
                         <SelectItem key={s} value={s}>
-                          {s}
+                          {getSectorLabel(s, locale)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -626,7 +626,7 @@ export function CompanySubmit() {
                     <SelectContent>
                       {COUNTRIES.map((c) => (
                         <SelectItem key={c.code} value={c.code}>
-                          {c.name}
+                          {getCountryLabel(c.code, locale)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -987,7 +987,7 @@ export function CompanySubmit() {
                 </p>
                 <p className="mt-1 text-sm">
                   {selectedCompany?.tradeName || selectedCompany?.legalName} ·{" "}
-                  {selectedCompany?.legalForm} · {selectedCompany?.country}
+                  {selectedCompany?.legalForm} · {getCountryLabel(selectedCompany?.country || "", locale)}
                 </p>
               </div>
 
@@ -998,8 +998,8 @@ export function CompanySubmit() {
                   {form.description}
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <Badge variant="outline">{form.sector}</Badge>
-                  <Badge variant="outline">{form.city}, {form.country}</Badge>
+                  <Badge variant="outline">{getSectorLabel(form.sector, locale)}</Badge>
+                  <Badge variant="outline">{form.city}, {getCountryLabel(form.country, locale)}</Badge>
                   <Badge className="bg-nexora-lime text-nexora-black">
                     {form.instrumentType === "debt" ? "Dette" : "Capital"}
                   </Badge>

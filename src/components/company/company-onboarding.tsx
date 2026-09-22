@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { COUNTRIES } from "@/lib/countries";
+import { COUNTRIES, getCountryLabel } from "@/lib/countries";
 import { toast } from "@/hooks/use-toast";
 import { useAppStore } from "@/lib/store";
 
@@ -117,7 +117,7 @@ export function CompanyOnboarding({ onCreated, compact = false }: CompanyOnboard
             <Field label={copy.country} required>
               <Select value={form.country} onValueChange={(value) => set("country", value)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{COUNTRIES.map((country) => <SelectItem key={country.code} value={country.code}>{country.name}</SelectItem>)}</SelectContent>
+                <SelectContent>{COUNTRIES.map((country) => <SelectItem key={country.code} value={country.code}>{getCountryLabel(country.code, locale)}</SelectItem>)}</SelectContent>
               </Select>
             </Field>
             <Field label={copy.registration} required>

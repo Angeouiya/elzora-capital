@@ -249,3 +249,24 @@ export const SECTORS = [
 ] as const;
 
 export type Sector = (typeof SECTORS)[number];
+
+const SECTOR_LABELS_EN: Record<string, string> = {
+  Immobilier: "Real estate",
+  Industrie: "Industry",
+  Agriculture: "Agriculture",
+  Commerce: "Trade",
+  Transport: "Transport",
+  Énergie: "Energy",
+  Technologie: "Technology",
+  Services: "Services",
+};
+
+export function getSectorLabel(sector: string, locale: "fr" | "en"): string {
+  return locale === "en" ? SECTOR_LABELS_EN[sector] ?? sector : sector;
+}
+
+export function getCountryLabel(code: string, locale: "fr" | "en"): string {
+  const country = getCountry(code);
+  if (!country) return code;
+  return locale === "en" ? country.nameEn : country.name;
+}

@@ -45,6 +45,7 @@ interface AppState {
   authContext: AuthContext;
   locale: Locale;
   displayCurrency: DisplayCurrency;
+  exploreSector: string | null;
   // État d'affichage de la session authentifiée côté client.
   userEmail: string | null;
   adminEmail: string | null;
@@ -54,6 +55,7 @@ interface AppState {
   selectedCompanyId: string | null;
 
   setView: (v: PortalView) => void;
+  openExploreSector: (sector: string) => void;
   openOffer: (offerId: string) => void;
   openProject: (projectId: string) => void;
   setAuthContext: (c: AuthContext) => void;
@@ -79,6 +81,7 @@ export const useAppStore = create<AppState>((set) => ({
   authContext: "guest",
   locale: "fr",
   displayCurrency: "XOF",
+  exploreSector: null,
   userEmail: null,
   adminEmail: null,
   adminRole: null,
@@ -93,7 +96,7 @@ export const useAppStore = create<AppState>((set) => ({
         : view === "dashboard"
           ? "investor_dashboard"
           : view;
-    set({ view: normalizedView });
+    set({ view: normalizedView, ...(normalizedView === "explore" ? { exploreSector: null } : {}) });
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   },
   openOffer: (offerId) => {
@@ -111,6 +114,10 @@ export const useAppStore = create<AppState>((set) => ({
       window.localStorage.setItem("nexora-locale", locale);
       document.documentElement.lang = locale;
     }
+  },
+  openExploreSector: (sector) => {
+    set({ view: "explore", exploreSector: sector });
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   },
   setDisplayCurrency: (displayCurrency) => {
     set({ displayCurrency });

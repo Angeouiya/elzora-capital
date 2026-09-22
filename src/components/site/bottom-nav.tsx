@@ -33,8 +33,8 @@ export function BottomNav() {
   const [accountOpen, setAccountOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const labels = locale === "fr"
-    ? { home: "Accueil", explore: "Explorer", wallet: "Portefeuille", company: "Entreprise", account: "Compte", signOut: "Déconnexion", signingOut: "Déconnexion…", myWallet: "Mon portefeuille", myCompany: "Ma société" }
-    : { home: "Home", explore: "Explore", wallet: "Portfolio", company: "Company", account: "Account", signOut: "Sign out", signingOut: "Signing out…", myWallet: "My portfolio", myCompany: "My company" };
+    ? { home: "Accueil", explore: "Explorer", wallet: "Portefeuille", company: "Entreprise", account: "Compte", signOut: "Déconnexion", signingOut: "Déconnexion…", myWallet: "Mon portefeuille", myCompany: "Ma société", signedOut: "Déconnecté", signedOutText: "Vous avez été déconnecté de votre espace.", navigation: "Navigation principale mobile" }
+    : { home: "Home", explore: "Explore", wallet: "Portfolio", company: "Company", account: "Account", signOut: "Sign out", signingOut: "Signing out…", myWallet: "My portfolio", myCompany: "My company", signedOut: "Signed out", signedOutText: "You have been signed out of your workspace.", navigation: "Main mobile navigation" };
   const items: NavItem[] = [
     { icon: LayoutGrid, label: labels.home, view: "home" },
     { icon: Search, label: labels.explore, view: "explore" },
@@ -71,8 +71,8 @@ export function BottomNav() {
       setSigningOut(false);
       setAccountOpen(false);
       toast({
-        title: "Déconnecté",
-        description: "Vous avez été déconnecté de votre espace.",
+        title: labels.signedOut,
+        description: labels.signedOutText,
       });
       setView("home");
     }
@@ -83,7 +83,7 @@ export function BottomNav() {
       <nav
         className="fixed inset-x-0 bottom-0 z-40 border-t border-[#541249]/10 bg-white/92 shadow-[0_-10px_35px_rgba(56,12,49,.08)] backdrop-blur-2xl lg:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-        aria-label="Navigation principale mobile"
+        aria-label={labels.navigation}
       >
         <ul className="mx-auto flex max-w-md items-stretch justify-between px-2">
           {items.map((item) => {
@@ -134,7 +134,7 @@ export function BottomNav() {
               </AvatarFallback>
             </Avatar>
             <SheetTitle className="text-base">
-              {userEmail?.split("@")[0] ?? "Compte"}
+              {userEmail?.split("@")[0] ?? labels.account}
             </SheetTitle>
             <SheetDescription className="text-xs">
               {userEmail}
