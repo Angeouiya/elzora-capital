@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { useFetch } from "@/hooks/use-fetch";
@@ -10,7 +11,8 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fmtFCFA, fmtCompact, fmtPct } from "@/lib/finance";
+import { fmtPct } from "@/lib/finance";
+import { formatDisplayMoney } from "@/lib/display-money";
 import {
   ArrowLeft,
   MapPin,
@@ -33,7 +35,18 @@ function progressPct(raised: number, goal: number): number {
 export function OfferDetail() {
   const offerId = useAppStore((s) => s.selectedOfferId);
   const setView = useAppStore((s) => s.setView);
+  const locale = useAppStore((s) => s.locale);
+  const displayCurrency = useAppStore((s) => s.displayCurrency);
   const { toast } = useToast();
+  const money = (value: bigint | number, compact = false) =>
+    formatDisplayMoney(value, displayCurrency, locale, compact);
+  const text = locale === "fr" ? {
+    missing: "Offre introuvable.", back: "Retour aux offres", low: "Montant insuffisant", login: "Connexion requise", loginText: "Connectez-vous pour enregistrer votre engagement.", failed: "Souscription échouée", saved: "Souscription enregistrée", savedText: "Votre engagement est réservé. Les instructions de paiement seront affichées dans votre espace.", error: "Erreur", unknown: "Erreur inconnue",
+    equity: "Prise de participation", debt: "Dette", bullet: "in fine", amortized: "amortissable", conditions: "Conditions financières", goal: "Objectif", raised: "Levé", offered: "Capital offert", return: "Rémunération", duration: "Durée", long: "Long terme", months: "mois", of: "sur", investors: "souscripteurs", from: "Dès", cap: "Plafond", close: "Clôture prévue", project: "Présentation du projet", company: "Entreprise", verified: "Entreprise vérifiée", legalForm: "Forme juridique", country: "Pays", activity: "Activité", founded: "Fondée en", budget: "Budget & remboursement", allocation: "Affectation du budget", source: "Source de remboursement", exit: " / sortie", risks: "Risques identifiés", simulator: "Simulateur d’investissement", amount: "Montant de règlement (XOF)", minimum: "Minimum", maximum: "maximum", share: "Part de", expected: "Remboursement attendu", interest: "Dont intérêts", projected: "Projeté, non garanti. Soumis aux risques du projet.", enter: "Saisissez un montant pour simuler", secure: "Souscription nominative et sécurisée", secureText: "Votre identité vérifiée et votre adresse de contact sont reprises automatiquement depuis votre espace personnel.", submitting: "Enregistrement…", submit: "Enregistrer mon engagement", payment: "Le paiement par carte ou Mobile Money sera proposé uniquement via un prestataire autorisé, avec confirmation avant débit.", riskText: "L’investissement présente un risque de perte en capital. Les performances passées ne préjugent pas des performances futures.",
+  } : {
+    missing: "Offer not found.", back: "Back to opportunities", low: "Amount too low", login: "Sign-in required", loginText: "Sign in to save your commitment.", failed: "Subscription failed", saved: "Subscription saved", savedText: "Your commitment is reserved. Payment instructions will appear in your account.", error: "Error", unknown: "Unknown error",
+    equity: "Equity investment", debt: "Debt", bullet: "bullet", amortized: "amortizing", conditions: "Financial terms", goal: "Target", raised: "Raised", offered: "Equity offered", return: "Return", duration: "Duration", long: "Long term", months: "months", of: "of", investors: "investors", from: "From", cap: "Maximum", close: "Expected closing", project: "Project overview", company: "Company", verified: "Verified company", legalForm: "Legal form", country: "Country", activity: "Activity", founded: "Founded", budget: "Budget & repayment", allocation: "Use of funds", source: "Repayment source", exit: " / exit", risks: "Identified risks", simulator: "Investment simulator", amount: "Settlement amount (XOF)", minimum: "Minimum", maximum: "maximum", share: "Share of", expected: "Expected repayment", interest: "Including interest", projected: "Projected, not guaranteed. Subject to project risks.", enter: "Enter an amount to simulate", secure: "Named and secure subscription", secureText: "Your verified identity and contact address are automatically retrieved from your personal account.", submitting: "Saving…", submit: "Save my commitment", payment: "Card or Mobile Money payment will only be offered through an authorized provider, with confirmation before debit.", riskText: "Investing involves a risk of capital loss. Past performance does not predict future performance.",
+  };
 
   const { data, loading } = useFetch<{ offer: OfferDTO }>(
     offerId ? `/api/offers/${offerId}` : null
@@ -76,7 +89,7 @@ export function OfferDetail() {
   if (!offer) {
     return (
       <div className="page-shell py-10">
-        <p className="text-sm text-muted-foreground">Offre introuvable.</p>
+        <p className="text-sm text-muted-foreground">{text.missing}</p>
         <Button
           variant="ghost"
           size="sm"
@@ -84,7 +97,7 @@ export function OfferDetail() {
           className="mt-2"
         >
           <ArrowLeft className="h-4 w-4" />
-          Retour aux offres
+          {text.back}
         </Button>
       </div>
     );
@@ -97,8 +110,8 @@ export function OfferDetail() {
     if (!offerId) return;
     if (amount < minInv) {
       toast({
-        title: "Montant insuffisant",
-        description: `Minimum : ${fmtFCFA(minInv)}`,
+        title: text.low,
+        description: `${text.minimum} : ${money(minInv)}`,
         variant: "destructive",
       });
       return;
@@ -113,25 +126,24 @@ export function OfferDetail() {
       const json = (await res.json()) as { error?: string };
       if (res.status === 401) {
         toast({
-          title: "Connexion requise",
-          description: "Connectez-vous pour enregistrer votre engagement.",
+          title: text.login,
+          description: text.loginText,
         });
         setView("login");
         return;
       }
       if (!res.ok) {
-        throw new Error(json.error || "Souscription échouée");
+        throw new Error(json.error || text.failed);
       }
       toast({
-        title: "Souscription enregistrée",
-        description:
-          "Votre engagement est réservé. Les instructions de paiement seront affichées dans votre espace.",
+        title: text.saved,
+        description: text.savedText,
       });
       setView("investor_dashboard");
     } catch (e) {
       toast({
-        title: "Erreur",
-        description: e instanceof Error ? e.message : "Erreur inconnue",
+        title: text.error,
+        description: e instanceof Error ? e.message : text.unknown,
         variant: "destructive",
       });
     } finally {
@@ -150,14 +162,17 @@ export function OfferDetail() {
         className="mb-4"
       >
         <ArrowLeft className="h-4 w-4" />
-        Retour aux offres
+        {text.back}
       </Button>
 
       {/* Hero */}
       <div className="relative mb-6 h-56 overflow-hidden rounded-xl sm:h-72">
-        <img
+        <Image
           src={offer.project.imageUrl}
           alt={offer.project.title}
+          fill
+          sizes="(max-width: 1024px) 100vw, 66vw"
+          unoptimized
           className="h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
@@ -168,11 +183,11 @@ export function OfferDetail() {
             </Badge>
             {isEquity ? (
               <Badge className="bg-nexora-lime text-nexora-black">
-                Prise de participation
+                {text.equity}
               </Badge>
             ) : (
               <Badge className="bg-nexora-pale text-positive">
-                Dette {offer.repaymentType === "bullet" ? "bullet" : "amortie"}
+                {text.debt} {offer.repaymentType === "bullet" ? text.bullet : text.amortized}
               </Badge>
             )}
             <Badge className="bg-background/80 text-white backdrop-blur">
@@ -197,26 +212,26 @@ export function OfferDetail() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <Coins className="h-5 w-5" />
-                Conditions financières
+                {text.conditions}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                 <div>
-                  <p className="text-xs text-muted-foreground">Objectif</p>
+                  <p className="text-xs text-muted-foreground">{text.goal}</p>
                   <p className="tnum text-base font-bold text-foreground">
-                    {fmtCompact(offer.fundingGoal)}
+                    {money(offer.fundingGoal, true)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Levé</p>
+                  <p className="text-xs text-muted-foreground">{text.raised}</p>
                   <p className="tnum text-base font-bold text-positive">
-                    {fmtCompact(offer.raisedAmount)}
+                    {money(offer.raisedAmount, true)}
                   </p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">
-                    {isEquity ? "Capital offert" : "Rémunération"}
+                    {isEquity ? text.offered : text.return}
                   </p>
                   <p className="tnum text-base font-bold text-foreground">
                     {isEquity
@@ -225,11 +240,11 @@ export function OfferDetail() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Durée</p>
+                  <p className="text-xs text-muted-foreground">{text.duration}</p>
                   <p className="tnum text-base font-bold text-foreground">
                     {isEquity
-                      ? "Long terme"
-                      : `${offer.durationMonths ?? "—"} mois`}
+                      ? text.long
+                      : `${offer.durationMonths ?? "—"} ${text.months}`}
                   </p>
                 </div>
               </div>
@@ -237,10 +252,10 @@ export function OfferDetail() {
               <div>
                 <div className="mb-1 flex items-center justify-between text-xs">
                   <span className="tnum font-semibold text-foreground">
-                    {fmtCompact(offer.raisedAmount)}
+                    {money(offer.raisedAmount, true)}
                   </span>
                   <span className="text-muted-foreground">
-                    sur {fmtCompact(offer.fundingGoal)} · {fmtPct(pct, 0)}
+                    {text.of} {money(offer.fundingGoal, true)} · {fmtPct(pct, 0)}
                   </span>
                 </div>
                 <Progress value={pct} className="h-2" />
@@ -248,21 +263,21 @@ export function OfferDetail() {
                   <span className="flex items-center gap-1">
                     <Users className="h-3.5 w-3.5" />
                     <span className="tnum">{offer.backersCount}</span>{" "}
-                    souscripteurs
+                    {text.investors}
                   </span>
                   <span className="flex items-center gap-1">
                     <Wallet className="h-3.5 w-3.5" />
-                    Dès{" "}
+                    {text.from}{" "}
                     <span className="tnum font-medium text-foreground">
-                      {fmtCompact(offer.minInvestment)}
+                      {money(offer.minInvestment, true)}
                     </span>
                   </span>
                   {maxInv && (
                     <span className="flex items-center gap-1">
                       <Coins className="h-3.5 w-3.5" />
-                      Plafond{" "}
+                      {text.cap}{" "}
                       <span className="tnum font-medium text-foreground">
-                        {fmtCompact(maxInv)}
+                        {money(maxInv, true)}
                       </span>
                     </span>
                   )}
@@ -271,9 +286,9 @@ export function OfferDetail() {
 
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <CalendarDays className="h-4 w-4" />
-                Clôture prévue :{" "}
+                {text.close} :{" "}
                 <span className="font-medium text-foreground">
-                  {new Date(offer.closingDate).toLocaleDateString("fr-FR", {
+                  {new Date(offer.closingDate).toLocaleDateString(locale === "fr" ? "fr-FR" : "en-GB", {
                     day: "2-digit",
                     month: "long",
                     year: "numeric",
@@ -290,12 +305,12 @@ export function OfferDetail() {
                 <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-positive" />
                 <div>
                   <p className="text-sm font-bold text-positive">
-                    Prise de participation au capital
+                    {locale === "fr" ? "Prise de participation au capital" : "Equity investment"}
                   </p>
                   <p className="mt-1 text-xs text-positive">
-                    Il s&rsquo;agit d&rsquo;une prise de participation au
-                    capital. Aucun échéancier de remboursement n&rsquo;est
-                    applicable. La sortie envisagée n&rsquo;est pas garantie.
+                    {locale === "fr"
+                      ? "Il s’agit d’une prise de participation au capital. Aucun échéancier de remboursement n’est applicable. La sortie envisagée n’est pas garantie."
+                      : "This is an equity investment. No repayment schedule applies and the contemplated exit is not guaranteed."}
                   </p>
                 </div>
               </div>
@@ -307,7 +322,7 @@ export function OfferDetail() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <FileText className="h-5 w-5" />
-                Présentation du projet
+                {text.project}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -322,7 +337,7 @@ export function OfferDetail() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <Building2 className="h-5 w-5" />
-                Entreprise
+                {text.company}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -338,31 +353,31 @@ export function OfferDetail() {
                 {company.verificationStatus === "verified" && (
                   <Badge className="bg-nexora-pale text-positive">
                     <ShieldCheck className="mr-1 h-3 w-3" />
-                    Entreprise vérifiée
+                    {text.verified}
                   </Badge>
                 )}
               </div>
               <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
                 <div>
-                  <p className="text-muted-foreground">Forme juridique</p>
+                  <p className="text-muted-foreground">{text.legalForm}</p>
                   <p className="font-medium text-foreground">
                     {company.legalForm}
                   </p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Pays</p>
+                  <p className="text-muted-foreground">{text.country}</p>
                   <p className="font-medium text-foreground">
                     {company.country}
                   </p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Activité</p>
+                  <p className="text-muted-foreground">{text.activity}</p>
                   <p className="font-medium text-foreground">
                     {company.activity}
                   </p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Fondée en</p>
+                  <p className="text-muted-foreground">{text.founded}</p>
                   <p className="tnum font-medium text-foreground">
                     {company.foundedYear ?? "—"}
                   </p>
@@ -376,14 +391,14 @@ export function OfferDetail() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <Wallet className="h-5 w-5" />
-                Budget &amp; remboursement
+                {text.budget}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {offer.project.budgetDetail && (
                 <div>
                   <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Affectation du budget
+                    {text.allocation}
                   </p>
                   <p className="text-sm text-foreground/90">
                     {offer.project.budgetDetail}
@@ -393,8 +408,8 @@ export function OfferDetail() {
               {offer.project.repaymentSource && (
                 <div>
                   <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Source de remboursement
-                    {isEquity ? " / sortie" : ""}
+                    {text.source}
+                    {isEquity ? text.exit : ""}
                   </p>
                   <p className="text-sm text-foreground/90">
                     {offer.project.repaymentSource}
@@ -404,7 +419,7 @@ export function OfferDetail() {
               {offer.project.risksIdentified && (
                 <div>
                   <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Risques identifiés
+                    {text.risks}
                   </p>
                   <p className="text-sm text-foreground/90">
                     {offer.project.risksIdentified}
@@ -421,14 +436,14 @@ export function OfferDetail() {
             <Card className="border-2 border-[#541249]">
               <CardHeader>
                 <CardTitle className="text-base">
-                  Simulateur d&rsquo;investissement
+                  {text.simulator}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Amount input */}
                 <div>
                   <Label htmlFor="amount" className="text-xs">
-                    Montant (FCFA)
+                    {text.amount}
                   </Label>
                   <Input
                     id="amount"
@@ -449,13 +464,13 @@ export function OfferDetail() {
                         onClick={() => setAmount(q)}
                         className="rounded-md border border-border bg-background px-2 py-1 text-xs text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
                       >
-                        <span className="tnum">{fmtCompact(q)}</span>
+                        <span className="tnum">{money(q, true)}</span>
                       </button>
                     ))}
                   </div>
                   <p className="mt-2 text-[11px] text-muted-foreground">
-                    Minimum {fmtCompact(minInv)}
-                    {maxInv ? ` · maximum ${fmtCompact(maxInv)}` : ""}
+                    {text.minimum} {money(minInv, true)}
+                    {maxInv ? ` · ${text.maximum} ${money(maxInv, true)}` : ""}
                   </p>
                 </div>
 
@@ -465,7 +480,7 @@ export function OfferDetail() {
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">
-                          Part de {isEquity ? "capital" : "l&rsquo;offre"}
+                          {text.share} {isEquity ? (locale === "fr" ? "capital" : "equity") : (locale === "fr" ? "l’offre" : "the offer")}
                         </span>
                         <span className="tnum font-bold text-foreground">
                           {fmtPct(simData.sharePct ?? 0, 3)}
@@ -475,49 +490,49 @@ export function OfferDetail() {
                         <>
                           <div className="flex items-center justify-between">
                             <span className="text-muted-foreground">
-                              Remboursement attendu
+                              {text.expected}
                             </span>
                             <span className="tnum font-bold text-foreground">
-                              {fmtFCFA(simData.expectedRepayment ?? simData.perInvestorRepayment ?? 0)}
+                              {money(simData.expectedRepayment ?? simData.perInvestorRepayment ?? 0)}
                             </span>
                           </div>
                           <div className="flex items-center justify-between">
                             <span className="text-muted-foreground">
-                              Dont intérêts
+                              {text.interest}
                             </span>
                             <span className="tnum font-medium text-foreground">
-                              {fmtFCFA(
+                              {money(
                                 simData.investorInterest ??
                                   (simData.expectedRepayment ?? simData.perInvestorRepayment ?? 0) - amount
                               )}
                             </span>
                           </div>
                           <p className="pt-1 text-[10px] text-muted-foreground">
-                            Projeté, non garanti. Soumis aux risques du projet.
+                            {text.projected}
                           </p>
                         </>
                       )}
                       {isEquity && (
                         <p className="pt-1 text-[11px] text-muted-foreground">
-                          Pas d&rsquo;échéancier — sortie envisagée à terme,
-                          non garantie.
+                          {locale === "fr"
+                            ? "Pas d’échéancier — sortie envisagée à terme, non garantie."
+                            : "No repayment schedule — a future exit is contemplated but not guaranteed."}
                         </p>
                       )}
                     </div>
                   ) : (
                     <p className="text-center text-xs text-muted-foreground">
-                      Saisissez un montant pour simuler
+                      {text.enter}
                     </p>
                   )}
                 </div>
 
                 <div className="rounded-md border border-border/70 bg-background p-3">
                   <p className="text-xs font-semibold text-foreground">
-                    Souscription nominative et sécurisée
+                    {text.secure}
                   </p>
                   <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-                    Votre identité vérifiée et votre adresse de contact sont
-                    reprises automatiquement depuis votre espace personnel.
+                    {text.secureText}
                   </p>
                 </div>
 
@@ -526,14 +541,13 @@ export function OfferDetail() {
                   disabled={submitting}
                   className="btn-nexora w-full"
                 >
-                  {submitting ? "Enregistrement…" : "Enregistrer mon engagement"}
+                  {submitting ? text.submitting : text.submit}
                 </Button>
 
                 <div className="flex items-start gap-2 rounded-md bg-nexora-pale p-3">
                   <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-positive" />
                   <p className="text-[11px] leading-relaxed text-positive">
-                    Le paiement par carte ou Mobile Money sera proposé uniquement
-                    via un prestataire autorisé, avec confirmation avant débit.
+                    {text.payment}
                   </p>
                 </div>
 
@@ -548,9 +562,7 @@ export function OfferDetail() {
                   <div className="flex items-start gap-2">
                     <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-nexora-danger" />
                     <p className="text-[11px] leading-relaxed text-nexora-danger">
-                      L&rsquo;investissement présente un risque de perte en
-                      capital. Les performances passées ne préjugent pas des
-                      performances futures.
+                      {text.riskText}
                     </p>
                   </div>
                 </div>

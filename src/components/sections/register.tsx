@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,9 +31,34 @@ type CompanyObjective = "invest" | "finance" | "both";
 
 const TOTAL_STEPS = 5;
 
+const COPY = {
+  fr: {
+    step: "Étape", titles: ["Créez votre compte NEXORA", "Vos coordonnées", "Pays et langue", "Consentements", "Compte créé"], companyGoal: "Votre objectif",
+    choose: "Choisissez le type de compte. Vous pourrez compléter votre profil plus tard — aucun justificatif n’est demandé à cette étape.", individual: "Particulier", individualDesc: "Investir dans les offres publiées sur NEXORA.", company: "Entreprise", companyDesc: "Rechercher un financement ou investir en tant que société.",
+    continue: "Continuer", back: "Retour", firstName: "Prénom", lastName: "Nom", phone: "Téléphone", password: "Mot de passe", confirm: "Confirmer", currency: "Devise", reflection: "Délai de rétractation", days: "jours",
+    goalIntro: "Quel est votre objectif principal ? Vous pourrez évoluer plus tard entre les deux rôles.", goals: [["Investir", "Placer la trésorerie de l’entreprise dans des offres publiées."], ["Rechercher un financement", "Déposer un dossier pour lever des fonds."], ["Les deux", "Investir et lever du capital — mêmes accès."]],
+    residence: "Pays de résidence", availability: "Disponibilité", pilot: "accès pilote", soon: "bientôt disponible", language: "Langue de communication", profileInfo: "Vous pourrez compléter votre profil, vos justificatifs et vos coordonnées de paiement vérifiées depuis votre espace. La vérification d’identité est requise avant tout investissement.",
+    terms: "J’accepte les Conditions Générales d’Utilisation", termsText: "(obligatoire) — j’ai pris connaissance du fonctionnement de la plateforme, des frais applicables et du rôle de NEXORA comme intermédiaire.", risk: "Je reconnais le risque de perte en capital", riskText: "(obligatoire) — l’investissement présente un risque de perte en capital. Les performances passées ne préjugent pas des performances futures.", marketing: "Je souhaite recevoir les nouvelles opportunités d’investissement par email (optionnel).",
+    creating: "Création…", create: "Créer mon compte", created: "Compte créé", welcome: (name: string) => `Bienvenue sur NEXORA Capital, ${name || "investisseur"}. Votre identité devra être vérifiée avant votre premier investissement. Vous pouvez dès à présent explorer les offres.`, savedEmail: "Email enregistré :", access: "Accéder à mon espace", exploreFirst: "Explorer d’abord les offres", already: "Vous avez déjà un compte ?", signIn: "Se connecter", security: "Votre mot de passe n’est jamais stocké en clair et votre session est protégée. Une vérification d’identité sera demandée avant toute souscription.",
+    errors: { kind: "Sélectionnez le type de compte.", required: "Tous les champs sont obligatoires.", email: "Adresse email invalide.", password: "Le mot de passe doit contenir au moins 10 caractères.", match: "Les mots de passe ne correspondent pas.", goal: "Sélectionnez votre objectif.", consent: "Vous devez accepter les CGU et reconnaître les risques.", create: "Impossible de créer le compte.", network: "Connexion indisponible. Réessayez dans quelques instants." },
+  },
+  en: {
+    step: "Step", titles: ["Create your NEXORA account", "Your contact details", "Country and language", "Consents", "Account created"], companyGoal: "Your objective",
+    choose: "Choose your account type. You can complete your profile later — no supporting document is required at this stage.", individual: "Individual", individualDesc: "Invest in opportunities published on NEXORA.", company: "Company", companyDesc: "Seek financing or invest as a company.",
+    continue: "Continue", back: "Back", firstName: "First name", lastName: "Last name", phone: "Phone", password: "Password", confirm: "Confirm", currency: "Currency", reflection: "Reflection period", days: "days",
+    goalIntro: "What is your main objective? You can switch between both roles later.", goals: [["Invest", "Invest company cash in published opportunities."], ["Seek financing", "Submit an application to raise funds."], ["Both", "Invest and raise capital with the same access."]],
+    residence: "Country of residence", availability: "Availability", pilot: "pilot access", soon: "coming soon", language: "Communication language", profileInfo: "You can complete your profile, supporting documents and verified payment details from your account. Identity verification is required before investing.",
+    terms: "I accept the Terms of Use", termsText: "(required) — I have reviewed how the platform works, the applicable fees and NEXORA’s role as an intermediary.", risk: "I acknowledge the risk of capital loss", riskText: "(required) — investing involves a risk of capital loss. Past performance does not predict future performance.", marketing: "I would like to receive new investment opportunities by email (optional).",
+    creating: "Creating…", create: "Create my account", created: "Account created", welcome: (name: string) => `Welcome to NEXORA Capital, ${name || "investor"}. Your identity must be verified before your first investment. You can already explore opportunities.`, savedEmail: "Registered email:", access: "Go to my account", exploreFirst: "Explore opportunities first", already: "Already have an account?", signIn: "Sign in", security: "Your password is never stored in plain text and your session is protected. Identity verification will be required before any subscription.",
+    errors: { kind: "Select an account type.", required: "All fields are required.", email: "Invalid email address.", password: "Your password must contain at least 10 characters.", match: "Passwords do not match.", goal: "Select your objective.", consent: "You must accept the terms and acknowledge the risks.", create: "Unable to create the account.", network: "Connection unavailable. Please try again shortly." },
+  },
+} as const;
+
 export function Register() {
   const setView = useAppStore((s) => s.setView);
   const login = useAppStore((s) => s.login);
+  const locale = useAppStore((s) => s.locale);
+  const copy = COPY[locale];
 
   const [step, setStep] = useState(1);
   const [kind, setKind] = useState<AccountKind | null>(null);
@@ -49,7 +74,9 @@ export function Register() {
 
   // Step 3 — objectif (company) OR country+language (individual)
   const [objective, setObjective] = useState<CompanyObjective | null>(null);
-  const [language, setLanguage] = useState("fr");
+  const [language, setLanguage] = useState<string>(locale);
+
+  useEffect(() => setLanguage(locale), [locale]);
 
   // Step 4 — consent
   const [acceptCgu, setAcceptCgu] = useState(false);
@@ -71,7 +98,7 @@ export function Register() {
 
   const handleStep1Next = () => {
     if (!kind) {
-      setErrorMsg("Sélectionnez le type de compte.");
+      setErrorMsg(copy.errors.kind);
       return;
     }
     goToStep(2);
@@ -79,19 +106,19 @@ export function Register() {
 
   const handleStep2Next = () => {
     if (!firstName.trim() || !lastName.trim() || !email.trim() || !phone.trim()) {
-      setErrorMsg("Tous les champs sont obligatoires.");
+      setErrorMsg(copy.errors.required);
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setErrorMsg("Adresse email invalide.");
+      setErrorMsg(copy.errors.email);
       return;
     }
     if (password.length < 10) {
-      setErrorMsg("Le mot de passe doit contenir au moins 10 caractères.");
+      setErrorMsg(copy.errors.password);
       return;
     }
     if (password !== confirmPassword) {
-      setErrorMsg("Les mots de passe ne correspondent pas.");
+      setErrorMsg(copy.errors.match);
       return;
     }
     goToStep(3);
@@ -99,7 +126,7 @@ export function Register() {
 
   const handleStep3Next = () => {
     if (kind === "company" && !objective) {
-      setErrorMsg("Sélectionnez votre objectif.");
+      setErrorMsg(copy.errors.goal);
       return;
     }
     goToStep(4);
@@ -107,7 +134,7 @@ export function Register() {
 
   const handleStep4Next = async () => {
     if (!acceptCgu || !acceptRisks) {
-      setErrorMsg("Vous devez accepter les CGU et reconnaître les risques.");
+      setErrorMsg(copy.errors.consent);
       return;
     }
     setSubmitting(true);
@@ -133,12 +160,12 @@ export function Register() {
       });
       const payload = (await response.json().catch(() => ({}))) as { error?: string };
       if (!response.ok) {
-        setErrorMsg(payload.error || "Impossible de créer le compte.");
+        setErrorMsg(payload.error || copy.errors.create);
         return;
       }
       goToStep(5);
     } catch {
-      setErrorMsg("Connexion indisponible. Réessayez dans quelques instants.");
+      setErrorMsg(copy.errors.network);
     } finally {
       setSubmitting(false);
     }
@@ -154,7 +181,7 @@ export function Register() {
       <div className="mb-6">
         <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
           <span className="font-semibold text-foreground">
-            Étape {step} / {TOTAL_STEPS}
+            {copy.step} {step} / {TOTAL_STEPS}
           </span>
           <span className="tnum">{Math.round(progressPct)} %</span>
         </div>
@@ -164,11 +191,11 @@ export function Register() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg font-bold tracking-tight">
-            {step === 1 && "Créez votre compte NEXORA"}
-            {step === 2 && "Vos coordonnées"}
-            {step === 3 && (kind === "company" ? "Votre objectif" : "Pays et langue")}
-            {step === 4 && "Consentements"}
-            {step === 5 && "Compte créé"}
+            {step === 1 && copy.titles[0]}
+            {step === 2 && copy.titles[1]}
+            {step === 3 && (kind === "company" ? copy.companyGoal : copy.titles[2])}
+            {step === 4 && copy.titles[3]}
+            {step === 5 && copy.titles[4]}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-5">
@@ -176,8 +203,7 @@ export function Register() {
           {step === 1 && (
             <>
               <p className="text-sm text-muted-foreground">
-                Choisissez le type de compte. Vous pourrez compléter votre
-                profil plus tard — <strong className="text-foreground">aucun justificatif n&rsquo;est demandé à cette étape</strong>.
+                {copy.choose}
               </p>
               <div className="grid gap-3 sm:grid-cols-2">
                 <button
@@ -193,9 +219,9 @@ export function Register() {
                     <UserRound className="h-5 w-5 text-nexora-lime" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-foreground">Particulier</p>
+                    <p className="text-sm font-bold text-foreground">{copy.individual}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      Investir dans les offres publiées sur NEXORA.
+                      {copy.individualDesc}
                     </p>
                   </div>
                 </button>
@@ -213,9 +239,9 @@ export function Register() {
                     <Building2 className="h-5 w-5 text-nexora-lime" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-foreground">Entreprise</p>
+                    <p className="text-sm font-bold text-foreground">{copy.company}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      Rechercher un financement ou investir en tant que société.
+                      {copy.companyDesc}
                     </p>
                   </div>
                 </button>
@@ -223,7 +249,7 @@ export function Register() {
               {errorMsg && <p className="text-xs text-nexora-danger">{errorMsg}</p>}
               <div className="flex justify-end">
                 <Button onClick={handleStep1Next} disabled={!kind} className="btn-nexora">
-                  Continuer
+                  {copy.continue}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
@@ -236,7 +262,7 @@ export function Register() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <Label htmlFor="reg-firstName" className="text-xs">
-                    Prénom
+                    {copy.firstName}
                   </Label>
                   <Input
                     id="reg-firstName"
@@ -248,7 +274,7 @@ export function Register() {
                 </div>
                 <div>
                   <Label htmlFor="reg-lastName" className="text-xs">
-                    Nom
+                    {copy.lastName}
                   </Label>
                   <Input
                     id="reg-lastName"
@@ -276,7 +302,7 @@ export function Register() {
 
               <div>
                 <Label htmlFor="reg-phone" className="text-xs">
-                  Téléphone
+                  {copy.phone}
                 </Label>
                 <div className="mt-1 flex gap-2">
                   <Select value={countryCode} onValueChange={setCountryCode}>
@@ -296,13 +322,13 @@ export function Register() {
                     inputMode="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder={country ? `77 000 00 00 (${country.currencyDisplay})` : "Numéro"}
+                    placeholder={country ? `77 000 00 00 (${country.currencyDisplay})` : copy.phone}
                     className="flex-1"
                   />
                 </div>
                 {country && (
                   <p className="mt-1 text-[11px] text-muted-foreground">
-                    Devise : {country.currencyDisplay} · Délai de rétractation : {country.reflectionPeriodDays} jours
+                    {copy.currency} : {country.currencyDisplay} · {copy.reflection} : {country.reflectionPeriodDays} {copy.days}
                   </p>
                 )}
               </div>
@@ -310,7 +336,7 @@ export function Register() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <Label htmlFor="reg-password" className="text-xs">
-                    Mot de passe
+                    {copy.password}
                   </Label>
                   <Input
                     id="reg-password"
@@ -323,7 +349,7 @@ export function Register() {
                 </div>
                 <div>
                   <Label htmlFor="reg-confirm" className="text-xs">
-                    Confirmer
+                    {copy.confirm}
                   </Label>
                   <Input
                     id="reg-confirm"
@@ -341,10 +367,10 @@ export function Register() {
               <div className="flex items-center justify-between">
                 <Button variant="ghost" size="sm" onClick={() => goToStep(1)}>
                   <ArrowLeft className="mr-2 h-4 w-4" />
-                  Retour
+                  {copy.back}
                 </Button>
                 <Button onClick={handleStep2Next} className="btn-nexora">
-                  Continuer
+                  {copy.continue}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
@@ -355,27 +381,26 @@ export function Register() {
           {step === 3 && kind === "company" && (
             <>
               <p className="text-sm text-muted-foreground">
-                Quel est votre objectif principal ? Vous pourrez évoluer plus
-                tard entre les deux rôles.
+                {copy.goalIntro}
               </p>
               <div className="grid gap-3">
                 {[
                   {
                     id: "invest" as const,
-                    label: "Investir",
-                    desc: "Placer la trésorerie de l&rsquo;entreprise dans des offres publiées.",
+                    label: copy.goals[0][0],
+                    desc: copy.goals[0][1],
                     icon: Coins,
                   },
                   {
                     id: "finance" as const,
-                    label: "Rechercher un financement",
-                    desc: "Déposer un dossier pour lever des fonds.",
+                    label: copy.goals[1][0],
+                    desc: copy.goals[1][1],
                     icon: Building2,
                   },
                   {
                     id: "both" as const,
-                    label: "Les deux",
-                    desc: "Investir et lever du capital — mêmes accès.",
+                    label: copy.goals[2][0],
+                    desc: copy.goals[2][1],
                     icon: ShieldCheck,
                   },
                 ].map((opt) => {
@@ -395,10 +420,7 @@ export function Register() {
                       <Icon className="mt-0.5 h-5 w-5 shrink-0 text-foreground" />
                       <div>
                         <p className="text-sm font-bold text-foreground">{opt.label}</p>
-                        <p
-                          className="mt-0.5 text-xs text-muted-foreground"
-                          dangerouslySetInnerHTML={{ __html: opt.desc }}
-                        />
+                        <p className="mt-0.5 text-xs text-muted-foreground">{opt.desc}</p>
                       </div>
                     </button>
                   );
@@ -408,10 +430,10 @@ export function Register() {
               <div className="flex items-center justify-between">
                 <Button variant="ghost" size="sm" onClick={() => goToStep(2)}>
                   <ArrowLeft className="mr-2 h-4 w-4" />
-                  Retour
+                  {copy.back}
                 </Button>
                 <Button onClick={handleStep3Next} className="btn-nexora">
-                  Continuer
+                  {copy.continue}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
@@ -423,7 +445,7 @@ export function Register() {
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="reg-country2" className="text-xs">
-                    Pays de résidence
+                    {copy.residence}
                   </Label>
                   <Select value={countryCode} onValueChange={setCountryCode}>
                     <SelectTrigger className="mt-1 w-full" id="reg-country2">
@@ -439,14 +461,14 @@ export function Register() {
                   </Select>
                   {country && country.operationalStatus !== "active" && (
                     <p className="mt-1 text-[11px] text-muted-foreground">
-                      Disponibilité : {country.operationalStatus === "demo" ? "accès pilote" : "bientôt disponible"}.
+                      {copy.availability} : {country.operationalStatus === "demo" ? copy.pilot : copy.soon}.
                     </p>
                   )}
                 </div>
 
                 <div>
                   <Label htmlFor="reg-lang" className="text-xs">
-                    Langue de communication
+                    {copy.language}
                   </Label>
                   <Select value={language} onValueChange={setLanguage}>
                     <SelectTrigger className="mt-1 w-full" id="reg-lang">
@@ -462,10 +484,7 @@ export function Register() {
                 <div className="flex items-start gap-2 rounded-md bg-secondary/60 p-3">
                   <Globe className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                   <p className="text-[11px] leading-relaxed text-muted-foreground">
-                    Vous pourrez compléter votre profil (justificatifs,
-                    coordonnées de paiement vérifiées) depuis votre espace. La
-                    vérification d&rsquo;identité est requise avant tout
-                    investissement.
+                    {copy.profileInfo}
                   </p>
                 </div>
               </div>
@@ -473,10 +492,10 @@ export function Register() {
               <div className="flex items-center justify-between">
                 <Button variant="ghost" size="sm" onClick={() => goToStep(2)}>
                   <ArrowLeft className="mr-2 h-4 w-4" />
-                  Retour
+                  {copy.back}
                 </Button>
                 <Button onClick={handleStep3Next} className="btn-nexora">
-                  Continuer
+                  {copy.continue}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
@@ -498,10 +517,7 @@ export function Register() {
                     className="mt-0.5"
                   />
                   <span className="text-xs leading-relaxed text-foreground">
-                    <strong>J&rsquo;accepte les Conditions Générales d&rsquo;Utilisation</strong>{" "}
-                    (obligatoire) — j&rsquo;ai pris connaissance du fonctionnement
-                    de la plateforme, des frais applicables et du rôle de NEXORA
-                    comme intermédiaire.
+                    <strong>{copy.terms}</strong>{" "}{copy.termsText}
                   </span>
                 </label>
 
@@ -517,11 +533,9 @@ export function Register() {
                   />
                   <span className="text-xs leading-relaxed text-foreground">
                     <strong className="text-nexora-danger">
-                      Je reconnais le risque de perte en capital
+                      {copy.risk}
                     </strong>{" "}
-                    (obligatoire) — l&rsquo;investissement présente un risque de
-                    perte en capital. Les performances passées ne préjugent pas
-                    des performances futures.
+                    {copy.riskText}
                   </span>
                 </label>
 
@@ -536,8 +550,7 @@ export function Register() {
                     className="mt-0.5"
                   />
                   <span className="text-xs leading-relaxed text-muted-foreground">
-                    Je souhaite recevoir les nouvelles opportunités
-                    d&rsquo;investissement par email (optionnel).
+                    {copy.marketing}
                   </span>
                 </label>
               </div>
@@ -547,10 +560,10 @@ export function Register() {
               <div className="flex items-center justify-between">
                 <Button variant="ghost" size="sm" onClick={() => goToStep(3)}>
                   <ArrowLeft className="mr-2 h-4 w-4" />
-                  Retour
+                  {copy.back}
                 </Button>
                 <Button onClick={handleStep4Next} disabled={submitting} className="btn-nexora">
-                  {submitting ? "Création…" : "Créer mon compte"}
+                  {submitting ? copy.creating : copy.create}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
@@ -563,16 +576,14 @@ export function Register() {
               <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-nexora-pale">
                 <CheckCircle2 className="h-7 w-7 text-positive" />
               </div>
-              <h3 className="text-lg font-bold text-foreground">Compte créé</h3>
+              <h3 className="text-lg font-bold text-foreground">{copy.created}</h3>
               <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-                Bienvenue sur NEXORA Capital, {firstName || "investisseur"}.
-                Votre identité devra être vérifiée avant votre premier
-                investissement. Vous pouvez dès à présent explorer les offres.
+                {copy.welcome(firstName)}
               </p>
 
               <div className="mt-5 w-full rounded-md border border-border bg-secondary/60 p-3 text-left">
                 <p className="text-xs text-muted-foreground">
-                  Email enregistré :
+                  {copy.savedEmail}
                 </p>
                 <p className="mt-0.5 truncate text-sm font-semibold text-foreground">
                   {email || "vous@exemple.com"}
@@ -583,7 +594,7 @@ export function Register() {
                 onClick={handleFinalLogin}
                 className="btn-nexora mt-6 w-full"
               >
-                Accéder à mon espace
+                {copy.access}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
               <button
@@ -591,7 +602,7 @@ export function Register() {
                 onClick={() => setView("explore")}
                 className="mt-3 text-xs text-muted-foreground underline-offset-4 hover:underline"
               >
-                Explorer d&rsquo;abord les offres
+                {copy.exploreFirst}
               </button>
             </div>
           )}
@@ -601,13 +612,13 @@ export function Register() {
       {/* Already have account */}
       {step < 5 && (
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          Vous avez déjà un compte ?{" "}
+          {copy.already}{" "}
           <button
             type="button"
             onClick={() => setView("login")}
             className="font-semibold text-foreground underline-offset-4 hover:underline"
           >
-            Se connecter
+            {copy.signIn}
           </button>
         </p>
       )}
@@ -615,8 +626,7 @@ export function Register() {
       <div className="mt-6 flex items-start gap-2 rounded-md bg-nexora-pale p-3">
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-positive" />
         <p className="text-[11px] leading-relaxed text-positive">
-          Votre mot de passe n&rsquo;est jamais stocké en clair et votre session est protégée. Une
-          vérification d&rsquo;identité sera demandée avant toute souscription.
+          {copy.security}
         </p>
       </div>
     </section>

@@ -17,7 +17,8 @@ import {
   ResponsiveContainer,
   Tooltip as RTooltip,
 } from "recharts";
-import { fmtFCFA, fmtCompact } from "@/lib/finance";
+import { formatDisplayMoney } from "@/lib/display-money";
+import type { Locale } from "@/lib/store";
 import { toast } from "@/hooks/use-toast";
 import {
   Wallet,
@@ -108,27 +109,28 @@ interface InvestorDashboardData {
 
 function NotLoggedIn() {
   const setView = useAppStore((s) => s.setView);
+  const locale = useAppStore((s) => s.locale);
+  const en = locale === "en";
   return (
     <section className="mx-auto max-w-md px-4 py-16 sm:px-6 lg:px-8">
       <div className="rounded-xl border border-border/60 bg-card p-8 text-center">
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-nexora-pale">
           <Wallet className="h-7 w-7 text-positive" />
         </div>
-        <h1 className="text-xl font-bold text-foreground">Mon portefeuille</h1>
+        <h1 className="text-xl font-bold text-foreground">{en ? "My portfolio" : "Mon portefeuille"}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Connectez-vous pour accéder à votre portefeuille d&apos;investissements,
-          vos notifications et vos prochains remboursements.
+          {en ? "Sign in to access your investments, notifications and upcoming repayments." : "Connectez-vous pour accéder à votre portefeuille d’investissements, vos notifications et vos prochains remboursements."}
         </p>
         <div className="mt-6 flex flex-col gap-2">
           <Button onClick={() => setView("login")} className="btn-nexora w-full">
-            Se connecter
+            {en ? "Sign in" : "Se connecter"}
           </Button>
           <Button
             variant="ghost"
             onClick={() => setView("register")}
             className="w-full"
           >
-            Créer un compte
+            {en ? "Create account" : "Créer un compte"}
           </Button>
         </div>
       </div>
@@ -136,16 +138,16 @@ function NotLoggedIn() {
   );
 }
 
-function ErrorState({ onRetry }: { onRetry: () => void }) {
+function ErrorState({ onRetry, locale }: { onRetry: () => void; locale: Locale }) {
   return (
     <section className="mx-auto max-w-md px-4 py-16 text-center sm:px-6 lg:px-8">
       <div className="rounded-xl border border-nexora-danger/30 bg-[#FFF5F5] p-6">
         <AlertTriangle className="mx-auto mb-3 h-8 w-8 text-nexora-danger" />
         <p className="text-sm font-semibold text-nexora-danger">
-          Impossible de charger votre portefeuille
+          {locale === "en" ? "Unable to load your portfolio" : "Impossible de charger votre portefeuille"}
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
-          Vérifiez votre connexion et réessayez.
+          {locale === "en" ? "Check your connection and try again." : "Vérifiez votre connexion et réessayez."}
         </p>
         <Button
           variant="outline"
@@ -153,49 +155,54 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
           onClick={onRetry}
         >
           <RefreshCw className="mr-2 h-4 w-4" />
-          Réessayer
+          {locale === "en" ? "Try again" : "Réessayer"}
         </Button>
       </div>
     </section>
   );
 }
 
-function statusBadge(status: string) {
+function statusBadge(status: string, locale: Locale) {
+  const en = locale === "en";
   switch (status) {
     case "confirmed":
       return (
-        <Badge className="bg-nexora-pale text-positive">Confirmé</Badge>
+        <Badge className="bg-nexora-pale text-positive">{en ? "Confirmed" : "Confirmé"}</Badge>
       );
     case "pending_payment":
       return (
         <Badge className="bg-[#FFF8E1] text-[#8a6d00]">
-          En attente de confirmation
+          {en ? "Pending confirmation" : "En attente de confirmation"}
         </Badge>
       );
     case "rejected":
       return (
-        <Badge className="bg-[#FFF5F5] text-nexora-danger">Rejeté</Badge>
+        <Badge className="bg-[#FFF5F5] text-nexora-danger">{en ? "Rejected" : "Rejeté"}</Badge>
       );
     case "refunded":
-      return <Badge variant="secondary">Remboursé</Badge>;
+      return <Badge variant="secondary">{en ? "Repaid" : "Remboursé"}</Badge>;
     case "cancelled":
-      return <Badge variant="outline">Annulé</Badge>;
+      return <Badge variant="outline">{en ? "Cancelled" : "Annulé"}</Badge>;
     default:
       return <Badge variant="outline">{status}</Badge>;
   }
 }
 
-function instrumentBadge(type?: string) {
+function instrumentBadge(type: string | undefined, locale: Locale) {
   if (type === "equity") {
-    return <Badge className="bg-nexora-lime text-nexora-black">Action</Badge>;
+    return <Badge className="bg-nexora-lime text-nexora-black">{locale === "en" ? "Equity" : "Action"}</Badge>;
   }
-  return <Badge variant="outline">Dette</Badge>;
+  return <Badge variant="outline">{locale === "en" ? "Debt" : "Dette"}</Badge>;
 }
 
 export function InvestorDashboard() {
   const userEmail = useAppStore((s) => s.userEmail);
   const setView = useAppStore((s) => s.setView);
   const openOffer = useAppStore((s) => s.openOffer);
+  const locale = useAppStore((s) => s.locale);
+  const displayCurrency = useAppStore((s) => s.displayCurrency);
+  const money = (value: bigint | number, compact = false) => formatDisplayMoney(value, displayCurrency, locale, compact);
+  const en = locale === "en";
 
   const [data, setData] = useState<InvestorDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -251,6 +258,7 @@ export function InvestorDashboard() {
   if (error) {
     return (
       <ErrorState
+        locale={locale}
         onRetry={() => {
           setLoading(true);
           setError(null);
@@ -264,7 +272,7 @@ export function InvestorDashboard() {
     return (
       <section className="mx-auto max-w-md px-4 py-16 text-center">
         <p className="text-sm text-muted-foreground">
-          Aucun compte investisseur trouvé pour{" "}
+          {en ? "No investor account found for" : "Aucun compte investisseur trouvé pour"}{" "}
           <strong className="text-foreground">{userEmail}</strong>.
         </p>
         <Button
@@ -272,7 +280,7 @@ export function InvestorDashboard() {
           className="mt-4"
           onClick={() => setView("explore")}
         >
-          Explorer les offres
+          {en ? "Explore opportunities" : "Explorer les offres"}
         </Button>
       </section>
     );
@@ -312,7 +320,7 @@ export function InvestorDashboard() {
         {user.kycStatus === "verified" && (
           <div className="flex items-center gap-2 rounded-full bg-nexora-pale px-3 py-1.5 text-xs font-medium text-positive">
             <ShieldCheck className="h-3.5 w-3.5" />
-            Identité vérifiée
+            {en ? "Identity verified" : "Identité vérifiée"}
           </div>
         )}
       </div>
@@ -323,16 +331,16 @@ export function InvestorDashboard() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-muted-foreground">
-              Capital engagé
+              {en ? "Committed capital" : "Capital engagé"}
             </span>
             <Wallet className="h-4 w-4 text-foreground" />
           </div>
           <p className="tnum mt-2 text-2xl font-bold text-foreground">
-            {fmtFCFA(totalInvested)}
+            {money(totalInvested)}
           </p>
           <p className="mt-0.5 text-[11px] text-muted-foreground">
-            Réparti sur {portfolio?.activeDeals ?? 0}{" "}
-            {investments.length > 1 ? "dossiers actifs" : "dossier actif"}
+            {en ? "Across" : "Réparti sur"} {portfolio?.activeDeals ?? 0}{" "}
+            {en ? (investments.length > 1 ? "active deals" : "active deal") : (investments.length > 1 ? "dossiers actifs" : "dossier actif")}
           </p>
         </Card>
 
@@ -340,17 +348,17 @@ export function InvestorDashboard() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-muted-foreground">
-              Revenus reçus
+              {en ? "Returns received" : "Revenus reçus"}
             </span>
             <Coins className="h-4 w-4 text-positive" />
           </div>
           <p className="tnum mt-2 text-2xl font-bold text-positive">
-            {fmtFCFA(receivedTotal)}
+            {money(receivedTotal)}
           </p>
           <p className="mt-0.5 text-[11px] text-muted-foreground">
             {receivedTotal > 0
-              ? "Capital et intérêts distribués"
-              : "Aucun remboursement reçu pour l'instant"}
+              ? (en ? "Principal and interest distributed" : "Capital et intérêts distribués")
+              : (en ? "No repayment received yet" : "Aucun remboursement reçu pour l'instant")}
           </p>
         </Card>
 
@@ -358,12 +366,12 @@ export function InvestorDashboard() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-muted-foreground">
-              Disponible
+              {en ? "Available" : "Disponible"}
             </span>
             <ArrowDownToLine className="h-4 w-4 text-muted-foreground" />
           </div>
           <p className="tnum mt-2 text-2xl font-bold text-foreground">
-            {fmtFCFA(availableBalance)}
+            {money(availableBalance)}
           </p>
           {availableBalance > 0 && portfolio?.payoutsEnabled ? (
             <Button
@@ -479,8 +487,8 @@ export function InvestorDashboard() {
                           {p?.sector && (
                             <Badge variant="outline">{p.sector}</Badge>
                           )}
-                          {instrumentBadge(p?.instrumentType)}
-                          {statusBadge(inv.status)}
+                          {instrumentBadge(p?.instrumentType, locale)}
+                          {statusBadge(inv.status, locale)}
                           <span className="flex items-center gap-1 text-muted-foreground">
                             <Calendar className="h-3 w-3" />
                             <span className="tnum">
@@ -493,12 +501,12 @@ export function InvestorDashboard() {
                       </div>
                       <div className="shrink-0 text-right">
                         <p className="tnum text-base font-bold text-foreground">
-                          {fmtCompact(inv.amount)}
+                          {money(inv.amount, true)}
                         </p>
                         <p className="mt-0.5 text-[11px] text-muted-foreground">
                           Soit{" "}
                           <span className="tnum font-medium text-foreground">
-                            {fmtFCFA(inv.amount)}
+                            {money(inv.amount)}
                           </span>
                         </p>
                         <p className="mt-1 text-[11px] text-muted-foreground">
@@ -519,7 +527,7 @@ export function InvestorDashboard() {
                           </p>
                           <p className="tnum mt-0.5 text-sm font-semibold text-muted-foreground">
                             {inv.expectedRepayment !== null
-                              ? fmtFCFA(inv.expectedRepayment)
+                              ? money(inv.expectedRepayment)
                               : "—"}
                           </p>
                           <p className="text-[10px] text-muted-foreground">
@@ -535,7 +543,7 @@ export function InvestorDashboard() {
                               received > 0 ? "text-positive" : "text-muted-foreground"
                             }`}
                           >
-                            {fmtFCFA(received)}
+                            {money(received)}
                           </p>
                         </div>
                         <div>
@@ -544,7 +552,7 @@ export function InvestorDashboard() {
                           </p>
                           <p className="tnum mt-0.5 text-sm font-semibold text-muted-foreground">
                             {inv.remainingDue !== null
-                              ? fmtFCFA(inv.remainingDue)
+                              ? money(inv.remainingDue)
                               : "—"}
                           </p>
                         </div>
@@ -614,7 +622,7 @@ export function InvestorDashboard() {
                       ))}
                     </Pie>
                     <RTooltip
-                      formatter={(v: number) => fmtCompact(v)}
+                      formatter={(v: number) => money(v, true)}
                       contentStyle={{
                         borderRadius: 8,
                         border: "1px solid var(--border)",
@@ -639,7 +647,7 @@ export function InvestorDashboard() {
                         {s.name}
                       </span>
                       <span className="tnum font-medium text-foreground">
-                        {fmtCompact(s.value)}
+                        {money(s.value, true)}
                       </span>
                     </div>
                   ))}
