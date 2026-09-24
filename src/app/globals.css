@@ -298,6 +298,34 @@ button[data-control="media"]:focus-visible {
   min-height: 100dvh;
 }
 
+.desktop-app-sidebar {
+  color: #fff;
+  background:
+    radial-gradient(circle at 12% 5%, rgba(197,135,196,.26), transparent 15rem),
+    radial-gradient(circle at 110% 75%, rgba(111,31,98,.52), transparent 20rem),
+    linear-gradient(176deg, #380c31 0%, #250820 50%, #130410 100%);
+  box-shadow: 18px 0 52px rgba(37,8,32,.12);
+}
+
+.private-app-screen h1,
+.private-app-screen h2 {
+  font-weight: 700;
+  letter-spacing: -.025em;
+}
+
+.private-app-screen .tnum {
+  font-weight: 700;
+}
+
+.app-workspace-main h3 {
+  font-weight: 650;
+  letter-spacing: -.018em;
+}
+
+.app-workspace-main [data-slot="button"] {
+  font-weight: 600;
+}
+
 .member-overview-card {
   background:
     radial-gradient(circle at 88% 8%, rgba(197,135,196,.34), transparent 16rem),
@@ -458,8 +486,8 @@ button[data-control="media"]:focus-visible {
 .page-title {
   color: var(--foreground);
   font-size: clamp(1.85rem, 4vw, 3.25rem);
-  font-weight: 850;
-  letter-spacing: -0.045em;
+  font-weight: 740;
+  letter-spacing: -0.032em;
   line-height: 1.02;
 }
 
@@ -701,10 +729,16 @@ button[data-control="media"]:focus-visible {
 
 .display-title {
   text-wrap: balance;
-  font-size: clamp(2.35rem, 6vw, 5.65rem);
-  font-weight: 850;
-  letter-spacing: -.065em;
-  line-height: .91;
+  font-size: clamp(2.15rem, 5.25vw, 4.9rem);
+  font-weight: 740;
+  letter-spacing: -.043em;
+  line-height: .96;
+}
+
+.home-content-shell h2,
+.public-page-hero h1 {
+  font-weight: 720;
+  letter-spacing: -.03em;
 }
 
 .public-panel {
@@ -921,6 +955,26 @@ textarea {
   .home-proof-icon {
     width: 2.25rem;
     height: 2.25rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .app-workspace-main {
+    margin-left: 17rem;
+    min-width: 0;
+    background:
+      radial-gradient(circle at 96% 2%, rgba(123,40,109,.055), transparent 28rem),
+      linear-gradient(180deg, rgba(255,254,253,.96), rgba(250,247,249,.98));
+  }
+
+  .app-workspace-main .page-shell {
+    width: min(calc(100% - 3rem), 96rem);
+    max-width: none;
+  }
+
+  .app-workspace-main .private-dashboard-hero,
+  .app-workspace-main .member-overview-card {
+    border-radius: 1.35rem;
   }
 }
 

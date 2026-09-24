@@ -152,7 +152,7 @@ export function MemberHome() {
       <header className="flex items-center justify-between gap-4 pb-4 sm:pb-5">
         <div>
           <p className="text-sm font-medium text-muted-foreground">{copy.greeting}</p>
-          <h1 className="mt-0.5 text-2xl font-black tracking-[-.04em] text-foreground sm:text-3xl">
+          <h1 className="mt-0.5 text-2xl font-bold tracking-[-.025em] text-foreground sm:text-[1.75rem]">
             {firstName}
           </h1>
         </div>
@@ -165,7 +165,7 @@ export function MemberHome() {
       <div className="member-overview-card relative overflow-hidden rounded-[1.6rem] p-5 text-white sm:p-7 lg:grid lg:grid-cols-[1.2fr_.8fr] lg:gap-10 lg:p-9">
         <div className="relative z-10">
           <p className="text-xs font-bold uppercase tracking-[.15em] text-white/58">{copy.overview}</p>
-          <p className="tnum mt-4 text-[2rem] font-black leading-none tracking-[-.05em] sm:text-5xl">
+          <p className="tnum mt-4 text-[1.85rem] font-bold leading-none tracking-[-.035em] sm:text-4xl">
             {money(portfolio.totalInvested)}
           </p>
           <p className="mt-2 text-sm text-white/64">{copy.invested}</p>
@@ -231,12 +231,12 @@ export function MemberHome() {
               data-control="choice"
               key={action.view}
               onClick={() => setView(action.view)}
-              className="group flex min-h-20 flex-col items-start justify-between rounded-2xl border border-[#541249]/10 bg-white p-3 text-left shadow-[0_8px_24px_rgba(56,12,49,.045)] hover:border-[#541249]/22 hover:bg-[#fcf8fb] sm:min-h-24 sm:p-4"
+              className="group flex min-h-20 flex-col items-center justify-center rounded-2xl border border-[#541249]/10 bg-white p-3 text-center shadow-[0_8px_24px_rgba(56,12,49,.045)] hover:border-[#541249]/22 hover:bg-[#fcf8fb] sm:min-h-24 sm:p-4"
             >
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f4ebf2] text-[#541249] transition-colors group-hover:bg-[#541249] group-hover:text-white">
                 <Icon className="h-4.5 w-4.5" />
               </span>
-              <span className="mt-3 text-xs font-bold leading-4 text-foreground sm:text-sm">{action.label}</span>
+              <span className="mt-2.5 text-xs font-semibold leading-4 text-foreground sm:text-sm">{action.label}</span>
             </button>
           );
         })}

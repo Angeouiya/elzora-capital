@@ -131,7 +131,7 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
   return (
     <Sheet open={open} onOpenChange={setOpen}>
     <header
-      className="sticky top-0 z-50 w-full border-b border-[#541249]/[.07] bg-[#fffefd]/88 backdrop-blur-2xl"
+      className={`sticky top-0 z-50 w-full border-b border-[#541249]/[.07] bg-[#fffefd]/88 backdrop-blur-2xl ${userEmail ? "lg:hidden" : ""}`}
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
       <div className={`mx-auto flex max-w-[82rem] items-center justify-between px-4 sm:px-6 lg:px-8 ${userEmail ? "h-16 lg:h-[4.5rem]" : "h-[4.5rem]"}`}>

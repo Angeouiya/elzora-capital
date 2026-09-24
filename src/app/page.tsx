@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { Header } from "@/components/site/header";
 import { Footer } from "@/components/site/footer";
+import { DesktopAppSidebar } from "@/components/site/desktop-app-sidebar";
 import { Home } from "@/components/sections/home";
 
 const dynamicView = <T extends object>(loader: () => Promise<T>, key: keyof T) =>
@@ -76,7 +77,8 @@ export default function Page() {
   return (
     <div className="app-shell flex min-h-screen flex-col bg-transparent">
       <Header sessionPending={sessionPending} />
-      <main className={`flex-1 ${showBottomNav ? "pb-20 lg:pb-0" : ""}`}>
+      {showBottomNav && <DesktopAppSidebar />}
+      <main className={`flex-1 ${showBottomNav ? "app-workspace-main pb-20 lg:pb-0" : ""}`}>
         {publicView === "home" && (userEmail ? <MemberHome /> : <Home />)}
         {publicView === "explore" && <Explore />}
         {publicView === "offer" && <OfferDetail />}
