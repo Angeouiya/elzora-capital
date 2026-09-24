@@ -680,7 +680,7 @@ export function CompanyDashboard() {
               </SelectContent>
             </Select>
             <Button
-              className="border-white/15 bg-white text-[#541249] hover:bg-[#f8edf5]"
+              className="border-white/15 !bg-none !bg-white !text-[#541249] hover:!bg-[#f8edf5]"
               size="sm"
               onClick={() => setView("company_submit")}
             >

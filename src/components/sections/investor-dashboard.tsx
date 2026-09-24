@@ -420,7 +420,7 @@ export function InvestorDashboard() {
             {availableBalance > 0 && portfolio?.payoutsEnabled ? (
               <Button
                 size="sm"
-                className="mt-2 h-8 border-white/15 bg-white px-3 text-[11px] text-[#541249] hover:bg-[#f8edf5]"
+                className="mt-2 h-8 border-white/15 !bg-none !bg-white px-3 text-[11px] !text-[#541249] hover:!bg-[#f8edf5]"
                 onClick={() => setPayoutOpen(true)}
               >
                 <ArrowDownToLine className="h-3.5 w-3.5" />

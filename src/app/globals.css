@@ -846,15 +846,20 @@ textarea {
     box-shadow: 0 18px 45px rgba(56,12,49,.18);
   }
   .private-metric-grid {
+    grid-template-columns: repeat(3, 12.75rem);
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
   }
   .private-metric-grid::-webkit-scrollbar { display: none; }
   .private-metric {
-    min-width: 9.5rem;
+    min-width: 12.75rem;
     scroll-snap-align: start;
     padding: .9rem 1rem 1rem;
+  }
+  .private-metric > .tnum {
+    white-space: nowrap;
+    font-size: 1.125rem;
   }
   .private-submit-page {
     width: 100%;
