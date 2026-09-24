@@ -64,7 +64,7 @@ export function PayoutDialog({
     fetch("/api/investor/payouts", { cache: "no-store", signal: controller.signal })
       .then(async (response) => {
         const payload = (await response.json()) as PayoutContext & { error?: string };
-        if (!response.ok) throw new Error(payload.error || "Payout unavailable");
+        if (!response.ok) throw new Error(en ? "Unable to load your available balance." : "Impossible de charger votre solde disponible.");
         return payload;
       })
       .then((payload) => {
@@ -75,10 +75,10 @@ export function PayoutDialog({
       })
       .catch((fetchError: unknown) => {
         if (fetchError instanceof DOMException && fetchError.name === "AbortError") return;
-        setError(fetchError instanceof Error ? fetchError.message : "Payout unavailable");
+        setError(fetchError instanceof Error ? fetchError.message : en ? "Transfer unavailable." : "Versement indisponible.");
       });
     return () => controller.abort();
-  }, [open]);
+  }, [open, en]);
 
   const numericAmount = Number(amount);
   const openPayout = useMemo(
@@ -108,24 +108,25 @@ export function PayoutDialog({
       });
       const payload = (await response.json()) as {
         error?: string;
-        notice?: string;
         payout?: { status?: string };
       };
       if (!response.ok && response.status !== 202) {
-        throw new Error(payload.error || (en ? "Payout unavailable" : "Versement indisponible"));
+        throw new Error(getPayoutError(response.status, en));
       }
+      const completed = payload.payout?.status === "completed";
       toast({
-        title:
-          payload.payout?.status === "completed"
-            ? en ? "Payout completed" : "Versement effectué"
-            : en ? "Payout secured" : "Versement sécurisé",
-        description: payload.notice,
+        title: completed
+          ? en ? "Transfer completed" : "Versement effectué"
+          : en ? "Request received" : "Demande reçue",
+        description: completed
+          ? en ? "The amount has been sent to your Mobile Money account." : "Le montant a été envoyé vers votre compte Mobile Money."
+          : en ? "We are completing the transfer and will notify you when it is done." : "Nous finalisons le versement et vous préviendrons dès qu’il sera terminé.",
       });
       onOpenChange(false);
       onCompleted();
     } catch (submitError) {
       toast({
-        title: en ? "Payout unavailable" : "Versement indisponible",
+        title: en ? "Transfer unavailable" : "Versement indisponible",
         description:
           submitError instanceof Error
             ? submitError.message
@@ -141,7 +142,7 @@ export function PayoutDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{en ? "Mobile Money payout" : "Versement Mobile Money"}</DialogTitle>
+          <DialogTitle>{en ? "Receive via Mobile Money" : "Recevoir par Mobile Money"}</DialogTitle>
           <DialogDescription>
             {en
               ? "Transfer your available returns to the number registered on your account."
@@ -233,11 +234,19 @@ export function PayoutDialog({
               ) : (
                 <ArrowDownToLine className="mr-2 h-4 w-4" />
               )}
-              {submitting ? (en ? "Securing…" : "Sécurisation…") : (en ? "Confirm payout" : "Confirmer le versement")}
+              {submitting ? (en ? "Sending…" : "Envoi…") : (en ? "Confirm transfer" : "Confirmer le versement")}
             </Button>
           )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
+}
+
+function getPayoutError(status: number, en: boolean): string {
+  if (status === 401) return en ? "Sign in again to continue." : "Reconnectez-vous pour continuer.";
+  if (status === 403) return en ? "Verify your identity before requesting a transfer." : "Vérifiez votre identité avant de demander un versement.";
+  if (status === 409) return en ? "Check your available balance and ongoing requests." : "Vérifiez votre solde disponible et vos demandes en cours.";
+  if (status === 503) return en ? "Mobile Money transfers are temporarily unavailable." : "Les versements Mobile Money sont momentanément indisponibles.";
+  return en ? "The transfer could not be completed. Please try again." : "Le versement n’a pas pu aboutir. Veuillez réessayer.";
 }

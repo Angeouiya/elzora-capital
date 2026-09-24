@@ -16,13 +16,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "NEXORA Capital — Capital privé · Private capital",
   description:
-    "Capital privé en Afrique de l'Ouest · Private capital in West Africa. Dette et capital, dès 10 000 XOF.",
+    "Capital privé en Afrique de l'Ouest · Private capital in West Africa. Dette et capital, dès 10 000 francs CFA.",
   keywords: [
     "financement participatif",
     "Afrique de l'Ouest",
     "UEMOA",
-    "XOF",
-    "FCFA",
+    "franc CFA",
     "dette",
     "capital",
     "crowdfunding",

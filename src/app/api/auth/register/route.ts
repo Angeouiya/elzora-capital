@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   try {
     body = (await req.json()) as Record<string, unknown>;
   } catch {
-    return NextResponse.json({ error: "Payload invalide" }, { status: 400 });
+    return NextResponse.json({ code: "INVALID_PAYLOAD" }, { status: 400 });
   }
 
   const email = String(body.email || "").trim().toLowerCase();
@@ -25,22 +25,22 @@ export async function POST(req: NextRequest) {
   const acceptedRisks = body.acceptedRisks === true;
 
   if (!EMAIL_PATTERN.test(email) || !firstName || !lastName || !phone) {
-    return NextResponse.json({ error: "Coordonnées incomplètes ou invalides" }, { status: 400 });
+    return NextResponse.json({ code: "INVALID_CONTACT" }, { status: 400 });
   }
   if (password.length < 10 || password.length > 200) {
-    return NextResponse.json({ error: "Le mot de passe doit contenir au moins 10 caractères" }, { status: 400 });
+    return NextResponse.json({ code: "INVALID_PASSWORD" }, { status: 400 });
   }
   if (!COUNTRIES.some((entry) => entry.code === country)) {
-    return NextResponse.json({ error: "Pays non pris en charge" }, { status: 400 });
+    return NextResponse.json({ code: "UNSUPPORTED_COUNTRY" }, { status: 400 });
   }
   if (!acceptedTerms || !acceptedRisks) {
-    return NextResponse.json({ error: "Les consentements obligatoires sont requis" }, { status: 400 });
+    return NextResponse.json({ code: "REQUIRED_CONSENTS" }, { status: 400 });
   }
 
   try {
     const database = getD1();
     const exists = await database.prepare(`SELECT id FROM User WHERE email = ? LIMIT 1`).bind(email).first();
-    if (exists) return NextResponse.json({ error: "Un compte existe déjà avec cet email" }, { status: 409 });
+    if (exists) return NextResponse.json({ code: "EMAIL_EXISTS" }, { status: 409 });
 
     const userId = crypto.randomUUID();
     const sessionId = crypto.randomUUID();
@@ -124,6 +124,6 @@ export async function POST(req: NextRequest) {
     return response;
   } catch (error) {
     console.error("auth_register_failed", error);
-    return NextResponse.json({ error: "Création du compte indisponible" }, { status: 503 });
+    return NextResponse.json({ code: "REGISTER_UNAVAILABLE" }, { status: 503 });
   }
 }

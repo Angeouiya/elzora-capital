@@ -79,12 +79,11 @@ export function KycDialog({ open, onOpenChange, locale, status, onSubmitted }: K
     formData.set("consent", String(formData.get("consent") === "on"));
     try {
       const response = await fetch("/api/investor/kyc", { method: "POST", body: formData });
-      const json = await response.json() as { error?: string };
-      if (!response.ok) throw new Error(json.error || (en ? "Submission failed" : "Envoi impossible"));
+      if (!response.ok) throw new Error(en ? "Verification is temporarily unavailable." : "La vérification est momentanément indisponible.");
       setRemote({ status: "pending", reason: null, submittedAt: new Date().toISOString(), verifiedAt: null });
       onSubmitted();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : en ? "Submission failed" : "Envoi impossible");
+      setError(cause instanceof Error ? cause.message : en ? "Unable to send your documents." : "Impossible d’envoyer vos documents.");
     } finally {
       setSubmitting(false);
     }
@@ -92,7 +91,7 @@ export function KycDialog({ open, onOpenChange, locale, status, onSubmitted }: K
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
+      <DialogContent className="max-h-[calc(100dvh-1rem)] w-[calc(100%-1rem)] overflow-y-auto rounded-[1.5rem] sm:max-h-[92vh] sm:max-w-2xl">
         <DialogHeader>
           <div className="mb-1 flex h-11 w-11 items-center justify-center rounded-2xl bg-[#F5EAF3] text-[#541249]">
             <ShieldCheck className="h-5 w-5" />
@@ -184,13 +183,13 @@ export function KycDialog({ open, onOpenChange, locale, status, onSubmitted }: K
                 {identityType !== "passport" ? <Field label={en ? "Document — back" : "Pièce — verso"}><Input className={inputFileClass} name="identityBack" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" required /></Field> : null}
                 <Field label={en ? "Proof of address" : "Justificatif de domicile"}><Input className={inputFileClass} name="proofAddress" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" required /></Field>
               </div>
-              <p className="mt-3 text-xs text-muted-foreground">PDF, JPG, PNG or WebP · 5 MB max {en ? "per file" : "par fichier"}</p>
+              <p className="mt-3 text-xs text-muted-foreground">PDF, JPG, PNG {en ? "or" : "ou"} WebP · {en ? "5 MB maximum per file" : "5 Mo maximum par fichier"}</p>
             </div>
 
             <div className="space-y-3 text-sm">
               <Check name="politicallyExposed" label={en ? "I am a politically exposed person (or a close relative)." : "Je suis une personne politiquement exposée (ou un proche)."} />
               <Check name="actingForSelf" required label={en ? "I confirm that I am acting on my own behalf." : "Je confirme agir pour mon propre compte."} />
-              <Check name="consent" required label={en ? "I consent to the secure processing of these data for regulatory verification." : "J’accepte le traitement sécurisé de ces données aux fins de vérification réglementaire."} />
+              <Check name="consent" required label={en ? "I agree to the secure use of this information to verify my identity and protect my account." : "J’accepte l’utilisation sécurisée de ces informations pour vérifier mon identité et protéger mon compte."} />
             </div>
 
             {error ? <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
@@ -210,7 +209,7 @@ export function KycDialog({ open, onOpenChange, locale, status, onSubmitted }: K
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <div className="space-y-1.5"><Label className="text-xs font-medium">{label}</Label>{children}</div>;
+  return <div className="space-y-1.5"><Label className="text-sm font-semibold">{label}</Label>{children}</div>;
 }
 
 function Check({ name, label, required = false }: { name: string; label: string; required?: boolean }) {
