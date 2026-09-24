@@ -40,10 +40,10 @@ export function Explore() {
   );
 
   return (
-    <div className="page-shell reveal-in pb-28 lg:pb-10">
-      <section className="relative overflow-hidden rounded-[1.55rem] bg-[linear-gradient(135deg,#541249_0%,#380c31_48%,#1c0618_100%)] p-5 text-white shadow-[0_20px_55px_rgba(56,12,49,.18)] sm:p-8">
+    <div className="reveal-in overflow-x-clip pb-28 lg:pb-10">
+      <section className="public-hero public-page-hero text-white">
         <div className="absolute -right-16 -top-24 h-64 w-64 rounded-full bg-[#a55b98]/15 blur-3xl" />
-        <div className="relative flex items-end justify-between gap-5">
+        <div className="public-page-hero-inner relative flex items-end justify-between gap-5">
           <div className="max-w-2xl">
             <p className="editorial-kicker">{copy.kicker}</p>
             <h1 className="mt-3 text-[2rem] font-black leading-[.98] tracking-[-.05em] sm:text-5xl">{copy.title}</h1>
@@ -55,6 +55,8 @@ export function Explore() {
           </div>
         </div>
       </section>
+
+      <div className="page-shell explore-page-body">
 
       <section className="sticky top-[4.05rem] z-30 -mx-1 mt-3 rounded-2xl border border-[#541249]/10 bg-[#fffefd]/94 p-2 shadow-[0_12px_34px_rgba(56,12,49,.08)] backdrop-blur-xl sm:static sm:mx-0 sm:mt-5 sm:p-4">
         <div className="flex items-center justify-between gap-3 md:hidden">
@@ -98,6 +100,7 @@ export function Explore() {
           : offers.length === 0 ? <div className="public-panel py-10 text-center"><SearchX className="mx-auto h-8 w-8 text-[#7b286d]" /><h2 className="mt-3 text-base font-extrabold">{copy.empty}</h2><p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">{copy.emptyText}</p><Button variant="outline" onClick={reset} className="mt-5">{copy.reset}</Button></div>
           : <div className="grid gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">{offers.map((offer, index) => <OfferCard key={offer.id} offer={offer} eager={index === 0} compactOnMobile />)}</div>}
       </section>
+      </div>
     </div>
   );
 }

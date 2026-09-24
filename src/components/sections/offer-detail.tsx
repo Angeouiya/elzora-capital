@@ -23,7 +23,7 @@ import {
   Users,
   Coins,
   Wallet,
-  BriefcaseBusiness,
+  Waypoints,
   ShieldCheck,
   TriangleAlert,
   FileText,
@@ -155,7 +155,7 @@ export function OfferDetail() {
         return;
       }
       if (!res.ok) {
-        throw new Error(json.error || text.failed);
+        throw new Error(text.failed);
       }
       if (json.payment?.status === "ready" && json.payment.checkoutUrl) {
         const checkout = new URL(json.payment.checkoutUrl);
@@ -174,7 +174,7 @@ export function OfferDetail() {
     } catch (e) {
       toast({
         title: text.error,
-        description: e instanceof Error ? e.message : text.unknown,
+        description: e instanceof Error && e.message === text.failed ? e.message : text.failed,
         variant: "destructive",
       });
     } finally {
@@ -186,43 +186,46 @@ export function OfferDetail() {
   const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 
   return (
-    <div className="page-shell pb-36 lg:pb-10">
-      <Button
+    <div className="reveal-in overflow-x-clip pb-36 lg:pb-10">
+      <div className="page-shell py-3 sm:py-4">
+        <Button
         variant="ghost"
         size="sm"
         onClick={() => setView("explore")}
-        className="mb-3 -ml-2"
+        className="-ml-2"
       >
         <ArrowLeft className="h-4 w-4" />
         {text.back}
-      </Button>
+        </Button>
+      </div>
 
       {/* Hero */}
-      <div className="relative mb-3 h-60 overflow-hidden rounded-[1.55rem] shadow-[0_24px_65px_rgba(56,12,49,.16)] sm:mb-5 sm:h-80">
+      <div className="offer-hero-fullbleed relative h-72 overflow-hidden bg-[#250820] shadow-[0_24px_65px_rgba(56,12,49,.16)] sm:h-[25rem]">
         <Image
           src={offer.project.imageUrl}
           alt={offer.project.title}
           fill
-          sizes="(max-width: 1024px) 100vw, 66vw"
+          sizes="100vw"
           unoptimized
           className="h-full w-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#130410]/95 via-[#250820]/45 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-8">
+        <div className="absolute inset-0 bg-[linear-gradient(100deg,rgba(19,4,16,.76)_0%,rgba(37,8,32,.44)_56%,rgba(19,4,16,.18)_100%)]" />
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#130410]/92 via-[#250820]/35 to-transparent">
+          <div className="offer-hero-content py-6 sm:py-9">
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <Badge className="bg-background/95 text-foreground">
               {getSectorLabel(offer.project.sector, locale)}
             </Badge>
             {isEquity ? (
-              <Badge className="bg-nexora-lime text-nexora-black">
+              <Badge className="border border-white/20 bg-white/92 text-[#541249]">
                 {text.equity}
               </Badge>
             ) : (
-              <Badge className="bg-nexora-pale text-positive">
+              <Badge className="border border-white/20 bg-[#f4e7f1]/95 text-[#541249]">
                 {text.debt}
               </Badge>
             )}
-            <Badge className="bg-background/80 text-white backdrop-blur">
+            <Badge className="border border-white/15 bg-[#130410]/48 text-white backdrop-blur">
               <MapPin className="mr-1 h-3 w-3" />
               {offer.project.city}, {getCountryLabel(offer.project.country, locale)}
             </Badge>
@@ -233,8 +236,11 @@ export function OfferDetail() {
           <p className="mt-1 text-sm text-white/80">
             {company.tradeName || company.legalName}
           </p>
+          </div>
         </div>
       </div>
+
+      <div className="page-shell offer-detail-body">
 
       <nav className="sticky top-[4.05rem] z-30 mb-4 flex gap-1.5 overflow-x-auto rounded-2xl border border-[#541249]/10 bg-[#fffefd]/94 p-1.5 shadow-[0_10px_30px_rgba(56,12,49,.07)] backdrop-blur-xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mb-5 lg:static lg:w-fit" aria-label={locale === "fr" ? "Sections de l’opportunité" : "Opportunity sections"}>
         <Button type="button" variant="ghost" size="sm" onClick={() => scrollTo("offer-overview")} className="shrink-0 rounded-xl">{text.overview}</Button>
@@ -374,7 +380,7 @@ export function OfferDetail() {
           <Card className="rounded-[1.35rem] border-[#541249]/10">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
-                <BriefcaseBusiness className="h-5 w-5" />
+                <Waypoints className="h-5 w-5" />
                 {text.company}
               </CardTitle>
             </CardHeader>
@@ -645,6 +651,7 @@ export function OfferDetail() {
             </Card>
           </div>
         </div>
+      </div>
       </div>
 
       <div className={`fixed inset-x-3 z-30 lg:hidden ${userEmail ? "bottom-[calc(4.65rem+env(safe-area-inset-bottom))]" : "bottom-[calc(.75rem+env(safe-area-inset-bottom))]"}`}>

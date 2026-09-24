@@ -17,7 +17,8 @@ import {
 import { COUNTRIES, getCountryLabel } from "@/lib/countries";
 import {
   UserRound,
-  BriefcaseBusiness,
+  TrendingUp,
+  Waypoints,
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
@@ -185,8 +186,8 @@ export function Register() {
   };
 
   return (
-    <section className="page-shell max-w-3xl reveal-in">
-      <div className="mb-4 overflow-hidden rounded-[1.5rem] bg-[linear-gradient(135deg,#541249_0%,#2f0a29_58%,#130410_100%)] px-5 py-5 text-white shadow-[0_18px_50px_rgba(56,12,49,.18)] sm:px-8 sm:py-7">
+    <section className="page-shell registration-shell max-w-3xl reveal-in">
+      <div className="registration-progress mb-4 overflow-hidden rounded-[1.5rem] bg-[linear-gradient(135deg,#541249_0%,#2f0a29_58%,#130410_100%)] px-5 py-5 text-white shadow-[0_18px_50px_rgba(56,12,49,.18)] sm:px-8 sm:py-7">
         <div className="flex items-center justify-between gap-4">
           <p className="text-xs font-extrabold uppercase tracking-[.18em] text-white/60">{copy.step} {step} / {TOTAL_STEPS}</p>
           <span className="rounded-full border border-white/12 bg-white/8 px-3 py-1 text-xs font-bold text-white/75">{Math.round(progressPct)} %</span>
@@ -195,7 +196,7 @@ export function Register() {
         <Progress value={progressPct} className="mt-4 h-1.5 bg-white/12" />
       </div>
 
-      <Card className="rounded-[1.5rem] border-[#541249]/10 bg-white/95 shadow-[0_16px_46px_rgba(56,12,49,.07)]">
+      <Card className="registration-card rounded-[1.5rem] border-[#541249]/10 bg-white/95 shadow-[0_16px_46px_rgba(56,12,49,.07)]">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg font-bold tracking-tight">
             {step === 1 && copy.titles[0]}
@@ -247,7 +248,7 @@ export function Register() {
                   }`}
                 >
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-nexora-black">
-                    <BriefcaseBusiness className="h-5 w-5 text-[#e8bdbe]" />
+                    <Waypoints className="h-5 w-5 text-[#e8bdbe]" />
                   </div>
                   <div>
                     <p className="text-sm font-bold text-foreground">{copy.company}</p>
@@ -259,7 +260,7 @@ export function Register() {
               </div>
               {errorMsg && <p className="text-xs text-nexora-danger">{errorMsg}</p>}
               <div className="flex justify-end">
-                <Button onClick={handleStep1Next} disabled={!kind} className="btn-nexora">
+                <Button onClick={handleStep1Next} disabled={!kind} className="btn-nexora w-full sm:w-auto">
                   {copy.continue}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
@@ -375,12 +376,12 @@ export function Register() {
 
               {errorMsg && <p className="text-xs text-nexora-danger">{errorMsg}</p>}
 
-              <div className="flex items-center justify-between">
+              <div className="registration-actions">
                 <Button variant="ghost" size="sm" onClick={() => goToStep(1)}>
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   {copy.back}
                 </Button>
-                <Button onClick={handleStep2Next} className="btn-nexora">
+                <Button onClick={handleStep2Next} className="btn-nexora w-full sm:w-auto">
                   {copy.continue}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
@@ -406,7 +407,7 @@ export function Register() {
                     id: "finance" as const,
                     label: copy.goals[1][0],
                     desc: copy.goals[1][1],
-                    icon: BriefcaseBusiness,
+                    icon: TrendingUp,
                   },
                   {
                     id: "both" as const,
@@ -440,12 +441,12 @@ export function Register() {
                 })}
               </div>
               {errorMsg && <p className="text-xs text-nexora-danger">{errorMsg}</p>}
-              <div className="flex items-center justify-between">
+              <div className="registration-actions">
                 <Button variant="ghost" size="sm" onClick={() => goToStep(2)}>
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   {copy.back}
                 </Button>
-                <Button onClick={handleStep3Next} className="btn-nexora">
+                <Button onClick={handleStep3Next} className="btn-nexora w-full sm:w-auto">
                   {copy.continue}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
@@ -502,12 +503,12 @@ export function Register() {
                 </div>
               </div>
               {errorMsg && <p className="text-xs text-nexora-danger">{errorMsg}</p>}
-              <div className="flex items-center justify-between">
+              <div className="registration-actions">
                 <Button variant="ghost" size="sm" onClick={() => goToStep(2)}>
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   {copy.back}
                 </Button>
-                <Button onClick={handleStep3Next} className="btn-nexora">
+                <Button onClick={handleStep3Next} className="btn-nexora w-full sm:w-auto">
                   {copy.continue}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
@@ -576,12 +577,12 @@ export function Register() {
 
               {errorMsg && <p className="text-xs text-nexora-danger">{errorMsg}</p>}
 
-              <div className="flex items-center justify-between">
+              <div className="registration-actions">
                 <Button variant="ghost" size="sm" onClick={() => goToStep(3)}>
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   {copy.back}
                 </Button>
-                <Button onClick={handleStep4Next} disabled={submitting} className="btn-nexora">
+                <Button onClick={handleStep4Next} disabled={submitting} className="btn-nexora w-full sm:w-auto">
                   {submitting ? copy.creating : copy.create}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>

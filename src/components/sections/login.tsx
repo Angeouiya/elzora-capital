@@ -24,8 +24,9 @@ export function Login() {
     submitting: "Connexion…",
     noAccount: "Pas encore de compte ?",
     register: "Créer un compte",
-    security: "Votre mot de passe n’est jamais stocké en clair. La session est conservée dans un cookie sécurisé inaccessible aux scripts de la page.",
+    security: "Votre mot de passe et vos informations de connexion restent protégés à chaque visite.",
     kicker: "Votre espace privé", asideTitle: "Retrouvez vos décisions, pas du bruit.", asideText: "Suivez vos engagements, vos documents et vos mouvements depuis un espace unique, pensé pour rester lisible.", protected: "Session protégée", verified: "Identité vérifiée avant souscription",
+    invalid: "Adresse email ou mot de passe incorrect.", refused: "Connexion refusée", unavailable: "Connexion momentanément indisponible. Réessayez dans quelques instants.", errorTitle: "Connexion indisponible", welcome: "Bienvenue", welcomeText: (email: string) => `Vous êtes connecté avec ${email}.`,
   } : {
     title: "Sign in to your account",
     intro: "Access your portfolio or company workspace.",
@@ -34,8 +35,9 @@ export function Login() {
     submitting: "Signing in…",
     noAccount: "Don’t have an account yet?",
     register: "Create account",
-    security: "Your password is never stored in plain text. Your session is kept in a secure cookie that page scripts cannot access.",
+    security: "Your password and sign-in information remain protected on every visit.",
     kicker: "Your private space", asideTitle: "Find your decisions, not the noise.", asideText: "Track commitments, documents and movements from one clear, carefully designed space.", protected: "Protected session", verified: "Identity verified before subscription",
+    invalid: "Incorrect email address or password.", refused: "Sign-in refused", unavailable: "Sign-in is temporarily unavailable. Please try again shortly.", errorTitle: "Sign-in unavailable", welcome: "Welcome", welcomeText: (email: string) => `You are signed in with ${email}.`,
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -51,22 +53,20 @@ export function Login() {
         body: JSON.stringify({ email: trimmedEmail, password }),
       });
       if (res.status === 401) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        const msg = data?.error || "Identifiants invalides.";
+        const msg = copy.invalid;
         setError(msg);
         toast({
-          title: "Connexion refusée",
+          title: copy.refused,
           description: msg,
           variant: "destructive",
         });
         return;
       }
       if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        const msg = data?.error || "Erreur inattendue. Réessayez.";
+        const msg = copy.unavailable;
         setError(msg);
         toast({
-          title: "Erreur",
+          title: copy.errorTitle,
           description: msg,
           variant: "destructive",
         });
@@ -75,15 +75,15 @@ export function Login() {
       const data = (await res.json()) as { user?: { email?: string } };
       const userEmail = data?.user?.email || trimmedEmail;
       toast({
-        title: "Bienvenue",
-        description: `Vous êtes connecté en tant que ${userEmail}.`,
+        title: copy.welcome,
+        description: copy.welcomeText(userEmail),
       });
       login(userEmail);
-    } catch (err) {
-      const msg = "Réseau inaccessible. Vérifiez votre connexion et réessayez.";
+    } catch {
+      const msg = copy.unavailable;
       setError(msg);
       toast({
-        title: "Erreur réseau",
+        title: copy.errorTitle,
         description: msg,
         variant: "destructive",
       });
@@ -93,7 +93,7 @@ export function Login() {
   };
 
   return (
-    <section className="page-shell reveal-in">
+    <section className="page-shell auth-page-shell reveal-in">
       <div className="auth-stage grid overflow-hidden lg:grid-cols-[.9fr_1.1fr]">
         <aside className="relative hidden min-h-[38rem] flex-col justify-between overflow-hidden p-10 text-white lg:flex">
           <div className="pointer-events-none absolute -right-16 top-20 h-72 w-72 rounded-full border border-white/10" />
@@ -109,7 +109,7 @@ export function Login() {
           </div>
         </aside>
 
-        <Card className="m-1 rounded-[1.75rem] border-0 bg-[#fffefd] shadow-none sm:m-2 lg:rounded-l-[1.35rem]">
+        <Card className="auth-form-card m-1 rounded-[1.75rem] border-0 bg-[#fffefd] shadow-none sm:m-2 lg:rounded-l-[1.35rem]">
           <CardHeader className="px-5 pb-4 pt-8 sm:px-10 sm:pt-12">
             <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-full bg-[#f3e6f0] text-[#541249]"><Lock className="h-5 w-5" /></div>
             <CardTitle className="text-2xl font-black tracking-[-.035em] sm:text-3xl">{copy.title}</CardTitle>
