@@ -152,7 +152,7 @@ export function MemberHome() {
       <header className="flex items-center justify-between gap-4 pb-4 sm:pb-5">
         <div>
           <p className="text-sm font-medium text-muted-foreground">{copy.greeting}</p>
-          <h1 className="mt-0.5 text-2xl font-bold tracking-[-.025em] text-foreground sm:text-[1.75rem]">
+          <h1 className="mt-0.5 text-xl font-semibold tracking-[-.02em] text-foreground sm:text-2xl">
             {firstName}
           </h1>
         </div>
@@ -165,7 +165,7 @@ export function MemberHome() {
       <div className="member-overview-card relative overflow-hidden rounded-[1.6rem] p-5 text-white sm:p-7 lg:grid lg:grid-cols-[1.2fr_.8fr] lg:gap-10 lg:p-9">
         <div className="relative z-10">
           <p className="text-xs font-bold uppercase tracking-[.15em] text-white/58">{copy.overview}</p>
-          <p className="tnum mt-4 text-[1.85rem] font-bold leading-none tracking-[-.035em] sm:text-4xl">
+          <p className="tnum mt-4 text-[1.7rem] font-semibold leading-none tracking-[-.03em] sm:text-[2.1rem]">
             {money(portfolio.totalInvested)}
           </p>
           <p className="mt-2 text-sm text-white/64">{copy.invested}</p>
@@ -174,12 +174,12 @@ export function MemberHome() {
             <div className="rounded-2xl border border-white/10 bg-white/[.07] p-3.5 backdrop-blur-xl">
               <WalletCards className="h-4 w-4 text-[#e4b4d9]" />
               <p className="mt-3 text-xs text-white/58">{copy.wallet}</p>
-              <p className="tnum mt-1 text-base font-bold">{money(portfolio.availableBalance, true)}</p>
+              <p className="tnum mt-1 text-base font-semibold">{money(portfolio.availableBalance, true)}</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/[.07] p-3.5 backdrop-blur-xl">
               <HandCoins className="h-4 w-4 text-[#d99ca1]" />
               <p className="mt-3 text-xs text-white/58">{copy.received}</p>
-              <p className="tnum mt-1 text-base font-bold">{money(portfolio.receivedTotal, true)}</p>
+              <p className="tnum mt-1 text-base font-semibold">{money(portfolio.receivedTotal, true)}</p>
             </div>
           </div>
         </div>
@@ -187,11 +187,11 @@ export function MemberHome() {
         <div className="relative z-10 mt-5 flex flex-col justify-between rounded-2xl border border-white/10 bg-black/10 p-4 backdrop-blur-xl lg:mt-0">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="tnum text-2xl font-black">{portfolio.activeDeals}</p>
+              <p className="tnum text-xl font-semibold">{portfolio.activeDeals}</p>
               <p className="mt-1 text-xs leading-4 text-white/58">{copy.active}</p>
             </div>
             <div>
-              <p className="tnum text-2xl font-black">{portfolio.pendingPayments}</p>
+              <p className="tnum text-xl font-semibold">{portfolio.pendingPayments}</p>
               <p className="mt-1 text-xs leading-4 text-white/58">{copy.pending}</p>
             </div>
           </div>
@@ -245,7 +245,7 @@ export function MemberHome() {
       <section className="mt-8 sm:mt-10">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h2 className="text-lg font-black tracking-[-.025em] sm:text-2xl">{copy.market}</h2>
+            <h2 className="text-lg font-semibold tracking-[-.02em] sm:text-xl">{copy.market}</h2>
             <p className="mt-1 text-sm text-muted-foreground">{copy.marketText}</p>
           </div>
           <Button variant="ghost" size="sm" onClick={() => setView("explore")} className="shrink-0 text-[#541249]">
@@ -275,7 +275,7 @@ export function MemberHome() {
       <section className="private-notice mt-7 p-4 sm:mt-9 sm:p-5">
         <div className="flex items-center gap-2">
           <BellRing className="h-4.5 w-4.5 text-[#541249]" />
-          <h2 className="text-sm font-black">{copy.activity}</h2>
+          <h2 className="text-sm font-semibold">{copy.activity}</h2>
         </div>
         {latestNotification ? (
           <div className="mt-3 border-l-2 border-[#7b286d] pl-3">

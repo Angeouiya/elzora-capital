@@ -348,6 +348,12 @@ button[data-control="media"]:focus-visible {
   position: relative;
 }
 
+.private-app-screen h1,
+.private-app-screen h2,
+.private-app-screen h3 {
+  font-weight: 650;
+}
+
 .private-dashboard-hero {
   position: relative;
   isolation: isolate;
@@ -402,7 +408,7 @@ button[data-control="media"]:focus-visible {
   margin-bottom: .75rem;
   color: var(--foreground);
   font-size: 1rem;
-  font-weight: 750;
+  font-weight: 650;
   letter-spacing: -.018em;
 }
 
@@ -485,8 +491,8 @@ button[data-control="media"]:focus-visible {
 
 .page-title {
   color: var(--foreground);
-  font-size: clamp(1.85rem, 4vw, 3.25rem);
-  font-weight: 740;
+  font-size: clamp(1.75rem, 3.7vw, 2.95rem);
+  font-weight: 680;
   letter-spacing: -0.032em;
   line-height: 1.02;
 }
@@ -729,15 +735,15 @@ button[data-control="media"]:focus-visible {
 
 .display-title {
   text-wrap: balance;
-  font-size: clamp(2.15rem, 5.25vw, 4.9rem);
-  font-weight: 740;
+  font-size: clamp(2.05rem, 4.8vw, 4.35rem);
+  font-weight: 700;
   letter-spacing: -.043em;
   line-height: .96;
 }
 
 .home-content-shell h2,
 .public-page-hero h1 {
-  font-weight: 720;
+  font-weight: 680;
   letter-spacing: -.03em;
 }
 

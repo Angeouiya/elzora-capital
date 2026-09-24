@@ -92,7 +92,7 @@ export function OfferCard({ offer, eager = false, compactOnMobile = false }: { o
           <p className="text-xs font-medium text-muted-foreground">
             {offer.project.company.tradeName || offer.project.company.legalName}
           </p>
-          <h3 className="mt-1 line-clamp-2 text-base font-extrabold leading-snug tracking-[-.015em] text-foreground">
+          <h3 className="mt-1 line-clamp-2 text-base font-semibold leading-snug tracking-[-.012em] text-foreground">
             {offer.project.title}
           </h3>
         </div>
@@ -103,7 +103,7 @@ export function OfferCard({ offer, eager = false, compactOnMobile = false }: { o
             {locale === "fr" ? "Rémunération" : "Return"}
           </p>
           <p
-            className={`tnum text-sm font-extrabold ${
+            className={`tnum text-sm font-semibold ${
               isEquity ? "text-foreground" : "text-positive"
             }`}
           >
