@@ -461,6 +461,39 @@ button[data-control="media"]:focus-visible {
   overflow: hidden;
 }
 
+.registration-frame {
+  isolation: isolate;
+}
+
+.registration-card [data-slot="input"],
+.registration-card [data-slot="select-trigger"] {
+  min-height: 2.75rem;
+  border-radius: .85rem;
+  border-color: rgba(84,18,73,.13);
+  background: rgba(253,252,253,.94);
+  box-shadow: 0 1px 0 rgba(255,255,255,.9) inset, 0 3px 12px rgba(56,12,49,.035);
+}
+
+.registration-card [data-slot="input"]:focus-visible,
+.registration-card [data-slot="select-trigger"]:focus-visible {
+  border-color: rgba(84,18,73,.42);
+  background: #fff;
+}
+
+.registration-card [data-slot="label"] {
+  color: #4f454d;
+  font-weight: 700;
+}
+
+.registration-actions {
+  border-top: 1px solid rgba(84,18,73,.08);
+  padding-top: 1.25rem;
+}
+
+.registration-actions > [data-slot="button"] {
+  min-height: 2.75rem;
+}
+
 .mobile-card-rail {
   scrollbar-width: none;
 }
@@ -850,6 +883,11 @@ textarea {
   .registration-shell {
     width: 100%;
     padding-top: 0;
+  }
+  .registration-frame {
+    border-inline: 0;
+    border-radius: 0;
+    box-shadow: none;
   }
   .auth-stage,
   .auth-form-card,

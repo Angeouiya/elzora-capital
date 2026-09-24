@@ -2,11 +2,10 @@
 import { useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -17,11 +16,13 @@ import {
 import { COUNTRIES, getCountryLabel } from "@/lib/countries";
 import {
   UserRound,
+  ContactRound,
   TrendingUp,
   Waypoints,
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
+  FileCheck2,
   ShieldCheck,
   Globe,
   Coins,
@@ -31,11 +32,12 @@ type AccountKind = "individual" | "company";
 type CompanyObjective = "invest" | "finance" | "both";
 
 const TOTAL_STEPS = 5;
+const REGISTRATION_STEP_ICONS = [UserRound, ContactRound, Globe, FileCheck2, CheckCircle2];
 
 const COPY = {
   fr: {
-    step: "Étape", titles: ["Créez votre compte NEXORA", "Vos coordonnées", "Pays et langue", "Consentements", "Compte créé"], companyGoal: "Votre objectif",
-    choose: "Choisissez le type de compte. Vous pourrez compléter votre profil plus tard — aucun justificatif n’est demandé à cette étape.", individual: "Particulier", individualDesc: "Investir dans les offres publiées sur NEXORA.", company: "Entreprise", companyDesc: "Rechercher un financement ou investir en tant que société.",
+    step: "Étape", titles: ["Ouvrez votre espace NEXORA", "Faisons connaissance", "Votre profil", "Dernière vérification", "Votre espace est prêt"], sectionTitles: ["Choisissez votre profil", "Vos coordonnées", "Pays et langue", "Vos confirmations", "Bienvenue chez NEXORA"], companyGoal: "Votre objectif",
+    choose: "Sélectionnez l’espace qui correspond à votre besoin. Vous pourrez compléter votre profil et ajouter vos justificatifs plus tard.", individual: "Particulier", individualDesc: "Découvrir les opportunités et investir en votre nom.", company: "Entreprise", companyDesc: "Financer votre activité ou investir au nom de votre société.", selected: "Sélectionné",
     continue: "Continuer", back: "Retour", firstName: "Prénom", lastName: "Nom", phone: "Téléphone", password: "Mot de passe", confirm: "Confirmer", settlementCurrency: "Paiements", reflection: "Temps pour changer d’avis", days: "jours",
     goalIntro: "Quel est votre objectif principal ? Vous pourrez évoluer plus tard entre les deux rôles.", goals: [["Investir", "Placer la trésorerie de l’entreprise dans des offres publiées."], ["Rechercher un financement", "Déposer un dossier pour lever des fonds."], ["Les deux", "Investir et lever du capital — mêmes accès."]],
     residence: "Pays de résidence", availability: "Dans votre pays", pilot: "ouverture progressive", soon: "bientôt disponible", language: "Langue de communication", profileInfo: "Vous pourrez compléter votre profil et ajouter vos justificatifs depuis votre espace. Votre identité sera vérifiée avant le premier investissement.",
@@ -44,8 +46,8 @@ const COPY = {
     errors: { kind: "Sélectionnez le type de compte.", required: "Tous les champs sont obligatoires.", email: "Adresse email invalide.", password: "Le mot de passe doit contenir au moins 10 caractères.", match: "Les mots de passe ne correspondent pas.", goal: "Sélectionnez votre objectif.", consent: "Vous devez accepter les conditions et reconnaître les risques.", country: "Ce pays n’est pas encore disponible.", exists: "Un compte existe déjà avec cette adresse email.", create: "Impossible de créer le compte pour le moment.", network: "Connexion indisponible. Réessayez dans quelques instants." },
   },
   en: {
-    step: "Step", titles: ["Create your NEXORA account", "Your contact details", "Country and language", "Consents", "Account created"], companyGoal: "Your objective",
-    choose: "Choose your account type. You can complete your profile later — no supporting document is required at this stage.", individual: "Individual", individualDesc: "Invest in opportunities published on NEXORA.", company: "Company", companyDesc: "Seek financing or invest as a company.",
+    step: "Step", titles: ["Open your NEXORA space", "Let’s get acquainted", "Your profile", "Final review", "Your space is ready"], sectionTitles: ["Choose your profile", "Your contact details", "Country and language", "Your confirmations", "Welcome to NEXORA"], companyGoal: "Your objective",
+    choose: "Select the space that matches your needs. You can complete your profile and add supporting documents later.", individual: "Individual", individualDesc: "Discover opportunities and invest in your own name.", company: "Company", companyDesc: "Finance your activity or invest on behalf of your company.", selected: "Selected",
     continue: "Continue", back: "Back", firstName: "First name", lastName: "Last name", phone: "Phone", password: "Password", confirm: "Confirm", settlementCurrency: "Payments", reflection: "Time to change your mind", days: "days",
     goalIntro: "What is your main objective? You can switch between both roles later.", goals: [["Invest", "Invest company cash in published opportunities."], ["Seek financing", "Submit an application to raise funds."], ["Both", "Invest and raise capital with the same access."]],
     residence: "Country of residence", availability: "In your country", pilot: "opening gradually", soon: "coming soon", language: "Communication language", profileInfo: "You can complete your profile and add supporting documents from your account. Your identity will be verified before your first investment.",
@@ -90,6 +92,10 @@ export function Register() {
   const progressPct = (step / TOTAL_STEPS) * 100;
 
   const country = COUNTRIES.find((c) => c.code === countryCode);
+  const StepIcon = REGISTRATION_STEP_ICONS[Math.min(step - 1, TOTAL_STEPS - 1)];
+  const sectionTitle = step === 3 && kind === "company"
+    ? copy.companyGoal
+    : copy.sectionTitles[Math.min(step - 1, copy.sectionTitles.length - 1)];
 
   const goToStep = (s: number) => {
     setErrorMsg(null);
@@ -186,27 +192,45 @@ export function Register() {
   };
 
   return (
-    <section className="page-shell registration-shell max-w-3xl reveal-in">
-      <div className="registration-progress mb-4 overflow-hidden rounded-[1.5rem] bg-[linear-gradient(135deg,#541249_0%,#2f0a29_58%,#130410_100%)] px-5 py-5 text-white shadow-[0_18px_50px_rgba(56,12,49,.18)] sm:px-8 sm:py-7">
-        <div className="flex items-center justify-between gap-4">
-          <p className="text-xs font-extrabold uppercase tracking-[.18em] text-white/60">{copy.step} {step} / {TOTAL_STEPS}</p>
-          <span className="rounded-full border border-white/12 bg-white/8 px-3 py-1 text-xs font-bold text-white/75">{Math.round(progressPct)} %</span>
+    <section className="page-shell registration-shell max-w-4xl reveal-in">
+      <div className="registration-frame overflow-hidden rounded-[2rem] border border-[#541249]/10 bg-white/96 shadow-[0_24px_70px_rgba(56,12,49,.12)]">
+      <div className="registration-progress relative overflow-hidden bg-[linear-gradient(128deg,#601554_0%,#380c31_52%,#160412_100%)] px-5 py-5 text-white sm:px-8 sm:py-6">
+        <div className="pointer-events-none absolute -right-20 -top-32 h-72 w-72 rounded-full border border-white/[.07] bg-[#8b367c]/15 shadow-[0_0_90px_rgba(165,91,152,.18)]" aria-hidden="true" />
+        <div className="relative flex items-center justify-between gap-4">
+          <p className="text-[11px] font-extrabold uppercase tracking-[.17em] text-white/62">{copy.step} {step} / {TOTAL_STEPS}</p>
+          <span className="rounded-full border border-white/12 bg-white/8 px-3 py-1 text-[11px] font-bold text-white/78">{Math.round(progressPct)} %</span>
         </div>
-        <h1 className="mt-3 text-2xl font-black tracking-[-.04em] sm:text-3xl">{copy.titles[Math.min(step - 1, copy.titles.length - 1)]}</h1>
-        <Progress value={progressPct} className="mt-4 h-1.5 bg-white/12" />
+        <h1 className="relative mt-2.5 max-w-2xl text-2xl font-black leading-tight tracking-[-.04em] sm:text-[1.8rem]">{copy.titles[Math.min(step - 1, copy.titles.length - 1)]}</h1>
+        <div
+          className="relative mt-4 grid grid-cols-5 gap-1.5"
+          role="progressbar"
+          aria-label={`${copy.step} ${step} / ${TOTAL_STEPS}`}
+          aria-valuemin={1}
+          aria-valuemax={TOTAL_STEPS}
+          aria-valuenow={step}
+        >
+          {Array.from({ length: TOTAL_STEPS }).map((_, index) => (
+            <span
+              key={index}
+              className={`h-1.5 rounded-full transition-colors duration-300 ${index < step ? "bg-[#d696c9]" : "bg-white/14"}`}
+            />
+          ))}
+        </div>
       </div>
 
-      <Card className="registration-card rounded-[1.5rem] border-[#541249]/10 bg-white/95 shadow-[0_16px_46px_rgba(56,12,49,.07)]">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg font-bold tracking-tight">
-            {step === 1 && copy.titles[0]}
-            {step === 2 && copy.titles[1]}
-            {step === 3 && (kind === "company" ? copy.companyGoal : copy.titles[2])}
-            {step === 4 && copy.titles[3]}
-            {step === 5 && copy.titles[4]}
-          </CardTitle>
+      <Card className="registration-card gap-3 rounded-none border-0 bg-white/95 py-0 shadow-none">
+        <CardHeader className="grid grid-cols-[auto_1fr] items-center gap-x-3 border-b border-[#541249]/8 px-5 py-4 sm:px-8 sm:py-5">
+          <span className="row-span-2 flex h-10 w-10 items-center justify-center rounded-[.9rem] bg-[#f3e7f1] text-[#641756]">
+            <StepIcon className="h-[1.1rem] w-[1.1rem]" />
+          </span>
+          <CardTitle className="text-lg font-extrabold tracking-[-.025em] sm:text-xl">{sectionTitle}</CardTitle>
+          <CardDescription className="text-xs leading-5">
+            {step === 1
+              ? locale === "fr" ? "Un choix simple pour personnaliser votre parcours." : "A simple choice to personalize your journey."
+              : `${copy.step} ${step} ${locale === "fr" ? "sur" : "of"} ${TOTAL_STEPS}`}
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-5 pb-5 sm:pb-7">
+        <CardContent className="space-y-5 px-5 pb-5 pt-2 sm:px-8 sm:pb-7 sm:pt-3">
           {/* STEP 1 — Account type */}
           {step === 1 && (
             <>
@@ -219,18 +243,21 @@ export function Register() {
                   type="button"
                   onClick={() => setKind("individual")}
                   aria-pressed={kind === "individual"}
-                  className={`flex flex-col items-start gap-3 rounded-2xl border p-5 text-left shadow-[0_5px_18px_rgba(56,12,49,.04)] transition-all hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(56,12,49,.09)] ${
+                  className={`relative flex min-h-[8.5rem] items-start gap-4 rounded-[1.2rem] border p-4 pr-12 text-left transition-all hover:-translate-y-0.5 ${
                     kind === "individual"
-                      ? "border-[#541249]/55 bg-[linear-gradient(145deg,#FAF4F9,#F1DFEE)] ring-2 ring-[#541249]/12"
-                      : "border-[#541249]/10 bg-white/90 hover:border-[#541249]/30"
+                      ? "border-[#6c195e]/50 bg-[linear-gradient(145deg,#fcf8fb,#f1dfed)] shadow-[0_12px_28px_rgba(56,12,49,.11)] ring-2 ring-[#541249]/10"
+                      : "border-[#541249]/10 bg-[#fdfcfd] shadow-[0_5px_18px_rgba(56,12,49,.035)] hover:border-[#541249]/28 hover:bg-white hover:shadow-[0_11px_25px_rgba(56,12,49,.08)]"
                   }`}
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-nexora-black">
-                    <UserRound className="h-5 w-5 text-[#e8bdbe]" />
+                  <span className={`absolute right-4 top-4 flex h-6 items-center justify-center rounded-full text-[10px] font-bold ${kind === "individual" ? "min-w-6 bg-[#541249] px-1.5 text-white" : "w-6 border border-[#541249]/15 bg-white"}`}>
+                    {kind === "individual" ? <><CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" /><span className="sr-only">{copy.selected}</span></> : null}
+                  </span>
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[.9rem] bg-[linear-gradient(145deg,#380c31,#160412)] shadow-[0_8px_18px_rgba(56,12,49,.2)]">
+                    <UserRound className="h-5 w-5 text-[#f2c7eb]" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-foreground">{copy.individual}</p>
-                    <p className="mt-1 text-sm leading-5 text-muted-foreground">
+                    <p className="text-[.9375rem] font-extrabold tracking-[-.015em] text-foreground">{copy.individual}</p>
+                    <p className="mt-1.5 text-sm leading-5 text-muted-foreground">
                       {copy.individualDesc}
                     </p>
                   </div>
@@ -241,26 +268,29 @@ export function Register() {
                   type="button"
                   onClick={() => setKind("company")}
                   aria-pressed={kind === "company"}
-                  className={`flex flex-col items-start gap-3 rounded-2xl border p-5 text-left shadow-[0_5px_18px_rgba(56,12,49,.04)] transition-all hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(56,12,49,.09)] ${
+                  className={`relative flex min-h-[8.5rem] items-start gap-4 rounded-[1.2rem] border p-4 pr-12 text-left transition-all hover:-translate-y-0.5 ${
                     kind === "company"
-                      ? "border-[#541249]/55 bg-[linear-gradient(145deg,#FAF4F9,#F1DFEE)] ring-2 ring-[#541249]/12"
-                      : "border-[#541249]/10 bg-white/90 hover:border-[#541249]/30"
+                      ? "border-[#6c195e]/50 bg-[linear-gradient(145deg,#fcf8fb,#f1dfed)] shadow-[0_12px_28px_rgba(56,12,49,.11)] ring-2 ring-[#541249]/10"
+                      : "border-[#541249]/10 bg-[#fdfcfd] shadow-[0_5px_18px_rgba(56,12,49,.035)] hover:border-[#541249]/28 hover:bg-white hover:shadow-[0_11px_25px_rgba(56,12,49,.08)]"
                   }`}
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-nexora-black">
-                    <Waypoints className="h-5 w-5 text-[#e8bdbe]" />
+                  <span className={`absolute right-4 top-4 flex h-6 items-center justify-center rounded-full text-[10px] font-bold ${kind === "company" ? "min-w-6 bg-[#541249] px-1.5 text-white" : "w-6 border border-[#541249]/15 bg-white"}`}>
+                    {kind === "company" ? <><CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" /><span className="sr-only">{copy.selected}</span></> : null}
+                  </span>
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[.9rem] bg-[linear-gradient(145deg,#380c31,#160412)] shadow-[0_8px_18px_rgba(56,12,49,.2)]">
+                    <Waypoints className="h-5 w-5 text-[#f2c7eb]" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-foreground">{copy.company}</p>
-                    <p className="mt-1 text-sm leading-5 text-muted-foreground">
+                    <p className="text-[.9375rem] font-extrabold tracking-[-.015em] text-foreground">{copy.company}</p>
+                    <p className="mt-1.5 text-sm leading-5 text-muted-foreground">
                       {copy.companyDesc}
                     </p>
                   </div>
                 </button>
               </div>
               {errorMsg && <p className="text-xs text-nexora-danger">{errorMsg}</p>}
-              <div className="flex justify-end">
-                <Button onClick={handleStep1Next} disabled={!kind} className="btn-nexora w-full sm:w-auto">
+              <div className="flex justify-end border-t border-[#541249]/8 pt-5">
+                <Button onClick={handleStep1Next} disabled={!kind} className="btn-nexora h-11 w-full min-w-40 sm:w-auto">
                   {copy.continue}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
@@ -625,21 +655,24 @@ export function Register() {
         </CardContent>
       </Card>
 
-      {/* Already have account */}
-      {step < 5 && (
-        <p className="mt-5 text-center text-sm text-muted-foreground">
-          {copy.already}{" "}
-          <Button type="button" variant="link" onClick={() => setView("login")} className="inline h-auto p-0 align-baseline font-semibold">
-            {copy.signIn}
-          </Button>
-        </p>
-      )}
-
-      <div className="mt-5 flex items-start gap-3 rounded-2xl border border-[#541249]/10 bg-[#FAF4F9] p-4">
-        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-positive" />
-        <p className="text-sm leading-6 text-[#541249]">
-          {copy.security}
-        </p>
+      <div className="registration-support flex flex-col gap-3 border-t border-[#541249]/8 bg-[linear-gradient(135deg,#fbf8fa,#f7eef5)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+        <div className="flex max-w-xl items-start gap-3">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[.7rem] bg-white text-[#641756] shadow-[0_4px_12px_rgba(56,12,49,.07)]">
+            <ShieldCheck className="h-4 w-4" />
+          </span>
+          <p className="text-xs leading-5 text-[#541249]/80">
+            {copy.security}
+          </p>
+        </div>
+        {step < 5 ? (
+          <p className="shrink-0 text-sm text-muted-foreground">
+            {copy.already}{" "}
+            <Button type="button" variant="link" onClick={() => setView("login")} className="inline h-auto p-0 align-baseline font-bold">
+              {copy.signIn}
+            </Button>
+          </p>
+        ) : null}
+      </div>
       </div>
     </section>
   );
