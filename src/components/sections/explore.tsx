@@ -98,7 +98,7 @@ export function Explore() {
         <div className="mb-4 hidden items-end justify-between md:flex"><div><p className="page-kicker">{copy.results}</p><p className="mt-1 text-sm text-muted-foreground">{loading ? copy.loading : copy.count(offers.length)}</p></div></div>
         {loading ? <div className="grid items-stretch gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">{Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-44 rounded-[1.35rem] sm:h-[27rem]" />)}</div>
           : offers.length === 0 ? <div className="public-panel py-10 text-center"><SearchX className="mx-auto h-8 w-8 text-[#7b286d]" /><h2 className="mt-3 text-base font-extrabold">{copy.empty}</h2><p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">{copy.emptyText}</p><Button variant="outline" onClick={reset} className="mt-5">{copy.reset}</Button></div>
-          : <div className="grid items-stretch gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">{offers.map((offer, index) => <OfferCard key={offer.id} offer={offer} eager={index === 0} compactOnMobile />)}</div>}
+          : <div className="grid items-stretch gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-[repeat(auto-fit,minmax(16.5rem,1fr))]">{offers.map((offer, index) => <OfferCard key={offer.id} offer={offer} eager={index === 0} compactOnMobile />)}</div>}
       </section>
       </div>
     </div>

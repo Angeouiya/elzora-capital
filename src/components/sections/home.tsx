@@ -86,7 +86,7 @@ export function Home() {
         </div>
         {loading ? <div className="grid items-stretch gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-44 rounded-2xl sm:h-[25rem]" />)}</div>
           : offers.length === 0 ? <div className="public-panel px-5 py-9 text-center sm:py-11"><CircleCheck className="mx-auto h-8 w-8 text-[#541249]" /><p className="mt-3 text-sm font-bold">{copy.next}</p><p className="mx-auto mt-1 max-w-md text-xs leading-5 text-muted-foreground">{copy.nextText}</p><Button variant="outline" className="mt-4" onClick={() => setView("register")}>{copy.notify}<ArrowRight className="h-4 w-4" /></Button></div>
-          : <div className="grid items-stretch gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">{offers.slice(0, 4).map((offer, index) => <OfferCard key={offer.id} offer={offer} eager={index === 0} compactOnMobile />)}</div>}
+          : <div className="grid items-stretch gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-[repeat(auto-fit,minmax(16.5rem,1fr))]">{offers.slice(0, 4).map((offer, index) => <OfferCard key={offer.id} offer={offer} eager={index === 0} compactOnMobile />)}</div>}
         <Button variant="outline" onClick={() => setView("explore")} className="mt-5 w-full sm:hidden">{copy.all}<ArrowRight className="h-4 w-4" /></Button>
       </section>
 
