@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useAppStore } from "@/lib/store";
 import { useFetch } from "@/hooks/use-fetch";
 import { OfferCard } from "@/components/site/offer-card";
@@ -53,8 +52,7 @@ export function Home() {
 
   return (
     <div className="page-shell reveal-in">
-      <section className="public-hero min-h-[38rem] text-white sm:min-h-[40rem] lg:min-h-[43rem]">
-        <Image src="/capital-landscape.png" alt="" fill priority sizes="(max-width: 768px) 100vw, 1320px" className="-z-10 object-cover object-[68%_center] opacity-70 sm:object-center" />
+      <section className="public-hero home-hero-gradient min-h-[38rem] text-white sm:min-h-[40rem] lg:min-h-[43rem]">
         <div className="relative flex min-h-[38rem] flex-col justify-between p-5 sm:min-h-[40rem] sm:p-9 lg:min-h-[43rem] lg:p-12">
           <div className="max-w-[48rem] pt-5 sm:pt-8 lg:pt-10">
             <p className="editorial-kicker">{copy.kicker}</p>

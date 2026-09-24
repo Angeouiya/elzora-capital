@@ -1,20 +1,36 @@
 "use client";
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { Header } from "@/components/site/header";
 import { Footer } from "@/components/site/footer";
-import { BottomNav } from "@/components/site/bottom-nav";
 import { Home } from "@/components/sections/home";
-import { Explore } from "@/components/sections/explore";
-import { OfferDetail } from "@/components/sections/offer-detail";
-import { HowItWorks } from "@/components/sections/how";
-import { Login } from "@/components/sections/login";
-import { Register } from "@/components/sections/register";
-import { InvestorDashboard } from "@/components/sections/investor-dashboard";
-import { CompanyDashboard } from "@/components/sections/company-dashboard";
-import { CompanySubmit } from "@/components/sections/company-submit";
-import { Fees } from "@/components/sections/fees";
-import { Risks } from "@/components/sections/risks";
+
+const dynamicView = <T extends object>(loader: () => Promise<T>, key: keyof T) =>
+  dynamic(() => loader().then((module) => module[key] as React.ComponentType), {
+    loading: ViewLoading,
+  });
+
+const Explore = dynamicView(() => import("@/components/sections/explore"), "Explore");
+const OfferDetail = dynamicView(() => import("@/components/sections/offer-detail"), "OfferDetail");
+const HowItWorks = dynamicView(() => import("@/components/sections/how"), "HowItWorks");
+const Login = dynamicView(() => import("@/components/sections/login"), "Login");
+const Register = dynamicView(() => import("@/components/sections/register"), "Register");
+const InvestorDashboard = dynamicView(() => import("@/components/sections/investor-dashboard"), "InvestorDashboard");
+const CompanyDashboard = dynamicView(() => import("@/components/sections/company-dashboard"), "CompanyDashboard");
+const CompanySubmit = dynamicView(() => import("@/components/sections/company-submit"), "CompanySubmit");
+const Fees = dynamicView(() => import("@/components/sections/fees"), "Fees");
+const Risks = dynamicView(() => import("@/components/sections/risks"), "Risks");
+const BottomNav = dynamicView(() => import("@/components/site/bottom-nav"), "BottomNav");
+
+function ViewLoading() {
+  return (
+    <div className="page-shell" aria-label="Chargement" role="status">
+      <div className="h-72 animate-pulse rounded-[1.75rem] bg-[#f0e6ed]" />
+      <span className="sr-only">Chargement…</span>
+    </div>
+  );
+}
 
 export default function Page() {
   const view = useAppStore((s) => s.view);
