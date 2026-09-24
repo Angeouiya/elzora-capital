@@ -4,6 +4,7 @@ import { getD1, isoNow, requestIp } from "@/lib/d1";
 import { computeInvestorInterest } from "@/lib/finance";
 import { LEGAL_VERSIONS } from "@/lib/legal";
 import { getPaymentCapabilities } from "@/lib/payment-capabilities";
+import { getCountry } from "@/lib/countries";
 import {
   createPayDunyaCheckout,
   getPayDunyaCheckoutUrl,
@@ -28,6 +29,7 @@ interface InvestorRow {
   email: string;
   kycStatus: string;
   phone: string | null;
+  country: string;
 }
 
 interface InvestmentRow extends Record<string, unknown> {
@@ -157,7 +159,7 @@ export async function POST(
   const [offer, investor] = await Promise.all([
     findOffer(id),
     database
-      .prepare(`SELECT firstName, lastName, email, phone, kycStatus FROM User WHERE id = ? LIMIT 1`)
+      .prepare(`SELECT firstName, lastName, email, phone, country, kycStatus FROM User WHERE id = ? LIMIT 1`)
       .bind(session.userId)
       .first<InvestorRow>(),
   ]);
@@ -234,7 +236,10 @@ export async function POST(
 
   const investmentId = crypto.randomUUID();
   const now = isoNow();
-  const reflectionEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+  const reflectionPeriodDays = getCountry(investor.country)?.reflectionPeriodDays ?? 14;
+  const reflectionEndsAt = new Date(
+    Date.now() + reflectionPeriodDays * 24 * 60 * 60 * 1000
+  ).toISOString();
   const sharePct = calculateInvestmentSharePct(
     amount,
     offer.fundingGoal,
@@ -344,6 +349,7 @@ export async function POST(
             agreementHash: evidence.agreementHash,
             signatureMethod: "authenticated_clickwrap",
             paymentStatus: "awaiting_provider",
+            reflectionPeriodDays,
           }),
           ipAddress,
           now,

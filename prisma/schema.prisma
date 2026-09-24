@@ -340,6 +340,9 @@ model Investment {
   // Délai de rétractation
   reflectionEndsAt     DateTime?
   refundableUntil      DateTime?
+  cancellationEventId  String?                    @unique
+  cancelledAt          DateTime?
+  cancellationReason   String?
   createdAt            DateTime                   @default(now())
   updatedAt            DateTime                   @updatedAt
   subscriptionEvidence SubscriptionEvidence?

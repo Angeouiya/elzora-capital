@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { getD1 } from "@/lib/d1";
 import { simulateDebtFinancing } from "@/lib/finance";
 import { getPaymentCapabilities } from "@/lib/payment-capabilities";
+import { getCancellationEligibility } from "@/lib/investment-cancellation";
 
 interface UserRow extends Record<string, unknown> {
   id: string;
@@ -26,6 +27,11 @@ interface InvestmentDashboardRow extends Record<string, unknown> {
   status: string;
   signedAt: string | null;
   paymentConfirmedAt: string | null;
+  paymentRef: string | null;
+  reflectionEndsAt: string | null;
+  refundableUntil: string | null;
+  cancelledAt: string | null;
+  cancellationReason: string | null;
   createdAt: string;
   projectId: string;
   projectTitle: string;
@@ -87,7 +93,8 @@ export async function GET(req: Request) {
         `SELECT
            i.id, i.offerId, i.investorType, i.investorId, i.investorName,
            i.investorEmail, i.amount, i.sharePct, i.status, i.signedAt,
-           i.paymentConfirmedAt, i.createdAt,
+           i.paymentConfirmedAt, i.paymentRef, i.reflectionEndsAt,
+           i.refundableUntil, i.cancelledAt, i.cancellationReason, i.createdAt,
            p.id AS projectId, p.title AS projectTitle, p.sector AS projectSector,
            p.country AS projectCountry, p.city AS projectCity,
            p.instrumentType AS instrumentType,
@@ -152,7 +159,7 @@ export async function GET(req: Request) {
     const equityDividendReceived = Number(row.equityDividendReceived || 0);
     const receivedToDate = Number(row.receivedToDate || 0) + equityDividendReceived;
     receivedTotal += receivedToDate;
-    if (row.status === "pending_payment") pendingPayments += 1;
+    if (["pending_payment", "payment_pending"].includes(row.status)) pendingPayments += 1;
     if (row.status === "confirmed") {
       totalInvested += amount;
       activeDeals += 1;
@@ -178,6 +185,11 @@ export async function GET(req: Request) {
     } else {
       projectionLabel = "Valeur de sortie et liquidité non garanties";
     }
+    const cancellation = getCancellationEligibility({
+      status: row.status,
+      paymentRef: row.paymentRef,
+      reflectionEndsAt: row.reflectionEndsAt,
+    });
 
     return {
       id: row.id,
@@ -191,6 +203,15 @@ export async function GET(req: Request) {
       status: row.status,
       signedAt: row.signedAt,
       paymentConfirmedAt: row.paymentConfirmedAt,
+      reflectionEndsAt: row.reflectionEndsAt,
+      refundableUntil: row.refundableUntil,
+      cancelledAt: row.cancelledAt,
+      cancellationReason: row.cancellationReason,
+      cancellation: {
+        available: cancellation.allowed,
+        deadline: cancellation.deadline,
+        state: cancellation.code,
+      },
       createdAt: row.createdAt,
       expectedRepayment,
       receivedToDate,

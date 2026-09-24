@@ -16,7 +16,7 @@ const COPY = {
     intro: "Une expérience claire pour découvrir des entreprises sélectionnées, comprendre chaque dossier et engager son capital avec discernement.",
     opportunities: "Découvrir les opportunités", raise: "Présenter mon projet",
     proof: [["Sélection", "Dossiers analysés"], ["Territoire", "8 pays UEMOA"], ["Règlement", "Carte & Mobile Money"], ["Clarté", "Risques présentés"]],
-    signature: "Notre conviction", signatureTitle: "Le capital mérite mieux qu’une simple liste d’offres.", signatureText: "NEXORA organise l’information, met les risques au premier plan et rend chaque décision plus lisible. Nous privilégions la clarté à toute promesse irréaliste.",
+    signature: "Notre conviction", signatureTitle: "Le capital mérite mieux qu’une simple liste d’offres.", signatureText: "NEXORA organise l’information, met les risques au premier plan et rend chaque décision plus lisible. Nous privilégions la clarté à toute promesse irréaliste.", signaturePoints: [["Dossiers structurés", "L’essentiel au même endroit"], ["Risques visibles", "Aucun point important masqué"], ["Décision éclairée", "Vous gardez la main"]],
     market: "Sélection actuelle", open: "Opportunités ouvertes", loading: "Chargement…",
     offerCount: (count: number) => `${count} offre${count > 1 ? "s" : ""} ouverte${count > 1 ? "s" : ""} aux souscriptions`, all: "Explorer tout le marché",
     next: "La prochaine sélection est en préparation", nextText: "Chaque dossier passe par une analyse avant publication. Créez votre compte pour suivre les prochaines ouvertures.", notify: "Créer mon accès",
@@ -27,7 +27,7 @@ const COPY = {
     kicker: "Private capital · West Africa", title: "Invest in what is transforming the region.", intro: "A clear experience to discover selected businesses, understand each opportunity and commit capital with discernment.",
     opportunities: "Discover opportunities", raise: "Present my project",
     proof: [["Selection", "Reviewed applications"], ["Coverage", "8 WAEMU countries"], ["Settlement", "Card & Mobile Money"], ["Clarity", "Risks presented"]],
-    signature: "Our conviction", signatureTitle: "Capital deserves more than a simple list of deals.", signatureText: "NEXORA organizes information, puts risk in full view and makes each decision clearer. We favor clarity over unrealistic promises.",
+    signature: "Our conviction", signatureTitle: "Capital deserves more than a simple list of deals.", signatureText: "NEXORA organizes information, puts risk in full view and makes each decision clearer. We favor clarity over unrealistic promises.", signaturePoints: [["Structured files", "The essentials in one place"], ["Visible risks", "No important point hidden"], ["Informed decision", "You stay in control"]],
     market: "Current selection", open: "Open opportunities", loading: "Loading…", offerCount: (count: number) => `${count} opportunit${count === 1 ? "y" : "ies"} open for investment`, all: "Explore the full market",
     next: "The next selection is being prepared", nextText: "Every application is reviewed before publication. Create your account to follow upcoming openings.", notify: "Create my access",
     journey: "The NEXORA method", journeyTitle: "Simple to navigate. Serious underneath.", step: "0", more: "Understand the full journey", economy: "Real economy", sectors: "Sectors shaping everyday life",
@@ -37,6 +37,7 @@ const COPY = {
 
 const STEP_ICONS = [Send, FileSearch, Network];
 const PROOF_ICONS = [BadgeCheck, Compass, Smartphone, ShieldCheck];
+const SIGNATURE_ICONS = [FileSearch, ShieldCheck, CircleCheck];
 
 export function Home() {
   const setView = useAppStore((s) => s.setView);
@@ -46,6 +47,7 @@ export function Home() {
   const offers = data?.offers ?? [];
   const copy = COPY[locale];
   const proofItems: ReadonlyArray<readonly [string, string]> = copy.proof;
+  const signaturePoints: ReadonlyArray<readonly [string, string]> = copy.signaturePoints;
   const journeySteps: ReadonlyArray<readonly [string, string]> = copy.steps;
 
   return (
@@ -71,9 +73,39 @@ export function Home() {
       </section>
 
       <div className="page-shell home-content-shell">
-      <section className="home-section-reveal grid gap-4 py-8 sm:py-10 lg:grid-cols-[.58fr_1.42fr] lg:items-start">
-        <div><p className="page-kicker">{copy.signature}</p><div className="copper-line mt-4 max-w-32" /></div>
-        <div><h2 className="max-w-3xl text-2xl font-black leading-tight tracking-[-.04em] text-foreground sm:text-4xl">{copy.signatureTitle}</h2><p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">{copy.signatureText}</p></div>
+      <section className="home-section-reveal relative my-7 overflow-hidden rounded-[1.75rem] border border-[#541249]/10 bg-[linear-gradient(125deg,#fff_0%,#fbf7fa_58%,#f1e3ee_100%)] p-5 shadow-[0_18px_50px_rgba(56,12,49,.07)] sm:my-9 sm:p-7 lg:p-8">
+        <div className="pointer-events-none absolute -right-16 -top-24 h-56 w-56 rounded-full bg-[#7b286d]/10 blur-3xl" aria-hidden="true" />
+        <div className="relative grid gap-6 lg:grid-cols-[.38fr_1.62fr] lg:items-start lg:gap-10">
+          <div className="flex items-center gap-3 lg:block">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[.9rem] bg-[#541249] text-white shadow-[0_9px_22px_rgba(56,12,49,.2)]">
+              <BadgeCheck className="h-[1.1rem] w-[1.1rem]" />
+            </span>
+            <div>
+              <p className="page-kicker lg:mt-4">{copy.signature}</p>
+              <div className="mt-2 h-px w-16 bg-gradient-to-r from-[#541249]/55 to-transparent lg:mt-4" />
+            </div>
+          </div>
+          <div>
+            <h2 className="max-w-3xl text-2xl font-black leading-[1.14] tracking-[-.04em] text-foreground sm:text-[2rem]">{copy.signatureTitle}</h2>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground sm:text-[.9375rem] sm:leading-7">{copy.signatureText}</p>
+            <div className="mt-5 grid gap-2 sm:grid-cols-3">
+              {signaturePoints.map(([title, description], index) => {
+                const Icon = SIGNATURE_ICONS[index];
+                return (
+                  <div key={title} className="flex items-center gap-3 rounded-[1.05rem] border border-white/80 bg-white/72 px-3.5 py-3 shadow-[0_6px_18px_rgba(56,12,49,.045)] backdrop-blur-sm">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[.7rem] bg-[#f3e7f1] text-[#6c195e]">
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <span>
+                      <span className="block text-xs font-extrabold tracking-[-.01em] text-foreground">{title}</span>
+                      <span className="mt-0.5 block text-[11px] leading-4 text-muted-foreground">{description}</span>
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       </section>
 
       <section className="home-section-reveal border-t border-[#541249]/10 pt-8 sm:pt-10">

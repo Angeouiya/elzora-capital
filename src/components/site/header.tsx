@@ -133,7 +133,7 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
   return (
     <Sheet open={open} onOpenChange={setOpen}>
     <header
-      className={`sticky top-0 z-50 w-full border-b border-[#541249]/[.07] bg-[#fffefd]/88 backdrop-blur-2xl ${userEmail ? "lg:hidden" : ""}`}
+      className={`sticky top-0 z-50 w-full border-b border-[#541249]/[.08] bg-[#fffefd]/92 shadow-[0_1px_0_rgba(255,255,255,.9),0_12px_35px_rgba(56,12,49,.045)] backdrop-blur-2xl ${userEmail ? "lg:hidden" : ""}`}
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
       <div className={`mx-auto flex max-w-[82rem] items-center justify-between px-4 sm:px-6 lg:px-8 ${userEmail ? "h-16 lg:h-[4.5rem]" : "h-[4.5rem]"}`}>
@@ -151,16 +151,20 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
         </button>
 
         {/* Desktop nav */}
-        <nav className="hidden items-center gap-1 lg:flex">
+        <nav
+          className="hidden min-h-12 items-stretch gap-1 rounded-[1.35rem] border border-[#541249]/[.09] bg-[#f1eff1] p-1 shadow-[inset_0_1px_2px_rgba(19,4,16,.06),0_1px_0_rgba(255,255,255,.9)] lg:flex"
+          aria-label={locale === "fr" ? "Navigation principale" : "Main navigation"}
+        >
           {(userEmail ? copy.appNav : copy.nav).map((item) => (
             <button
               data-control="nav"
               key={item.view}
               onClick={() => setView(userEmail && item.view === "register" ? "company_dashboard" : item.view)}
-              className={`relative rounded-xl px-3.5 py-2 text-sm font-semibold transition-all ${
+              aria-current={view === (userEmail && item.view === "register" ? "company_dashboard" : item.view) ? "page" : undefined}
+              className={`relative min-h-10 rounded-[1rem] border px-4 py-2 text-[.8125rem] font-bold tracking-[-.012em] transition-all ${
                 view === (userEmail && item.view === "register" ? "company_dashboard" : item.view)
-                  ? "bg-[#f4ebf2] text-[#541249]"
-                  : "text-muted-foreground hover:bg-[#faf4f9] hover:text-[#541249]"
+                  ? "border-[#541249]/10 bg-white text-[#541249] shadow-[0_8px_20px_rgba(19,4,16,.11),inset_0_1px_0_rgba(255,255,255,.96)]"
+                  : "border-transparent text-[#60615e] hover:border-white/70 hover:bg-white/65 hover:text-[#541249] hover:shadow-[0_5px_14px_rgba(56,12,49,.06)]"
               }`}
             >
               {item.label}
@@ -175,11 +179,14 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
               <button
                 data-control="preference"
                 type="button"
-                className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[#541249]/14 bg-white/85 px-3 text-[11px] font-extrabold tracking-wide text-[#541249] shadow-[0_4px_14px_rgba(56,12,49,.06)] hover:-translate-y-0.5 hover:border-[#541249]/28 hover:bg-[#FAF4F9] hover:shadow-[0_8px_18px_rgba(56,12,49,.10)]"
+                className="inline-flex h-10 items-center gap-2 rounded-[1.05rem] border border-[#541249]/14 bg-white/92 px-3 text-xs font-extrabold tracking-[.015em] text-[#541249] shadow-[inset_0_1px_0_rgba(255,255,255,.95),0_6px_16px_rgba(56,12,49,.07)] hover:-translate-y-0.5 hover:border-[#541249]/28 hover:bg-[#FCF8FB] hover:shadow-[0_10px_24px_rgba(56,12,49,.12)]"
                 aria-label={copy.preferences}
               >
-                <Languages className="h-3.5 w-3.5" />
+                <span className="flex h-6 w-6 items-center justify-center rounded-[.65rem] bg-[#f4eaf2] text-[#541249]">
+                  <Languages className="h-3.5 w-3.5" />
+                </span>
                 <span>{locale.toUpperCase()} · {currencyLabel}</span>
+                <ChevronDown className="h-3.5 w-3.5 text-[#541249]/55" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-72 rounded-[1.5rem] p-3">
@@ -269,17 +276,17 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
           ) : (
             <>
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 onClick={() => setView("login")}
-                className="hidden text-foreground hover:bg-secondary/60 sm:inline-flex"
+                className="hidden h-10 rounded-[1.05rem] border-[#541249]/12 bg-white/80 px-4 text-[#33262f] shadow-[inset_0_1px_0_rgba(255,255,255,.94),0_5px_15px_rgba(56,12,49,.055)] hover:border-[#541249]/28 hover:bg-[#FCF8FB] hover:text-[#541249] sm:inline-flex"
               >
                 {copy.login}
               </Button>
               <Button
                 size="sm"
                 onClick={() => setView("register")}
-                className="btn-nexora hidden sm:inline-flex"
+                className="btn-nexora hidden h-10 rounded-[1.05rem] px-[1.1rem] shadow-[inset_0_1px_0_rgba(255,255,255,.24),inset_0_-1px_0_rgba(19,4,16,.28),0_9px_24px_rgba(56,12,49,.25)] sm:inline-flex"
               >
                 {copy.register}
               </Button>
@@ -291,7 +298,7 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
             <SheetTrigger asChild>
               <button
                 data-control="icon"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#541249]/10 bg-white/80 text-[#541249] shadow-[0_4px_14px_rgba(56,12,49,.06)] hover:bg-[#F7EAF5] lg:hidden"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-[1.05rem] border border-[#541249]/12 bg-white/92 text-[#541249] shadow-[inset_0_1px_0_rgba(255,255,255,.95),0_6px_16px_rgba(56,12,49,.07)] hover:-translate-y-0.5 hover:border-[#541249]/25 hover:bg-[#F7EAF5] hover:shadow-[0_10px_22px_rgba(56,12,49,.11)] lg:hidden"
                 aria-label="Menu"
                 aria-expanded={open}
               >
@@ -336,12 +343,12 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
               </button>
             ))}
             <Button
-              variant="ghost"
+              variant="outline"
               onClick={() => {
                 setView("login");
                 setOpen(false);
               }}
-              className="mt-2 justify-start sm:hidden"
+              className="mt-2 h-12 w-full justify-center rounded-[1.1rem] sm:hidden"
             >
               {copy.login}
             </Button>
@@ -350,7 +357,7 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
                 setView("register");
                 setOpen(false);
               }}
-              className="mt-2 btn-nexora"
+              className="mt-2 h-12 w-full rounded-[1.1rem] btn-nexora"
             >
               {copy.register}
             </Button>

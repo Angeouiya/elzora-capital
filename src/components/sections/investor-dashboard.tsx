@@ -13,6 +13,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PayoutDialog } from "@/components/investor/payout-dialog";
 import { KycDialog } from "@/components/investor/kyc-dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   PieChart,
   Pie,
   Cell,
@@ -37,6 +47,8 @@ import {
   Clock,
   UserRoundCheck,
   FileCheck2,
+  Loader2,
+  Undo2,
 } from "lucide-react";
 
 const CHART_COLORS = ["#541249", "#7A246C", "#250820", "#A55B98", "#C62828"];
@@ -63,6 +75,15 @@ interface DashboardInvestment {
   status: string;
   signedAt: string | null;
   paymentConfirmedAt: string | null;
+  reflectionEndsAt: string | null;
+  refundableUntil: string | null;
+  cancelledAt: string | null;
+  cancellationReason: string | null;
+  cancellation: {
+    available: boolean;
+    deadline: string | null;
+    state: string;
+  };
   createdAt: string;
   expectedRepayment: number | null;
   receivedToDate: number;
@@ -217,6 +238,12 @@ function localizedNotification(notification: DashboardNotification, locale: Loca
     return { title: "Payout requested", message: "Your request is being processed securely. We will notify you when it is complete." };
   }
   if (notification.type === "investment") {
+    if (/annulé/i.test(`${notification.title} ${notification.message}`)) {
+      return {
+        title: "Commitment cancelled",
+        message: "Your commitment was cancelled before payment. No funds were charged.",
+      };
+    }
     const match = notification.message.match(/engagement de (.+?) FCFA pour « (.+?) »/i);
     return {
       title: "Subscription saved",
@@ -253,6 +280,9 @@ export function InvestorDashboard() {
   const [reloadKey, setReloadKey] = useState(0);
   const [payoutOpen, setPayoutOpen] = useState(false);
   const [kycOpen, setKycOpen] = useState(false);
+  const [cancelTarget, setCancelTarget] = useState<DashboardInvestment | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
 
   const reload = useCallback(() => {
     fetch("/api/investor/dashboard")
@@ -275,6 +305,39 @@ export function InvestorDashboard() {
         setLoading(false);
       });
   }, [en]);
+
+  const cancelInvestment = async () => {
+    if (!cancelTarget || cancelling) return;
+    setCancelling(true);
+    setCancelError(null);
+    try {
+      const response = await fetch(`/api/investor/investments/${cancelTarget.id}/cancel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: "withdrawn_during_reflection" }),
+      });
+      const result = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        throw new Error(
+          en
+            ? "This commitment can no longer be cancelled from your account."
+            : result.error || "Cet engagement ne peut plus être annulé depuis votre espace."
+        );
+      }
+      setCancelTarget(null);
+      setReloadKey((current) => current + 1);
+    } catch (cancelFailure) {
+      setCancelError(
+        cancelFailure instanceof Error
+          ? cancelFailure.message
+          : en
+            ? "Cancellation is temporarily unavailable."
+            : "L'annulation est momentanément indisponible."
+      );
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   useEffect(() => {
     if (!userEmail) return;
@@ -344,7 +407,7 @@ export function InvestorDashboard() {
   const availableBalance = portfolio?.availableBalance ?? 0;
 
   const pendingCount = investments.filter(
-    (i) => i.status === "pending_payment"
+    (i) => ["pending_payment", "payment_pending"].includes(i.status)
   ).length;
   const sectorAllocation = (portfolio?.bySector ?? []).map((item) => ({
     ...item,
@@ -499,7 +562,8 @@ export function InvestorDashboard() {
                 const company = p?.company;
                 const companyLabel =
                   company?.tradeName || company?.legalName || "—";
-                const isPending = inv.status === "pending_payment";
+                const isPending = ["pending_payment", "payment_pending"].includes(inv.status);
+                const isCancelled = inv.status === "cancelled";
                 const received = inv.receivedToDate ?? 0;
                 return (
                   <Card
@@ -558,7 +622,7 @@ export function InvestorDashboard() {
                     </div>
 
                     {/* Financial details — clearly labeled */}
-                    {isDebt && (
+                    {isDebt && !isCancelled && (
                       <div className="mt-3 grid grid-cols-1 gap-2 rounded-md border border-border/60 bg-secondary/40 p-3 sm:grid-cols-3">
                         <div>
                           <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
@@ -597,7 +661,7 @@ export function InvestorDashboard() {
                         </div>
                       </div>
                     )}
-                    {isEquity && (
+                    {isEquity && !isCancelled && (
                       <div className="mt-3 rounded-md border border-[#D9BFD4] bg-[#FCF8FB] p-3">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
@@ -653,10 +717,39 @@ export function InvestorDashboard() {
                       >
                         <div className="flex items-start gap-2">
                           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[#8a6d00]" />
-                          <p className="text-xs text-[#8a6d00]">
-                            {en ? "Payment pending. We will notify you as soon as it is confirmed." : "Paiement en attente. Vous serez informé dès sa confirmation."}
-                          </p>
+                          <div>
+                            <p className="text-xs text-[#8a6d00]">
+                              {en ? "Payment pending. We will notify you as soon as it is confirmed." : "Paiement en attente. Vous serez informé dès sa confirmation."}
+                            </p>
+                            {inv.cancellation.available && inv.cancellation.deadline ? (
+                              <p className="mt-1 text-[11px] text-[#8a6d00]/80">
+                                {en ? "You may change your mind until" : "Vous pouvez changer d'avis jusqu'au"}{" "}
+                                {new Date(inv.cancellation.deadline).toLocaleString(dateLocale, {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}.
+                              </p>
+                            ) : null}
+                          </div>
                         </div>
+                        {inv.cancellation.available ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-8 shrink-0 border-[#d8b14c] bg-white text-[11px] text-[#684f00] hover:bg-[#fffdf4]"
+                            onClick={() => {
+                              setCancelError(null);
+                              setCancelTarget(inv);
+                            }}
+                          >
+                            <Undo2 className="h-3.5 w-3.5" />
+                            {en ? "Change my mind" : "Changer d'avis"}
+                          </Button>
+                        ) : null}
                       </div>
                     )}
                   </Card>
@@ -812,6 +905,73 @@ export function InvestorDashboard() {
         displayCurrency={displayCurrency}
         onCompleted={() => setReloadKey((current) => current + 1)}
       />
+
+      <AlertDialog
+        open={!!cancelTarget}
+        onOpenChange={(open) => {
+          if (!open && !cancelling) {
+            setCancelTarget(null);
+            setCancelError(null);
+          }
+        }}
+      >
+        <AlertDialogContent className="rounded-[1.6rem] border-[#541249]/12 bg-[#fffefd] p-5 sm:p-6">
+          <AlertDialogHeader>
+            <div className="mb-1 flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f4ebf2] text-[#541249]">
+              <Undo2 className="h-5 w-5" />
+            </div>
+            <AlertDialogTitle className="text-xl font-black tracking-[-.03em]">
+              {en ? "Cancel this commitment?" : "Annuler cet engagement ?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="leading-6">
+              {en
+                ? "No payment has been confirmed. The reserved amount will be released immediately and the opportunity will become available again."
+                : "Aucun paiement n'a été confirmé. Le montant réservé sera libéré immédiatement et redeviendra disponible sur l'offre."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {cancelTarget ? (
+            <div className="rounded-2xl border border-[#541249]/10 bg-[#f8f2f7] p-4">
+              <p className="text-sm font-bold text-foreground">{cancelTarget.project?.title}</p>
+              <p className="tnum mt-1 text-lg font-black text-[#541249]">{money(cancelTarget.amount)}</p>
+              {cancelTarget.cancellation.deadline ? (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {en ? "Reflection period ends" : "Fin du délai de réflexion"}{" "}
+                  {new Date(cancelTarget.cancellation.deadline).toLocaleString(dateLocale, {
+                    day: "2-digit",
+                    month: "long",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}.
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+          {cancelError ? (
+            <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+              {cancelError}
+            </p>
+          ) : null}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={cancelling}>
+              {en ? "Keep commitment" : "Conserver l'engagement"}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={cancelling}
+              className="bg-[#541249] text-white hover:bg-[#380c31]"
+              onClick={(event) => {
+                event.preventDefault();
+                void cancelInvestment();
+              }}
+            >
+              {cancelling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Undo2 className="h-4 w-4" />}
+              {cancelling
+                ? en ? "Cancelling…" : "Annulation…"
+                : en ? "Confirm cancellation" : "Confirmer l'annulation"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
     </section>
   );
