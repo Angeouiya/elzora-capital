@@ -2,7 +2,7 @@
 
 import { useAppStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, BriefcaseBusiness, CircleDollarSign, ReceiptText, WalletCards } from "lucide-react";
+import { ArrowRight, BadgePercent, CalendarClock, CircleDollarSign, ReceiptText, WalletCards } from "lucide-react";
 
 const COPY = {
   fr: {
@@ -35,7 +35,7 @@ const COPY = {
   },
 } as const;
 
-const FEE_ICONS = [BriefcaseBusiness, ReceiptText, CircleDollarSign];
+const FEE_ICONS = [BadgePercent, CalendarClock, CircleDollarSign];
 
 export function Fees() {
   const setView = useAppStore((state) => state.setView);
@@ -44,8 +44,9 @@ export function Fees() {
   const fees: ReadonlyArray<readonly [string, string, string, string]> = copy.fees;
 
   return (
-    <div className="page-shell reveal-in">
-      <section className="public-hero px-6 py-10 text-white sm:px-10 sm:py-14">
+    <div className="reveal-in overflow-x-clip">
+      <section className="public-hero public-page-hero text-white">
+        <div className="public-page-hero-inner">
         <p className="editorial-kicker">{copy.kicker}</p>
         <h1 className="mt-5 max-w-4xl text-4xl font-black leading-[.95] tracking-[-.055em] sm:text-6xl">
           {copy.title}
@@ -53,13 +54,16 @@ export function Fees() {
         <p className="mt-5 max-w-2xl text-sm leading-7 text-white/68 sm:text-base">
           {copy.intro}
         </p>
+        </div>
       </section>
 
-      <section className="mt-8 grid gap-4 md:grid-cols-3">
+      <div className="page-shell public-page-body">
+
+      <section className="public-card-grid grid gap-4 md:grid-cols-3">
         {fees.map(([audience, title, value, description], index) => {
           const Icon = FEE_ICONS[index];
           return (
-          <article key={title} className="public-panel p-5 sm:p-6">
+          <article key={title} className="public-panel public-info-card p-5 sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-nexora-pale text-positive">
                 <Icon className="h-5 w-5" />
@@ -76,7 +80,7 @@ export function Fees() {
         })}
       </section>
 
-      <section className="mt-6 rounded-2xl border border-border bg-white/75 p-5 sm:p-7">
+      <section className="public-info-card mt-6 rounded-2xl border border-border bg-white/75 p-5 sm:p-7">
         <div className="flex items-start gap-4">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#250820] text-white">
             <WalletCards className="h-5 w-5" />
@@ -91,13 +95,15 @@ export function Fees() {
       </section>
 
       <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-        <Button size="lg" className="btn-nexora" onClick={() => setView("explore")}>
+        <Button size="lg" className="btn-nexora w-full sm:w-auto" onClick={() => setView("explore")}>
           {copy.explore}
           <ArrowRight className="h-4 w-4" />
         </Button>
-        <Button size="lg" variant="outline" onClick={() => setView("how")}>
+        <Button size="lg" variant="outline" className="w-full sm:w-auto" onClick={() => setView("how")}>
           {copy.how}
+          <ReceiptText className="h-4 w-4" />
         </Button>
+      </div>
       </div>
     </div>
   );

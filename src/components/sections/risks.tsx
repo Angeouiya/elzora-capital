@@ -3,9 +3,10 @@
 import { useAppStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import {
+  Activity,
+  ArrowRight,
   ArrowUpRight,
   BanknoteArrowDown,
-  BriefcaseBusiness,
   FileCheck2,
   ScanSearch,
   Scale,
@@ -49,7 +50,7 @@ const COPY = {
   },
 } as const;
 
-const RISK_ICONS = [BanknoteArrowDown, BriefcaseBusiness, ScanSearch, Scale];
+const RISK_ICONS = [BanknoteArrowDown, Activity, ScanSearch, Scale];
 
 export function Risks() {
   const setView = useAppStore((state) => state.setView);
@@ -58,20 +59,24 @@ export function Risks() {
   const risks: ReadonlyArray<readonly [string, string]> = copy.risks;
 
   return (
-    <div className="page-shell reveal-in">
-      <section className="public-hero px-6 py-10 text-white sm:px-10 sm:py-14">
+    <div className="reveal-in overflow-x-clip">
+      <section className="public-hero public-page-hero text-white">
+        <div className="public-page-hero-inner">
         <p className="editorial-kicker">{copy.kicker}</p>
         <h1 className="mt-5 max-w-4xl text-4xl font-black leading-[.95] tracking-[-.055em] sm:text-6xl">{copy.title}</h1>
         <p className="mt-5 max-w-2xl text-sm leading-7 text-white/68 sm:text-base">
           {copy.intro}
         </p>
+        </div>
       </section>
 
-      <section className="mt-8 grid gap-4 sm:grid-cols-2">
+      <div className="page-shell public-page-body">
+
+      <section className="public-card-grid grid gap-4 sm:grid-cols-2">
         {risks.map(([title, description], index) => {
           const Icon = RISK_ICONS[index];
           return (
-          <article key={title} className="public-panel p-5 sm:p-6">
+          <article key={title} className="public-panel public-info-card p-5 sm:p-6">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-nexora-pale text-positive">
               <Icon className="h-5 w-5" />
             </span>
@@ -82,7 +87,7 @@ export function Risks() {
         })}
       </section>
 
-      <section className="mt-6 rounded-2xl border border-[#541249]/20 bg-[linear-gradient(135deg,#F7EAF5_0%,#FFFFFF_100%)] p-5 sm:p-7">
+      <section className="public-info-card mt-6 rounded-2xl border border-[#541249]/20 bg-[linear-gradient(135deg,#F7EAF5_0%,#FFFFFF_100%)] p-5 sm:p-7">
         <div className="flex items-start gap-4">
           <ShieldAlert className="mt-0.5 h-6 w-6 shrink-0 text-positive" />
           <div>
@@ -122,9 +127,11 @@ export function Risks() {
       </section>
 
       <div className="mt-8">
-        <Button className="btn-nexora" size="lg" onClick={() => setView("explore")}>
+        <Button className="btn-nexora w-full sm:w-auto" size="lg" onClick={() => setView("explore")}>
           {copy.cta}
+          <ArrowRight className="h-4 w-4" />
         </Button>
+      </div>
       </div>
     </div>
   );

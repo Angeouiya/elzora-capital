@@ -6,10 +6,14 @@ import {
   FileText,
   Coins,
   CalendarDays,
-  BriefcaseBusiness,
+  CircleDollarSign,
+  ClipboardSignature,
+  HandCoins,
+  ScanSearch,
+  Send,
   ShieldCheck,
   TriangleAlert,
-  LayoutGrid,
+  Waypoints,
   Wallet,
 } from "lucide-react";
 import { useAppStore } from "@/lib/store";
@@ -77,8 +81,8 @@ const COPY = {
   },
 } as const;
 
-const INVESTOR_ICONS = [Search, FileText, Coins, CalendarDays];
-const COMPANY_ICONS = [BriefcaseBusiness, FileText, LayoutGrid, Wallet];
+const INVESTOR_ICONS = [Search, FileText, HandCoins, CalendarDays];
+const COMPANY_ICONS = [ClipboardSignature, ScanSearch, Send, CircleDollarSign];
 
 export function HowItWorks() {
   const locale = useAppStore((state) => state.locale);
@@ -87,8 +91,9 @@ export function HowItWorks() {
   const companySteps: ReadonlyArray<readonly [string, string]> = copy.companySteps;
   const pricingItems: ReadonlyArray<readonly [string, string, string, string]> = copy.pricingItems;
   return (
-    <div className="page-shell reveal-in">
-      <section className="public-hero mb-8 px-6 py-9 text-white sm:px-10 sm:py-12">
+    <div className="reveal-in overflow-x-clip">
+      <section className="public-hero public-page-hero text-white">
+        <div className="public-page-hero-inner">
         <p className="editorial-kicker">{copy.kicker}</p>
         <h1 className="mt-5 max-w-3xl text-4xl font-black leading-[.95] tracking-[-.055em] sm:text-6xl">
           {copy.title}
@@ -96,12 +101,15 @@ export function HowItWorks() {
         <p className="mt-5 max-w-2xl text-sm leading-7 text-white/65 sm:text-base">
           {copy.intro}
         </p>
+        </div>
       </section>
 
+      <div className="page-shell public-page-body">
+
       {/* Two columns */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="public-card-grid grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
         {/* Investisseurs */}
-        <Card className="rounded-[1.5rem] border-[#541249]/10 bg-white/85">
+        <Card className="public-info-card rounded-[1.5rem] border-[#541249]/10 bg-white/85">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Wallet className="h-5 w-5" />
@@ -134,10 +142,10 @@ export function HowItWorks() {
         </Card>
 
         {/* Entreprises */}
-        <Card className="rounded-[1.5rem] border-[#541249]/10 bg-[#f4ebf2]">
+        <Card className="public-info-card rounded-[1.5rem] border-[#541249]/10 bg-[#f4ebf2]">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <BriefcaseBusiness className="h-5 w-5" />
+              <Waypoints className="h-5 w-5" />
               {copy.companyTitle}
             </CardTitle>
           </CardHeader>
@@ -166,7 +174,7 @@ export function HowItWorks() {
       </div>
 
       {/* Notre rôle */}
-      <Card className="mt-6 rounded-[1.5rem] border-[#541249]/10 bg-white/85">
+      <Card className="public-info-card mt-6 rounded-[1.5rem] border-[#541249]/10 bg-white/85">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <ShieldCheck className="h-5 w-5" />
@@ -181,7 +189,7 @@ export function HowItWorks() {
       </Card>
 
       {/* Tarification */}
-      <Card className="mt-6 rounded-[1.5rem] border-[#541249]/10 bg-white/85">
+      <Card className="public-info-card mt-6 rounded-[1.5rem] border-[#541249]/10 bg-white/85">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Coins className="h-5 w-5" />
@@ -193,7 +201,7 @@ export function HowItWorks() {
             {pricingItems.map(([label, value, description, audience]) => (
               <div
                 key={label}
-                className="rounded-lg border border-border bg-card p-4"
+                className="public-mini-card rounded-xl border border-border bg-card p-4"
               >
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -222,7 +230,7 @@ export function HowItWorks() {
 
       {/* Risques */}
       <div
-        className="mt-6 border-l-4 p-4"
+        className="mt-6 rounded-2xl border border-red-900/10 border-l-4 p-4 sm:p-5"
         style={{ borderColor: "#C62828", backgroundColor: "#FFF5F5" }}
       >
         <div className="flex items-start gap-3">
@@ -236,6 +244,7 @@ export function HowItWorks() {
             </p>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
