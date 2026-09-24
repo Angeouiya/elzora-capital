@@ -148,7 +148,7 @@ export function MemberHome() {
   ];
 
   return (
-    <section className="page-shell member-home reveal-in">
+    <section className="page-shell member-home private-app-screen reveal-in">
       <header className="flex items-center justify-between gap-4 pb-4 sm:pb-5">
         <div>
           <p className="text-sm font-medium text-muted-foreground">{copy.greeting}</p>
@@ -231,7 +231,7 @@ export function MemberHome() {
               data-control="choice"
               key={action.view}
               onClick={() => setView(action.view)}
-              className="group flex min-h-24 flex-col items-start justify-between rounded-2xl border border-[#541249]/10 bg-white p-3 text-left shadow-[0_8px_24px_rgba(56,12,49,.045)] hover:border-[#541249]/22 hover:bg-[#fcf8fb] sm:min-h-28 sm:p-4"
+              className="group flex min-h-20 flex-col items-start justify-between rounded-2xl border border-[#541249]/10 bg-white p-3 text-left shadow-[0_8px_24px_rgba(56,12,49,.045)] hover:border-[#541249]/22 hover:bg-[#fcf8fb] sm:min-h-24 sm:p-4"
             >
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f4ebf2] text-[#541249] transition-colors group-hover:bg-[#541249] group-hover:text-white">
                 <Icon className="h-4.5 w-4.5" />
@@ -272,7 +272,7 @@ export function MemberHome() {
         )}
       </section>
 
-      <section className="mt-7 rounded-[1.35rem] border border-[#541249]/10 bg-white p-4 sm:mt-9 sm:p-5">
+      <section className="private-notice mt-7 p-4 sm:mt-9 sm:p-5">
         <div className="flex items-center gap-2">
           <BellRing className="h-4.5 w-4.5 text-[#541249]" />
           <h2 className="text-sm font-black">{copy.activity}</h2>

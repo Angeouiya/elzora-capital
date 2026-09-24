@@ -38,7 +38,7 @@ import {
   AlertTriangle,
   RefreshCw,
   Info,
-  Landmark,
+  SlidersHorizontal,
   Wallet,
   Briefcase,
   LogIn,
@@ -72,7 +72,7 @@ interface MeResponse {
 const STEPS = [
   { id: 1, label: ["Entreprise", "Company"], icon: BadgeCheck },
   { id: 2, label: ["Projet", "Project"], icon: Briefcase },
-  { id: 3, label: ["Conditions", "Terms"], icon: Landmark },
+  { id: 3, label: ["Conditions", "Terms"], icon: SlidersHorizontal },
   { id: 4, label: ["Budget", "Budget"], icon: Wallet },
   { id: 5, label: ["Récapitulatif", "Review"], icon: CheckCircle2 },
 ] as const;
@@ -385,7 +385,7 @@ export function CompanySubmit() {
       if (!res.ok) {
         toast({
           title: copy.draftFailed,
-          description: body?.error || copy.retry,
+          description: copy.retry,
           variant: "destructive",
         });
         return;
@@ -418,7 +418,7 @@ export function CompanySubmit() {
       if (!res.ok) {
         toast({
           title: copy.submitFailed,
-          description: body?.error || copy.retry,
+          description: copy.retry,
           variant: "destructive",
         });
         return;
@@ -446,28 +446,31 @@ export function CompanySubmit() {
   const progressPct = (step / STEPS.length) * 100;
 
   return (
-    <section className="page-shell max-w-3xl reveal-in">
-      {/* Header */}
-      <div className="mb-4 flex items-center gap-2">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={() => setView("company_dashboard")}
-          className="h-9 w-9 text-muted-foreground"
-          aria-label={copy.back}
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <h1 className="text-lg font-bold tracking-tight text-foreground sm:text-xl">
-          {copy.title}
-        </h1>
-      </div>
+    <section className="page-shell private-app-screen private-submit-page max-w-3xl reveal-in">
+      <div className="private-submit-head mb-4 sm:mb-6">
+        <div className="flex items-center gap-2 border-b border-[#541249]/8 px-3 py-3 sm:px-4">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => setView("company_dashboard")}
+            className="h-9 w-9 text-muted-foreground"
+            aria-label={copy.back}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[#6c195e]">
+              {copy.step} {step} / {STEPS.length}
+            </p>
+            <h1 className="truncate text-lg font-black tracking-[-.025em] text-foreground sm:text-xl">
+              {copy.title}
+            </h1>
+          </div>
+        </div>
 
-      {/* Progress bar + steps */}
-      <div className="mb-6">
-        <div className="mb-2 flex items-center justify-between">
-          <ol className="flex flex-1 items-center gap-1 overflow-x-auto">
+        <div className="px-3 pb-3 pt-2.5 sm:px-4 sm:pb-4">
+          <ol className="private-step-rail flex items-center gap-1.5 overflow-x-auto pb-1">
             {STEPS.map((s) => {
               const Icon = s.icon;
               const isActive = s.id === step;
@@ -484,7 +487,7 @@ export function CompanySubmit() {
                     onClick={() => {
                       if (s.id < step || stepValid()) setStep(s.id);
                     }}
-                    className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                    className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
                       isActive
                         ? "bg-nexora-lime text-nexora-black"
                         : isDone
@@ -500,12 +503,12 @@ export function CompanySubmit() {
               );
             })}
           </ol>
+          <Progress value={progressPct} className="mt-2 h-1.5" />
         </div>
-        <Progress value={progressPct} className="h-1.5" />
       </div>
 
-      <Card>
-        <CardHeader>
+      <Card className="private-form-card">
+        <CardHeader className="border-b border-[#541249]/8 pb-5">
           <CardTitle className="text-base">
             {copy.step} {step} / {STEPS.length} — {stepLabel(step - 1)}
           </CardTitle>
@@ -1142,7 +1145,7 @@ export function CompanySubmit() {
           )}
 
           {/* Footer — navigation */}
-          <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="private-form-actions mt-6 flex flex-col gap-2 border-t border-[#541249]/8 pt-5 sm:flex-row sm:items-center sm:justify-between">
             <Button
               type="button"
               variant="ghost"

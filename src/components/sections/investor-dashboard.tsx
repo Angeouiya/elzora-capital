@@ -352,111 +352,94 @@ export function InvestorDashboard() {
   }));
 
   return (
-    <section className="page-shell reveal-in">
-      {/* Top bar — identity */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-nexora-black text-sm font-bold text-nexora-lime">
-            {initials || "??"}
+    <section className="page-shell private-app-screen reveal-in">
+      <div className="private-dashboard-hero mb-6">
+        <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <div className="flex min-w-0 items-center gap-3.5">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/12 bg-white/10 text-sm font-black text-white backdrop-blur-xl">
+              {initials || "??"}
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-[.16em] text-white/55">
+                {en ? "My portfolio" : "Mon portefeuille"}
+              </p>
+              <h1 className="truncate text-xl font-black tracking-[-.035em] text-white sm:text-2xl">
+                {fullName}
+              </h1>
+              <p className="truncate text-xs text-white/58">{user.email}</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-lg font-bold tracking-tight text-foreground sm:text-xl">
-              {fullName}
-            </h1>
-            <p className="text-xs text-muted-foreground">{user.email}</p>
+          {user.kycStatus === "verified" ? (
+            <div className="flex w-fit items-center gap-2 rounded-full border border-white/12 bg-white/10 px-3 py-2 text-xs font-semibold text-white backdrop-blur-xl">
+              <ShieldCheck className="h-3.5 w-3.5 text-[#e4b4d9]" />
+              {en ? "Identity verified" : "Identité vérifiée"}
+            </div>
+          ) : (
+            <Button
+              variant="outline"
+              className="w-full border-white/15 bg-white text-[#541249] hover:border-white/20 hover:bg-[#f8edf5] sm:w-auto"
+              onClick={() => setKycOpen(true)}
+            >
+              <UserRoundCheck className="h-4 w-4" />
+              {user.kycStatus === "pending" || user.kycStatus === "review"
+                ? en ? "Verification in progress" : "Vérification en cours"
+                : en ? "Verify my identity" : "Vérifier mon identité"}
+            </Button>
+          )}
+        </div>
+
+        <div className="private-metric-grid">
+          <div className="private-metric">
+            <div className="flex items-center justify-between gap-3 text-white/58">
+              <span className="text-[11px] font-medium">{en ? "Committed capital" : "Capital engagé"}</span>
+              <Wallet className="h-4 w-4 shrink-0" />
+            </div>
+            <p className="tnum mt-2 text-xl font-black tracking-[-.035em] text-white sm:text-2xl">{money(totalInvested)}</p>
+            <p className="mt-1 text-[10px] leading-4 text-white/52">
+              {portfolio?.activeDeals ?? 0} {en ? ((portfolio?.activeDeals ?? 0) > 1 ? "active deals" : "active deal") : ((portfolio?.activeDeals ?? 0) > 1 ? "dossiers actifs" : "dossier actif")}
+            </p>
+          </div>
+          <div className="private-metric">
+            <div className="flex items-center justify-between gap-3 text-white/58">
+              <span className="text-[11px] font-medium">{en ? "Returns received" : "Revenus reçus"}</span>
+              <Coins className="h-4 w-4 shrink-0" />
+            </div>
+            <p className="tnum mt-2 text-xl font-black tracking-[-.035em] text-white sm:text-2xl">{money(receivedTotal)}</p>
+            <p className="mt-1 text-[10px] leading-4 text-white/52">
+              {receivedTotal > 0
+                ? (en ? "Capital and interest distributed" : "Capital et intérêts distribués")
+                : (en ? "No distribution yet" : "Aucune distribution pour le moment")}
+            </p>
+          </div>
+          <div className="private-metric">
+            <div className="flex items-center justify-between gap-3 text-white/58">
+              <span className="text-[11px] font-medium">{en ? "Available" : "Disponible"}</span>
+              <ArrowDownToLine className="h-4 w-4 shrink-0" />
+            </div>
+            <p className="tnum mt-2 text-xl font-black tracking-[-.035em] text-white sm:text-2xl">{money(availableBalance)}</p>
+            {availableBalance > 0 && portfolio?.payoutsEnabled ? (
+              <Button
+                size="sm"
+                className="mt-2 h-8 border-white/15 bg-white px-3 text-[11px] text-[#541249] hover:bg-[#f8edf5]"
+                onClick={() => setPayoutOpen(true)}
+              >
+                <ArrowDownToLine className="h-3.5 w-3.5" />
+                {en ? "Request payout" : "Demander un versement"}
+              </Button>
+            ) : (
+              <p className="mt-1 text-[10px] leading-4 text-white/52">
+                {availableBalance > 0
+                  ? (en ? "Mobile Money activation in progress" : "Activation Mobile Money en cours")
+                  : (en ? "Your distributions will appear here" : "Vos distributions apparaîtront ici")}
+              </p>
+            )}
           </div>
         </div>
-        {user.kycStatus === "verified" ? (
-          <div className="flex items-center gap-2 rounded-full bg-nexora-pale px-3 py-1.5 text-xs font-medium text-positive">
-            <ShieldCheck className="h-3.5 w-3.5" />
-            {en ? "Identity verified" : "Identité vérifiée"}
-          </div>
-        ) : (
-          <Button
-            variant="outline"
-            className="border-[#D9BFD4] bg-[#FCF8FB] text-[#541249] hover:bg-[#F5EAF3]"
-            onClick={() => setKycOpen(true)}
-          >
-            <UserRoundCheck className="h-4 w-4" />
-            {user.kycStatus === "pending" || user.kycStatus === "review"
-              ? en ? "Verification in progress" : "Vérification en cours"
-              : en ? "Verify my identity" : "Vérifier mon identité"}
-          </Button>
-        )}
-      </div>
-
-      {/* 3 metrics max */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {/* 1. Capital engagé */}
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">
-              {en ? "Committed capital" : "Capital engagé"}
-            </span>
-            <Wallet className="h-4 w-4 text-foreground" />
-          </div>
-          <p className="tnum mt-2 text-2xl font-bold text-foreground">
-            {money(totalInvested)}
-          </p>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">
-            {en ? "Across" : "Réparti sur"} {portfolio?.activeDeals ?? 0}{" "}
-            {en ? ((portfolio?.activeDeals ?? 0) > 1 ? "active deals" : "active deal") : ((portfolio?.activeDeals ?? 0) > 1 ? "dossiers actifs" : "dossier actif")}
-          </p>
-        </Card>
-
-        {/* 2. Revenus reçus */}
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">
-              {en ? "Returns received" : "Revenus reçus"}
-            </span>
-            <Coins className="h-4 w-4 text-positive" />
-          </div>
-          <p className="tnum mt-2 text-2xl font-bold text-positive">
-            {money(receivedTotal)}
-          </p>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">
-            {receivedTotal > 0
-              ? (en ? "Principal and interest distributed" : "Capital et intérêts distribués")
-              : (en ? "No repayment received yet" : "Aucun remboursement reçu pour l'instant")}
-          </p>
-        </Card>
-
-        {/* 3. Disponible */}
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">
-              {en ? "Available" : "Disponible"}
-            </span>
-            <ArrowDownToLine className="h-4 w-4 text-muted-foreground" />
-          </div>
-          <p className="tnum mt-2 text-2xl font-bold text-foreground">
-            {money(availableBalance)}
-          </p>
-          {availableBalance > 0 && portfolio?.payoutsEnabled ? (
-            <Button
-              size="sm"
-              className="btn-nexora mt-2 h-7 px-3 text-xs"
-              onClick={() => setPayoutOpen(true)}
-            >
-              <ArrowDownToLine className="mr-1.5 h-3.5 w-3.5" />
-              {en ? "Request payout" : "Demander un versement"}
-            </Button>
-          ) : availableBalance > 0 ? (
-            <p className="mt-1 text-[11px] font-medium text-positive">
-              {en ? "Mobile Money payouts are being activated" : "Versements Mobile Money en cours d’activation"}
-            </p>
-          ) : (
-            <p className="mt-0.5 text-[11px] text-muted-foreground">
-              {en ? "Your returns will appear here after distribution" : "Vos revenus apparaîtront ici après distribution"}
-            </p>
-          )}
-        </Card>
       </div>
 
       {/* Prochaine étape banner — pending investments */}
       {pendingCount > 0 && (
-        <div className="mt-6 flex flex-col items-start gap-3 rounded-lg border border-[#541249]/30 bg-nexora-pale p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="private-notice mt-6 flex flex-col items-start gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <Clock className="mt-0.5 h-5 w-5 shrink-0 text-positive" />
             <div>
@@ -477,7 +460,7 @@ export function InvestorDashboard() {
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Investments list */}
         <div className="lg:col-span-2">
-          <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-foreground">
+          <h2 className="private-section-heading">
             <Wallet className="h-4 w-4" />
             {en ? "My investments" : "Mes investissements"}
             <span className="tnum text-xs font-normal text-muted-foreground">
@@ -486,7 +469,7 @@ export function InvestorDashboard() {
           </h2>
 
           {investments.length === 0 ? (
-            <Card className="p-8 text-center">
+            <Card className="private-list-card p-8 text-center">
               <Wallet className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
               <p className="text-sm font-medium text-foreground">
                 {en ? "You do not have any investments yet" : "Vous n’avez encore aucun investissement"}
@@ -517,7 +500,7 @@ export function InvestorDashboard() {
                 return (
                   <Card
                     key={inv.id}
-                    className="cursor-pointer p-4 transition-shadow hover:shadow-md"
+                    className="private-list-card cursor-pointer p-4"
                     onClick={() => inv.offerId && openOffer(inv.offerId)}
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -683,12 +666,12 @@ export function InvestorDashboard() {
         <div className="flex flex-col gap-6">
           {/* Allocation par secteur */}
           <div>
-            <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-foreground">
+            <h2 className="private-section-heading">
               <PieIcon className="h-4 w-4" />
               {en ? "Allocation by sector" : "Répartition par secteur"}
             </h2>
             {sectorAllocation.length > 0 ? (
-              <Card className="p-4">
+              <Card className="private-list-card p-4">
                 <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
                     <Pie
@@ -741,7 +724,7 @@ export function InvestorDashboard() {
                 </div>
               </Card>
             ) : (
-              <Card className="p-8 text-center text-sm text-muted-foreground">
+              <Card className="private-list-card p-8 text-center text-sm text-muted-foreground">
                 {en ? "No allocation yet" : "Pas encore de répartition"}
               </Card>
             )}
@@ -749,16 +732,16 @@ export function InvestorDashboard() {
 
           {/* Notifications */}
           <div>
-            <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-foreground">
+            <h2 className="private-section-heading">
               <Bell className="h-4 w-4" />
               {en ? "Notifications" : "Notifications"}
             </h2>
             {notifications.length === 0 ? (
-              <Card className="p-8 text-center text-sm text-muted-foreground">
+              <Card className="private-list-card p-8 text-center text-sm text-muted-foreground">
                 {en ? "No notifications" : "Aucune notification"}
               </Card>
             ) : (
-              <Card className="max-h-96 overflow-y-auto p-0">
+              <Card className="private-list-card max-h-96 overflow-y-auto p-0">
                 <ul className="divide-y divide-border">
                   {notifications.map((n) => {
                     const localized = localizedNotification(n, locale);

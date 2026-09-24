@@ -386,7 +386,7 @@ export function CompanyDashboard() {
         error?: string;
         payment?: { checkoutUrl?: string; status?: string };
       };
-      if (!response.ok) throw new Error(payload.error || copy.paymentError);
+      if (!response.ok) throw new Error(copy.paymentUnavailable);
       const checkoutUrl = payload.payment?.checkoutUrl;
       if (!checkoutUrl || payload.payment?.status !== "ready") {
         throw new Error(copy.paymentError);
@@ -396,11 +396,10 @@ export function CompanyDashboard() {
         throw new Error(copy.paymentError);
       }
       window.location.assign(checkout.toString());
-    } catch (paymentError) {
+    } catch {
       toast({
         title: copy.paymentError,
-        description:
-          paymentError instanceof Error ? paymentError.message : copy.paymentError,
+        description: copy.paymentUnavailable,
         variant: "destructive",
       });
       setPayingId(null);
@@ -439,17 +438,16 @@ export function CompanyDashboard() {
         }),
       });
       const payload = (await response.json()) as { error?: string };
-      if (!response.ok) throw new Error(payload.error || dividendCopy.declarationError);
+      if (!response.ok) throw new Error(dividendCopy.declarationError);
       toast({ title: dividendCopy.declared, description: dividendCopy.declaredText });
       setDividendForms((current) => ({ ...current, [issuance.id]: EMPTY_DIVIDEND_FORM }));
       setReloadKey((value) => value + 1);
-    } catch (submissionError) {
+    } catch {
       toast({
         title: dividendCopy.declarationError,
-        description:
-          submissionError instanceof Error
-            ? submissionError.message
-            : dividendCopy.declarationError,
+        description: locale === "fr"
+          ? "Votre déclaration n’a pas pu être transmise. Vérifiez les informations puis réessayez."
+          : "Your declaration could not be submitted. Check the information and try again.",
         variant: "destructive",
       });
     } finally {
@@ -469,7 +467,7 @@ export function CompanyDashboard() {
         error?: string;
         payment?: { checkoutUrl?: string; status?: string };
       };
-      if (!response.ok) throw new Error(payload.error || dividendCopy.paymentError);
+      if (!response.ok) throw new Error(dividendCopy.paymentError);
       const checkoutUrl = payload.payment?.checkoutUrl;
       if (!checkoutUrl || payload.payment?.status !== "ready") {
         throw new Error(dividendCopy.paymentError);
@@ -479,11 +477,12 @@ export function CompanyDashboard() {
         throw new Error(dividendCopy.paymentError);
       }
       window.location.assign(checkout.toString());
-    } catch (paymentError) {
+    } catch {
       toast({
         title: dividendCopy.paymentError,
-        description:
-          paymentError instanceof Error ? paymentError.message : dividendCopy.paymentError,
+        description: locale === "fr"
+          ? "Le règlement ne peut pas être ouvert pour le moment. Réessayez dans quelques instants."
+          : "The payment cannot be opened right now. Please try again shortly.",
         variant: "destructive",
       });
       setDividendAction(null);
@@ -642,128 +641,97 @@ export function CompanyDashboard() {
   const nextPayment = upcomingPayments[0] ?? null;
 
   return (
-    <section className="page-shell reveal-in">
-      {/* Header + context selector */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-md bg-nexora-black text-nexora-lime">
-            <PanelsTopLeft className="h-6 w-6" />
+    <section className="page-shell private-app-screen reveal-in">
+      <div className="private-dashboard-hero mb-7">
+        <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <div className="flex min-w-0 items-center gap-3.5">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/12 bg-white/10 text-white backdrop-blur-xl">
+              <PanelsTopLeft className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-[.16em] text-white/55">
+                {copy.workspace}
+              </p>
+              <h1 className="truncate text-xl font-black tracking-[-.035em] text-white sm:text-2xl">
+                {selectedCompany?.tradeName || selectedCompany?.legalName || copy.personal}
+              </h1>
+              <p className="truncate text-xs text-white/58">
+                {selectedCompany
+                  ? `${selectedCompany.legalForm} · ${getCountryLabel(selectedCompany.country, locale)}`
+                  : copy.select}
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-lg font-bold tracking-tight text-foreground sm:text-xl">
-              {copy.workspace}
-            </h1>
-            <p className="text-xs text-muted-foreground">
-              {selectedCompany
-                ? `${selectedCompany.tradeName || selectedCompany.legalName} · ${selectedCompany.legalForm} · ${getCountryLabel(selectedCompany.country, locale)}`
-                : copy.select}
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            <Select
+              value={selectedCompanyId ?? undefined}
+              onValueChange={(v) => setSelectedCompanyId(v)}
+            >
+              <SelectTrigger size="sm" className="w-full border-white/15 bg-white text-[#380c31] sm:w-[220px]">
+                <SelectValue placeholder={copy.personal} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="personal">{copy.personal}</SelectItem>
+                {memberships.map((m) => (
+                  <SelectItem key={m.company.id} value={m.company.id}>
+                    {m.company.tradeName || m.company.legalName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              className="border-white/15 bg-white text-[#541249] hover:bg-[#f8edf5]"
+              size="sm"
+              onClick={() => setView("company_submit")}
+            >
+              <Plus className="h-4 w-4" />
+              {copy.newFile}
+            </Button>
+          </div>
+        </div>
+
+        <div className="private-metric-grid">
+          <div className="private-metric">
+            <div className="flex items-center justify-between gap-3 text-white/58">
+              <span className="text-[11px] font-medium">{copy.nextDue}</span>
+              <CalendarClock className="h-4 w-4 shrink-0" />
+            </div>
+            <p className="tnum mt-2 text-xl font-black tracking-[-.035em] text-white sm:text-2xl">
+              {nextPayment ? money(nextPayment.totalDue) : copy.noDue}
+            </p>
+            <p className="mt-1 text-[10px] leading-4 text-white/52">
+              {nextPayment
+                ? `${copy.due} n°${nextPayment.installmentNo} · ${new Date(nextPayment.dueDate).toLocaleDateString(dateLocale)}`
+                : copy.afterFunding}
             </p>
           </div>
+          <div className="private-metric">
+            <div className="flex items-center justify-between gap-3 text-white/58">
+              <span className="text-[11px] font-medium">{copy.activeFiles}</span>
+              <Briefcase className="h-4 w-4 shrink-0" />
+            </div>
+            <p className="tnum mt-2 text-xl font-black tracking-[-.035em] text-white sm:text-2xl">{activeProjects.length}</p>
+            <p className="mt-1 text-[10px] leading-4 text-white/52">{companyProjects.length} {copy.totalFiles}</p>
+          </div>
+          <div className="private-metric">
+            <div className="flex items-center justify-between gap-3 text-white/58">
+              <span className="text-[11px] font-medium">{copy.fundedCapital}</span>
+              <Wallet className="h-4 w-4 shrink-0" />
+            </div>
+            <p className="tnum mt-2 text-xl font-black tracking-[-.035em] text-white sm:text-2xl">{money(capitalFunded, true)}</p>
+            <p className="mt-1 text-[10px] leading-4 text-white/52">{copy.raised}</p>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Select
-            value={selectedCompanyId ?? undefined}
-            onValueChange={(v) => setSelectedCompanyId(v)}
-          >
-            <SelectTrigger size="sm" className="w-[220px]">
-              <SelectValue placeholder={copy.personal} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="personal">{copy.personal}</SelectItem>
-              {memberships.map((m) => (
-                <SelectItem key={m.company.id} value={m.company.id}>
-                  {m.company.tradeName || m.company.legalName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* 3 metrics max */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {/* 1. Prochaine échéance */}
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">
-              {copy.nextDue}
-            </span>
-            <CalendarClock className="h-4 w-4 text-foreground" />
-          </div>
-          {nextPayment ? (
-            <>
-              <p className="tnum mt-2 text-xl font-bold text-foreground">
-                {money(nextPayment.totalDue)}
-              </p>
-              <p className="mt-0.5 text-[11px] text-muted-foreground">
-                {copy.due} n°{nextPayment.installmentNo} ·{" "}
-                {new Date(nextPayment.dueDate).toLocaleDateString(dateLocale)}
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="mt-2 text-sm font-semibold text-muted-foreground">
-                {copy.noDue}
-              </p>
-              <p className="mt-0.5 text-[11px] text-muted-foreground">
-                {copy.afterFunding}
-              </p>
-            </>
-          )}
-        </Card>
-
-        {/* 2. Dossiers actifs */}
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">
-              {copy.activeFiles}
-            </span>
-            <Briefcase className="h-4 w-4 text-foreground" />
-          </div>
-          <p className="tnum mt-2 text-2xl font-bold text-foreground">
-            {activeProjects.length}
-          </p>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">
-            {companyProjects.length} {copy.totalFiles}
-          </p>
-        </Card>
-
-        {/* 3. Capital financé */}
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">
-              {copy.fundedCapital}
-            </span>
-            <Wallet className="h-4 w-4 text-foreground" />
-          </div>
-          <p className="tnum mt-2 text-2xl font-bold text-foreground">
-            {money(capitalFunded, true)}
-          </p>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">
-            {copy.raised}
-          </p>
-        </Card>
-      </div>
-
-      {/* Nouveau dossier */}
-      <div className="mt-6 flex justify-end">
-        <Button
-          className="btn-nexora"
-          onClick={() => setView("company_submit")}
-        >
-          <Plus className="mr-1.5 h-4 w-4" />
-          {copy.newFile}
-        </Button>
       </div>
 
       {/* Mes dossiers */}
       <div className="mt-6">
-        <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-foreground">
+        <h2 className="private-section-heading">
           <Briefcase className="h-4 w-4" />
           {copy.myFiles}
         </h2>
         {companyProjects.length === 0 ? (
-          <Card className="p-8 text-center">
+          <Card className="private-list-card p-8 text-center">
             <Briefcase className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
             <p className="text-sm font-medium text-foreground">
               {copy.noFiles}
@@ -799,7 +767,7 @@ export function CompanyDashboard() {
                   : 0;
               const isDebt = p.instrumentType === "debt";
               return (
-                <Card key={p.id} className="p-4">
+                <Card key={p.id} className="private-list-card p-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-semibold text-foreground">
@@ -865,13 +833,13 @@ export function CompanyDashboard() {
 
       {/* Mes financements — repayment schedule for funded/repaying projects */}
       <div className="mt-8">
-        <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-foreground">
+        <h2 className="private-section-heading">
           <HandCoins className="h-4 w-4" />
           {copy.financing}
         </h2>
 
         {/* Notice: pas d'accès aux données investisseurs */}
-        <div className="mb-3 flex items-start gap-2 rounded-md border border-border bg-secondary/60 p-3">
+        <div className="private-notice mb-3 flex items-start gap-2 p-3.5">
           <Lock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
           <p className="text-[11px] leading-relaxed text-muted-foreground">
             {copy.privacy}
@@ -881,7 +849,7 @@ export function CompanyDashboard() {
         {companyProjects.filter(
           (p) => p.offer && p.instrumentType === "debt"
         ).length === 0 ? (
-          <Card className="p-8 text-center text-sm text-muted-foreground">
+          <Card className="private-list-card p-8 text-center text-sm text-muted-foreground">
             {copy.noFinancing}
           </Card>
         ) : (
@@ -913,7 +881,7 @@ export function CompanyDashboard() {
                   className: "bg-secondary text-muted-foreground",
                 };
                 return (
-                  <Card key={p.id} className="p-4">
+                  <Card key={p.id} className="private-list-card p-4">
                     <div className="mb-3 flex items-center justify-between gap-2">
                       <div className="min-w-0">
                         <p className="line-clamp-1 text-sm font-semibold text-foreground">
@@ -1072,7 +1040,7 @@ export function CompanyDashboard() {
 
       {/* Dividendes — equity only */}
       <div className="mt-8">
-        <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-foreground">
+        <h2 className="private-section-heading">
           <BadgeDollarSign className="h-4 w-4" />
           {dividendCopy.title}
         </h2>
@@ -1095,7 +1063,7 @@ export function CompanyDashboard() {
               const canPay = dividend.status === "approved";
               const paying = dividendAction === `pay:${dividend.id}`;
               return (
-                <Card key={dividend.id} className="p-4">
+                <Card key={dividend.id} className="private-list-card p-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <p className="text-sm font-semibold text-foreground">
@@ -1172,7 +1140,7 @@ export function CompanyDashboard() {
         )}
 
         {companyDividendIssuances.length === 0 ? (
-          <Card className="p-8 text-center text-sm text-muted-foreground">
+          <Card className="private-list-card p-8 text-center text-sm text-muted-foreground">
             {dividendCopy.empty}
           </Card>
         ) : (
@@ -1197,7 +1165,7 @@ export function CompanyDashboard() {
                 form.recordDate.length === 10 &&
                 (withholding === 0 || form.taxReference.trim().length > 0);
               return (
-                <Card key={issuance.id} className="p-4 sm:p-5">
+                <Card key={issuance.id} className="private-list-card p-4 sm:p-5">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <p className="text-sm font-semibold text-foreground">
