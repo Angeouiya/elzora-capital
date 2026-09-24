@@ -107,4 +107,6 @@ export interface SimulationResult {
   totalCompanyPayment: number;
   platformRevenue: number;
   sharePct: number;
+  offerAllocationPct?: number;
+  companyOwnershipPct?: number;
 }

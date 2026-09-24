@@ -19,6 +19,9 @@ interface InvestmentPaymentRow extends Record<string, unknown> {
   amount: number;
   status: string;
   paymentRef: string | null;
+  signedAt: string | null;
+  signatureHash: string | null;
+  evidencePresent: number;
 }
 
 export async function POST(req: NextRequest) {
@@ -76,8 +79,13 @@ async function handleInvestmentWebhook(
   const database = getD1();
   const investment = await database
     .prepare(
-      `SELECT id, offerId, investorId, amount, status, paymentRef
-       FROM Investment WHERE id = ? LIMIT 1`
+      `SELECT i.id, i.offerId, i.investorId, i.amount, i.status, i.paymentRef,
+              i.signedAt, i.signatureHash,
+              CASE WHEN se.id IS NULL THEN 0 ELSE 1 END AS evidencePresent
+       FROM Investment i
+       LEFT JOIN SubscriptionEvidence se
+         ON se.investmentId = i.id AND se.signedPayloadHash = i.signatureHash
+       WHERE i.id = ? LIMIT 1`
     )
     .bind(investmentId)
     .first<InvestmentPaymentRow>();
@@ -93,6 +101,12 @@ async function handleInvestmentWebhook(
 
   const status = confirmed.status?.toLowerCase();
   if (status === "completed") {
+    if (!investment.signedAt || !investment.signatureHash || !Boolean(investment.evidencePresent)) {
+      return NextResponse.json(
+        { error: "Souscription non signée à rapprocher" },
+        { status: 409 }
+      );
+    }
     if (investment.status === "confirmed") {
       await finalizeFundedOffer(investment.offerId);
       return NextResponse.json({ received: true, idempotent: true });
@@ -100,7 +114,18 @@ async function handleInvestmentWebhook(
     if (!['pending_payment', 'payment_pending'].includes(investment.status)) {
       return NextResponse.json({ error: "Transaction à rapprocher" }, { status: 409 });
     }
-    await confirmInvestment(req, investment);
+    const didConfirm = await confirmInvestment(req, investment);
+    if (!didConfirm) {
+      const current = await database
+        .prepare(`SELECT status FROM Investment WHERE id = ? LIMIT 1`)
+        .bind(investment.id)
+        .first<{ status: string }>();
+      if (current?.status === "confirmed") {
+        await finalizeFundedOffer(investment.offerId);
+        return NextResponse.json({ received: true, idempotent: true });
+      }
+      return NextResponse.json({ error: "Transaction à rapprocher" }, { status: 409 });
+    }
     await finalizeFundedOffer(investment.offerId);
     return NextResponse.json({ received: true, status: "confirmed" });
   }
@@ -209,17 +234,23 @@ async function reopenCompanyPayment(
   ]);
 }
 
-async function confirmInvestment(req: NextRequest, investment: InvestmentPaymentRow) {
+async function confirmInvestment(req: NextRequest, investment: InvestmentPaymentRow): Promise<boolean> {
   const database = getD1();
   const now = isoNow();
   const eventId = crypto.randomUUID();
   const amount = Number(investment.amount);
-  await database.batch([
+  const results = await database.batch([
     database
       .prepare(
         `UPDATE Investment
          SET status = 'confirmed', paymentConfirmedAt = ?, paymentEventId = ?, updatedAt = ?
-         WHERE id = ? AND status IN ('pending_payment', 'payment_pending')`
+         WHERE id = ? AND status IN ('pending_payment', 'payment_pending')
+           AND signedAt IS NOT NULL AND signatureHash IS NOT NULL
+           AND EXISTS (
+             SELECT 1 FROM SubscriptionEvidence
+             WHERE investmentId = Investment.id
+               AND signedPayloadHash = Investment.signatureHash
+           )`
       )
       .bind(now, eventId, now, investment.id),
     database
@@ -309,6 +340,7 @@ async function confirmInvestment(req: NextRequest, investment: InvestmentPayment
       )
       .bind(crypto.randomUUID(), investment.investorId, now, investment.id, eventId),
   ]);
+  return (results[0].meta.changes || 0) === 1;
 }
 
 async function cancelInvestment(

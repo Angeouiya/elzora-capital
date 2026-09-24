@@ -18,6 +18,7 @@ async function main() {
   await db.distribution.deleteMany();
   await db.companyPayment.deleteMany();
   await db.payout.deleteMany();
+  await db.subscriptionEvidence.deleteMany();
   await db.investment.deleteMany();
   await db.offer.deleteMany();
   await db.projectEvent.deleteMany();

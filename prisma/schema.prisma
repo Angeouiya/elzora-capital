@@ -44,13 +44,14 @@ model User {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
-  memberships       CompanyMember[]
-  sessions          UserSession[]
-  notifications     Notification[]
-  submittedProjects Project[]       @relation("ProjectSubmitter")
-  kycProfile        KycProfile?
-  kycDocuments      KycDocument[]
-  legalAcceptances  LegalAcceptance[]
+  memberships          CompanyMember[]
+  sessions             UserSession[]
+  notifications        Notification[]
+  submittedProjects    Project[]              @relation("ProjectSubmitter")
+  kycProfile           KycProfile?
+  kycDocuments         KycDocument[]
+  legalAcceptances     LegalAcceptance[]
+  subscriptionEvidence SubscriptionEvidence[]
 }
 
 model LegalAcceptance {
@@ -68,41 +69,41 @@ model LegalAcceptance {
 }
 
 model KycProfile {
-  id                  String   @id @default(cuid())
-  userId              String   @unique
-  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                  String    @id @default(cuid())
+  userId              String    @unique
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   identityType        String
   identityNumberHash  String
   identityNumberLast4 String
   documentCountry     String
   expiresAt           String?
-  residentialAddress String
+  residentialAddress  String
   city                String
   occupation          String
   sourceOfFunds       String
-  politicallyExposed  Boolean  @default(false)
-  actingForSelf       Boolean  @default(true)
+  politicallyExposed  Boolean   @default(false)
+  actingForSelf       Boolean   @default(true)
   consentAt           DateTime
   reviewedAt          DateTime?
   reviewedBy          String?
   decidedBy           String?
   decisionReason      String?
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 }
 
 model KycDocument {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   kind        String
-  storageKey  String   @unique
+  storageKey  String    @unique
   fileName    String
   contentType String
   size        Int
   checksum    String
-  status      String   @default("active")
-  uploadedAt  DateTime @default(now())
+  status      String    @default("active")
+  uploadedAt  DateTime  @default(now())
   reviewedAt  DateTime?
 
   @@index([userId, status])
@@ -276,7 +277,8 @@ model Offer {
   status               String   @default("open") // open, closing, funded, failed, closed
   createdAt            DateTime @default(now())
 
-  investments Investment[]
+  investments          Investment[]
+  subscriptionEvidence SubscriptionEvidence[]
 }
 
 // ---------------------------------------------------------------------------
@@ -284,35 +286,64 @@ model Offer {
 // ---------------------------------------------------------------------------
 
 model Investment {
-  id                 String    @id @default(cuid())
-  offerId            String
-  offer              Offer     @relation(fields: [offerId], references: [id], onDelete: Cascade)
-  projectId          String
-  project            Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  id                   String                @id @default(cuid())
+  offerId              String
+  offer                Offer                 @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  projectId            String
+  project              Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
   // Investisseur : particulier ou entreprise (relation polymorphique, pas de FK)
-  investorType       String // "individual" | "company"
-  investorId         String // userId ou companyId (stocké, pas de FK contrainte)
-  investorName       String
-  investorEmail      String
-  amount             BigInt // montant investi
-  sharePct           Float // part de l'offre
+  investorType         String // "individual" | "company"
+  investorId           String // userId ou companyId (stocké, pas de FK contrainte)
+  investorName         String
+  investorEmail        String
+  amount               BigInt // montant investi
+  sharePct             Float // part de l'offre (dette) ou de l'entreprise (capital)
   // État
-  status             String    @default("pending_payment")
+  status               String                @default("pending_payment")
   // pending_payment, payment_pending, confirmed, rejected, refunded, cancelled
   // Signature
-  signedAt           DateTime?
-  signatureHash      String?
+  signedAt             DateTime?
+  signatureHash        String?
   // Paiement
-  paymentRef         String? // référence unique
-  paymentConfirmedAt DateTime?
-  paymentEventId     String?   @unique // verrou d'idempotence du webhook
+  paymentRef           String? // référence unique
+  paymentConfirmedAt   DateTime?
+  paymentEventId       String?               @unique // verrou d'idempotence du webhook
   // Délai de rétractation
-  reflectionEndsAt   DateTime?
-  refundableUntil    DateTime?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  reflectionEndsAt     DateTime?
+  refundableUntil      DateTime?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  subscriptionEvidence SubscriptionEvidence?
 
   @@index([investorId])
+  @@index([offerId])
+}
+
+model SubscriptionEvidence {
+  id                String     @id @default(cuid())
+  investmentId      String     @unique
+  investment        Investment @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+  offerId           String
+  offer             Offer      @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  investorId        String
+  investor          User       @relation(fields: [investorId], references: [id], onDelete: Cascade)
+  offerVersion      Int
+  agreementVersion  String
+  termsVersion      String
+  riskVersion       String
+  agreementSnapshot String
+  agreementHash     String
+  signedPayloadHash String     @unique
+  signatureMethod   String     @default("authenticated_clickwrap")
+  locale            String     @default("fr")
+  termsAcceptedAt   DateTime
+  riskAcceptedAt    DateTime
+  signedAt          DateTime
+  ipAddress         String?
+  userAgent         String?
+  createdAt         DateTime   @default(now())
+
+  @@index([investorId, signedAt])
   @@index([offerId])
 }
 

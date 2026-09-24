@@ -2,28 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { getD1, isoNow, requestIp } from "@/lib/d1";
 import { computeInvestorInterest } from "@/lib/finance";
+import { LEGAL_VERSIONS } from "@/lib/legal";
 import { getPaymentCapabilities } from "@/lib/payment-capabilities";
 import {
   createPayDunyaCheckout,
   getPayDunyaCheckoutUrl,
   getPayDunyaConfig,
 } from "@/lib/payments/paydunya";
+import {
+  calculateInvestmentSharePct,
+  calculateOfferAllocationPct,
+  createSubscriptionEvidence,
+  type SubscriptionOfferTerms,
+} from "@/lib/subscription-evidence";
 
-interface OfferTermsRow {
-  id: string;
-  projectId: string;
+interface OfferTermsRow extends SubscriptionOfferTerms {
   status: string;
   visibility: string;
-  closingDate: string;
-  fundingGoal: number;
   committedAmount: number;
-  minInvestment: number;
-  maxInvestment: number | null;
-  annualRate: number | null;
-  ratePeriod: string | null;
-  durationMonths: number | null;
-  instrumentType: string;
-  title: string;
 }
 
 interface InvestorRow {
@@ -46,6 +42,7 @@ interface InvestmentRow extends Record<string, unknown> {
   sharePct: number;
   status: string;
   signedAt: string | null;
+  signatureHash: string | null;
   paymentConfirmedAt: string | null;
   reflectionEndsAt: string | null;
   refundableUntil: string | null;
@@ -58,8 +55,10 @@ async function findOffer(id: string): Promise<OfferTermsRow | null> {
   return getD1()
     .prepare(
       `SELECT o.id, o.projectId, o.status, o.visibility, o.closingDate,
-              o.fundingGoal, o.committedAmount, o.minInvestment, o.maxInvestment,
-              o.annualRate, o.ratePeriod, o.durationMonths,
+              o.version, o.fundingGoal, o.committedAmount, o.minInvestment, o.maxInvestment,
+              o.annualRate, o.ratePeriod, o.durationMonths, o.repaymentType,
+              o.equityOfferedPct, o.valuationPre, o.upfrontCommissionPct,
+              o.annualFollowUpPct,
               p.instrumentType, p.title
        FROM Offer o
        JOIN Project p ON p.id = o.projectId
@@ -82,7 +81,13 @@ export async function GET(
   const offer = await findOffer(id);
   if (!offer) return NextResponse.json({ error: "Offre introuvable" }, { status: 404 });
 
-  const sharePct = offer.fundingGoal > 0 ? (amount * 100) / offer.fundingGoal : 0;
+  const offerAllocationPct = calculateOfferAllocationPct(amount, offer.fundingGoal);
+  const sharePct = calculateInvestmentSharePct(
+    amount,
+    offer.fundingGoal,
+    offer.instrumentType,
+    offer.equityOfferedPct
+  );
   if (offer.instrumentType === "debt") {
     const interest = computeInvestorInterest(
       BigInt(amount),
@@ -93,6 +98,7 @@ export async function GET(
     return NextResponse.json({
       instrument: "debt",
       sharePct,
+      offerAllocationPct,
       expectedRepayment: amount + Number(interest),
       investorInterest: Number(interest),
       projectionLabel: "Projection contractuelle, sous réserve de remboursement par l'entreprise",
@@ -102,6 +108,8 @@ export async function GET(
   return NextResponse.json({
     instrument: "equity",
     sharePct,
+    companyOwnershipPct: sharePct,
+    offerAllocationPct,
     note: "La valeur et la liquidité des titres ne sont pas garanties.",
   });
 }
@@ -128,6 +136,21 @@ export async function POST(
   if (amount === null || amount <= 0) {
     return NextResponse.json({ error: "Montant invalide" }, { status: 400 });
   }
+  if (
+    body.acceptTerms !== true ||
+    body.acceptRisks !== true ||
+    body.signatureIntent !== true ||
+    body.agreementVersion !== LEGAL_VERSIONS.subscription
+  ) {
+    return NextResponse.json(
+      {
+        error: "Veuillez lire et accepter le bulletin de souscription ainsi que les risques.",
+        code: "SUBSCRIPTION_ACCEPTANCE_REQUIRED",
+      },
+      { status: 422 }
+    );
+  }
+  const locale = body.locale === "en" ? "en" : "fr";
 
   const { id } = await params;
   const database = getD1();
@@ -178,13 +201,59 @@ export async function POST(
     )
     .bind(id, session.userId)
     .first<InvestmentRow>();
-  if (existing) return paymentResponse(existing, offer, investor, true);
+  if (existing) {
+    if (Number(existing.amount) !== amount) {
+      return NextResponse.json(
+        {
+          error: `Un engagement de ${Number(existing.amount).toLocaleString("fr-FR")} FCFA est déjà en attente pour cette offre.`,
+          code: "PENDING_INVESTMENT_EXISTS",
+          existingAmount: Number(existing.amount),
+        },
+        { status: 409 }
+      );
+    }
+    try {
+      const signedInvestment = await ensureSubscriptionEvidence(
+        req,
+        existing,
+        offer,
+        locale
+      );
+      return paymentResponse(signedInvestment, offer, investor, true);
+    } catch (error) {
+      console.error(
+        "subscription_evidence_upgrade_failed",
+        error instanceof Error ? error.message : "unknown_error"
+      );
+      return NextResponse.json(
+        { error: "La validation électronique n'a pas pu être enregistrée." },
+        { status: 503 }
+      );
+    }
+  }
 
   const investmentId = crypto.randomUUID();
   const now = isoNow();
   const reflectionEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
-  const sharePct = offer.fundingGoal > 0 ? (amount * 100) / offer.fundingGoal : 0;
+  const sharePct = calculateInvestmentSharePct(
+    amount,
+    offer.fundingGoal,
+    offer.instrumentType,
+    offer.equityOfferedPct
+  );
   const investorName = `${investor.firstName} ${investor.lastName}`.trim();
+  const evidence = await createSubscriptionEvidence({
+    investmentId,
+    investorId: session.userId,
+    investorEmail: investor.email,
+    amount,
+    sharePct,
+    signedAt: now,
+    locale,
+    offer,
+  });
+  const userAgent = req.headers.get("user-agent")?.slice(0, 512) || null;
+  const ipAddress = requestIp(req);
 
   try {
     const results = await database.batch([
@@ -192,8 +261,9 @@ export async function POST(
         .prepare(
           `INSERT INTO Investment
              (id, offerId, projectId, investorType, investorId, investorName, investorEmail,
-              amount, sharePct, status, reflectionEndsAt, refundableUntil, createdAt, updatedAt)
-           SELECT ?, o.id, o.projectId, 'individual', ?, ?, ?, ?, ?, 'pending_payment', ?, ?, ?, ?
+              amount, sharePct, status, signedAt, signatureHash,
+              reflectionEndsAt, refundableUntil, createdAt, updatedAt)
+           SELECT ?, o.id, o.projectId, 'individual', ?, ?, ?, ?, ?, 'pending_payment', ?, ?, ?, ?, ?, ?
            FROM Offer o
            WHERE o.id = ?
              AND o.status = 'open'
@@ -208,6 +278,8 @@ export async function POST(
           investor.email,
           amount,
           sharePct,
+          now,
+          evidence.signedPayloadHash,
           reflectionEndsAt,
           reflectionEndsAt,
           now,
@@ -215,6 +287,37 @@ export async function POST(
           id,
           now,
           amount
+        ),
+      database
+        .prepare(
+          `INSERT INTO SubscriptionEvidence
+             (id, investmentId, offerId, investorId, offerVersion,
+              agreementVersion, termsVersion, riskVersion, agreementSnapshot,
+              agreementHash, signedPayloadHash, signatureMethod, locale,
+              termsAcceptedAt, riskAcceptedAt, signedAt, ipAddress, userAgent, createdAt)
+           SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'authenticated_clickwrap', ?, ?, ?, ?, ?, ?, ?
+           WHERE EXISTS (SELECT 1 FROM Investment WHERE id = ?)`
+        )
+        .bind(
+          crypto.randomUUID(),
+          investmentId,
+          id,
+          session.userId,
+          offer.version,
+          LEGAL_VERSIONS.subscription,
+          LEGAL_VERSIONS.terms,
+          LEGAL_VERSIONS.risk,
+          evidence.agreementSnapshot,
+          evidence.agreementHash,
+          evidence.signedPayloadHash,
+          locale,
+          now,
+          now,
+          now,
+          ipAddress,
+          userAgent,
+          now,
+          investmentId
         ),
       database
         .prepare(
@@ -233,8 +336,16 @@ export async function POST(
           crypto.randomUUID(),
           session.userId,
           investmentId,
-          JSON.stringify({ offerId: id, amount, sharePct, paymentStatus: "awaiting_provider" }),
-          requestIp(req),
+          JSON.stringify({
+            offerId: id,
+            amount,
+            sharePct,
+            agreementVersion: LEGAL_VERSIONS.subscription,
+            agreementHash: evidence.agreementHash,
+            signatureMethod: "authenticated_clickwrap",
+            paymentStatus: "awaiting_provider",
+          }),
+          ipAddress,
           now,
           investmentId
         ),
@@ -286,6 +397,26 @@ async function paymentResponse(
   investor: InvestorRow,
   idempotent: boolean
 ) {
+  if (!investment.signedAt || !investment.signatureHash) {
+    return NextResponse.json(
+      { error: "La validation électronique doit être enregistrée avant le paiement." },
+      { status: 409, headers: { "Cache-Control": "no-store" } }
+    );
+  }
+  const evidence = await getD1()
+    .prepare(
+      `SELECT id FROM SubscriptionEvidence
+       WHERE investmentId = ? AND signedPayloadHash = ? LIMIT 1`
+    )
+    .bind(investment.id, investment.signatureHash)
+    .first<{ id: string }>();
+  if (!evidence) {
+    return NextResponse.json(
+      { error: "La preuve de souscription doit être validée avant le paiement." },
+      { status: 409, headers: { "Cache-Control": "no-store" } }
+    );
+  }
+
   const capabilities = getPaymentCapabilities();
   const config = getPayDunyaConfig();
 
@@ -383,13 +514,126 @@ async function paymentResponse(
       },
       nextSteps: [
         "Lire le récapitulatif et les risques",
-        "Signer les documents de souscription",
+        "Conserver le justificatif de validation électronique",
         "Régler via un prestataire de paiement habilité",
         "Recevoir la confirmation automatique des fonds",
       ],
     },
     { status: idempotent ? 200 : 201, headers: { "Cache-Control": "no-store" } }
   );
+}
+
+async function ensureSubscriptionEvidence(
+  req: NextRequest,
+  investment: InvestmentRow,
+  offer: OfferTermsRow,
+  locale: "fr" | "en"
+): Promise<InvestmentRow> {
+  const database = getD1();
+  const stored = await database
+    .prepare(
+      `SELECT signedAt, signedPayloadHash
+       FROM SubscriptionEvidence WHERE investmentId = ? LIMIT 1`
+    )
+    .bind(investment.id)
+    .first<{ signedAt: string; signedPayloadHash: string }>();
+
+  if (stored) {
+    if (
+      investment.signedAt !== stored.signedAt ||
+      investment.signatureHash !== stored.signedPayloadHash
+    ) {
+      await database
+        .prepare(
+          `UPDATE Investment SET signedAt = ?, signatureHash = ?, updatedAt = ?
+           WHERE id = ? AND status IN ('pending_payment', 'payment_pending')`
+        )
+        .bind(stored.signedAt, stored.signedPayloadHash, isoNow(), investment.id)
+        .run();
+    }
+  } else {
+    const signedAt = isoNow();
+    const evidence = await createSubscriptionEvidence({
+      investmentId: investment.id,
+      investorId: investment.investorId,
+      investorEmail: investment.investorEmail,
+      amount: Number(investment.amount),
+      sharePct: Number(investment.sharePct),
+      signedAt,
+      locale,
+      offer,
+    });
+    await database.batch([
+      database
+        .prepare(
+          `INSERT OR IGNORE INTO SubscriptionEvidence
+             (id, investmentId, offerId, investorId, offerVersion,
+              agreementVersion, termsVersion, riskVersion, agreementSnapshot,
+              agreementHash, signedPayloadHash, signatureMethod, locale,
+              termsAcceptedAt, riskAcceptedAt, signedAt, ipAddress, userAgent, createdAt)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'authenticated_clickwrap', ?, ?, ?, ?, ?, ?, ?)`
+        )
+        .bind(
+          crypto.randomUUID(),
+          investment.id,
+          investment.offerId,
+          investment.investorId,
+          offer.version,
+          LEGAL_VERSIONS.subscription,
+          LEGAL_VERSIONS.terms,
+          LEGAL_VERSIONS.risk,
+          evidence.agreementSnapshot,
+          evidence.agreementHash,
+          evidence.signedPayloadHash,
+          locale,
+          signedAt,
+          signedAt,
+          signedAt,
+          requestIp(req),
+          req.headers.get("user-agent")?.slice(0, 512) || null,
+          signedAt
+        ),
+      database
+        .prepare(
+          `UPDATE Investment
+           SET signedAt = (SELECT signedAt FROM SubscriptionEvidence WHERE investmentId = ?),
+               signatureHash = (SELECT signedPayloadHash FROM SubscriptionEvidence WHERE investmentId = ?),
+               updatedAt = ?
+           WHERE id = ? AND status IN ('pending_payment', 'payment_pending')
+             AND EXISTS (SELECT 1 FROM SubscriptionEvidence WHERE investmentId = ?)`
+        )
+        .bind(investment.id, investment.id, signedAt, investment.id, investment.id),
+      database
+        .prepare(
+          `INSERT INTO AuditLog
+             (id, actorType, actorId, action, entityType, entityId, metadata, ipAddress, createdAt)
+           SELECT ?, 'user', ?, 'subscription_evidence_recorded', 'investment', ?, ?, ?, ?
+           WHERE EXISTS (SELECT 1 FROM SubscriptionEvidence WHERE investmentId = ?)`
+        )
+        .bind(
+          crypto.randomUUID(),
+          investment.investorId,
+          investment.id,
+          JSON.stringify({
+            agreementVersion: LEGAL_VERSIONS.subscription,
+            agreementHash: evidence.agreementHash,
+            signatureMethod: "authenticated_clickwrap",
+          }),
+          requestIp(req),
+          signedAt,
+          investment.id
+        ),
+    ]);
+  }
+
+  const signedInvestment = await database
+    .prepare(`SELECT * FROM Investment WHERE id = ? LIMIT 1`)
+    .bind(investment.id)
+    .first<InvestmentRow>();
+  if (!signedInvestment?.signedAt || !signedInvestment.signatureHash) {
+    throw new Error("subscription_evidence_missing");
+  }
+  return signedInvestment;
 }
 
 function normalizeInvestment(row: InvestmentRow) {

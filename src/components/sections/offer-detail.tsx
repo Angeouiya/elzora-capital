@@ -11,9 +11,11 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
 import { fmtPct } from "@/lib/finance";
 import { formatDisplayMoney } from "@/lib/display-money";
 import { getCountryLabel, getSectorLabel } from "@/lib/countries";
+import { LEGAL_VERSIONS } from "@/lib/legal";
 import {
   ArrowLeft,
   MapPin,
@@ -43,10 +45,10 @@ export function OfferDetail() {
     formatDisplayMoney(value, displayCurrency, locale, compact);
   const text = locale === "fr" ? {
     missing: "Offre introuvable.", back: "Retour aux offres", low: "Montant insuffisant", login: "Connexion requise", loginText: "Connectez-vous pour enregistrer votre engagement.", failed: "Souscription échouée", saved: "Souscription enregistrée", savedText: "Votre engagement est réservé. Les instructions de paiement seront affichées dans votre espace.", paymentReady: "Ouverture du paiement sécurisé…", error: "Erreur", unknown: "Erreur inconnue",
-    equity: "Prise de participation", debt: "Dette", bullet: "in fine", amortized: "amortissable", conditions: "Conditions financières", goal: "Objectif", raised: "Levé", offered: "Capital offert", return: "Rémunération", duration: "Durée", long: "Long terme", months: "mois", of: "sur", investors: "souscripteurs", from: "Dès", cap: "Plafond", close: "Clôture prévue", project: "Présentation du projet", company: "Entreprise", verified: "Entreprise vérifiée", legalForm: "Forme juridique", country: "Pays", activity: "Activité", founded: "Fondée en", budget: "Budget & remboursement", allocation: "Affectation du budget", source: "Source de remboursement", exit: " / sortie", risks: "Risques identifiés", simulator: "Simulateur d’investissement", amount: "Montant de règlement (XOF)", minimum: "Minimum", maximum: "maximum", share: "Part de", expected: "Remboursement attendu", interest: "Dont intérêts", projected: "Projeté, non garanti. Soumis aux risques du projet.", enter: "Saisissez un montant pour simuler", secure: "Souscription nominative et sécurisée", secureText: "Votre identité vérifiée et votre adresse de contact sont reprises automatiquement depuis votre espace personnel.", submitting: "Enregistrement…", submit: "Enregistrer mon engagement", payment: "Le paiement par carte ou Mobile Money sera proposé uniquement via un prestataire autorisé, avec confirmation avant débit.", riskText: "L’investissement présente un risque de perte en capital. Les performances passées ne préjugent pas des performances futures.",
+    equity: "Prise de participation", debt: "Dette", bullet: "in fine", amortized: "amortissable", conditions: "Conditions financières", goal: "Objectif", raised: "Levé", offered: "Capital offert", return: "Rémunération", duration: "Durée", long: "Long terme", months: "mois", of: "sur", investors: "souscripteurs", from: "Dès", cap: "Plafond", close: "Clôture prévue", project: "Présentation du projet", company: "Entreprise", verified: "Entreprise vérifiée", legalForm: "Forme juridique", country: "Pays", activity: "Activité", founded: "Fondée en", budget: "Budget & remboursement", allocation: "Affectation du budget", source: "Source de remboursement", exit: " / sortie", risks: "Risques identifiés", simulator: "Simulateur d’investissement", amount: "Montant de règlement (XOF)", minimum: "Minimum", maximum: "maximum", share: "Part de", expected: "Remboursement attendu", interest: "Dont intérêts", projected: "Projeté, non garanti. Soumis aux risques du projet.", enter: "Saisissez un montant pour simuler", secure: "Souscription nominative et sécurisée", secureText: "Votre identité vérifiée et votre adresse de contact sont reprises automatiquement depuis votre espace personnel.", consentTitle: "Avant de continuer", acceptAgreement: "Je valide électroniquement le bulletin de souscription et confirme le montant indiqué.", acceptRisk: "J’ai lu les risques et j’accepte la possibilité de perdre tout ou partie du capital investi.", readTerms: "Lire les conditions", readRisk: "Lire le cadre et les risques", consentRequired: "Validez le bulletin et les risques avant de continuer.", submitting: "Validation en cours…", submit: "Valider et continuer", payment: "Le paiement par carte ou Mobile Money sera proposé uniquement via un prestataire autorisé, avec confirmation avant débit.", riskText: "L’investissement présente un risque de perte en capital. Les performances passées ne préjugent pas des performances futures.",
   } : {
     missing: "Offer not found.", back: "Back to opportunities", low: "Amount too low", login: "Sign-in required", loginText: "Sign in to save your commitment.", failed: "Subscription failed", saved: "Subscription saved", savedText: "Your commitment is reserved. Payment instructions will appear in your account.", paymentReady: "Opening secure payment…", error: "Error", unknown: "Unknown error",
-    equity: "Equity investment", debt: "Debt", bullet: "bullet", amortized: "amortizing", conditions: "Financial terms", goal: "Target", raised: "Raised", offered: "Equity offered", return: "Return", duration: "Duration", long: "Long term", months: "months", of: "of", investors: "investors", from: "From", cap: "Maximum", close: "Expected closing", project: "Project overview", company: "Company", verified: "Verified company", legalForm: "Legal form", country: "Country", activity: "Activity", founded: "Founded", budget: "Budget & repayment", allocation: "Use of funds", source: "Repayment source", exit: " / exit", risks: "Identified risks", simulator: "Investment simulator", amount: "Settlement amount (XOF)", minimum: "Minimum", maximum: "maximum", share: "Share of", expected: "Expected repayment", interest: "Including interest", projected: "Projected, not guaranteed. Subject to project risks.", enter: "Enter an amount to simulate", secure: "Named and secure subscription", secureText: "Your verified identity and contact address are automatically retrieved from your personal account.", submitting: "Saving…", submit: "Save my commitment", payment: "Card or Mobile Money payment will only be offered through an authorized provider, with confirmation before debit.", riskText: "Investing involves a risk of capital loss. Past performance does not predict future performance.",
+    equity: "Equity investment", debt: "Debt", bullet: "bullet", amortized: "amortizing", conditions: "Financial terms", goal: "Target", raised: "Raised", offered: "Equity offered", return: "Return", duration: "Duration", long: "Long term", months: "months", of: "of", investors: "investors", from: "From", cap: "Maximum", close: "Expected closing", project: "Project overview", company: "Company", verified: "Verified company", legalForm: "Legal form", country: "Country", activity: "Activity", founded: "Founded", budget: "Budget & repayment", allocation: "Use of funds", source: "Repayment source", exit: " / exit", risks: "Identified risks", simulator: "Investment simulator", amount: "Settlement amount (XOF)", minimum: "Minimum", maximum: "maximum", share: "Share of", expected: "Expected repayment", interest: "Including interest", projected: "Projected, not guaranteed. Subject to project risks.", enter: "Enter an amount to simulate", secure: "Named and secure subscription", secureText: "Your verified identity and contact address are automatically retrieved from your personal account.", consentTitle: "Before continuing", acceptAgreement: "I electronically approve the subscription form and confirm the amount shown.", acceptRisk: "I have read the risks and accept that I may lose some or all of the capital invested.", readTerms: "Read the terms", readRisk: "Read the framework and risks", consentRequired: "Accept the subscription form and the risks before continuing.", submitting: "Approving…", submit: "Approve and continue", payment: "Card or Mobile Money payment will only be offered through an authorized provider, with confirmation before debit.", riskText: "Investing involves a risk of capital loss. Past performance does not predict future performance.",
   };
 
   const { data, loading } = useFetch<{ offer: OfferDTO }>(
@@ -61,11 +63,15 @@ export function OfferDetail() {
   const maxInv = offer?.maxInvestment ?? null;
   const [amount, setAmount] = useState<number>(minInv);
   const [submitting, setSubmitting] = useState(false);
+  const [acceptAgreement, setAcceptAgreement] = useState(false);
+  const [acceptRisks, setAcceptRisks] = useState(false);
 
   // Reset amount when offer changes
   useEffect(() => {
     if (minInv > 0) setAmount(minInv);
-  }, [minInv]);
+    setAcceptAgreement(false);
+    setAcceptRisks(false);
+  }, [minInv, offerId]);
 
   // Simulation fetch
   const simUrl =
@@ -109,6 +115,10 @@ export function OfferDetail() {
 
   const handleSubscribe = async () => {
     if (!offerId) return;
+    if (!acceptAgreement || !acceptRisks) {
+      toast({ title: text.consentTitle, description: text.consentRequired });
+      return;
+    }
     if (amount < minInv) {
       toast({
         title: text.low,
@@ -122,7 +132,14 @@ export function OfferDetail() {
       const res = await fetch(`/api/offers/${offerId}/subscribe`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount }),
+        body: JSON.stringify({
+          amount,
+          acceptTerms: true,
+          acceptRisks: true,
+          signatureIntent: true,
+          agreementVersion: LEGAL_VERSIONS.subscription,
+          locale,
+        }),
       });
       const json = (await res.json()) as {
         error?: string;
@@ -552,9 +569,43 @@ export function OfferDetail() {
                   </p>
                 </div>
 
+                <div className="space-y-2 rounded-xl border border-[#541249]/20 bg-[#FBF7FA] p-3.5">
+                  <p className="text-xs font-bold text-foreground">{text.consentTitle}</p>
+                  <label htmlFor="subscription-agreement" className="flex cursor-pointer items-start gap-2.5">
+                    <Checkbox
+                      id="subscription-agreement"
+                      checked={acceptAgreement}
+                      onCheckedChange={(value) => setAcceptAgreement(value === true)}
+                      className="mt-0.5"
+                    />
+                    <span className="text-[11px] leading-relaxed text-foreground">
+                      {text.acceptAgreement}
+                    </span>
+                  </label>
+                  <label htmlFor="subscription-risk" className="flex cursor-pointer items-start gap-2.5">
+                    <Checkbox
+                      id="subscription-risk"
+                      checked={acceptRisks}
+                      onCheckedChange={(value) => setAcceptRisks(value === true)}
+                      className="mt-0.5"
+                    />
+                    <span className="text-[11px] leading-relaxed text-foreground">
+                      {text.acceptRisk}
+                    </span>
+                  </label>
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 pl-6 text-[10px] font-semibold">
+                    <a href="/legal/terms" target="_blank" rel="noreferrer" className="text-[#541249] underline-offset-2 hover:underline">
+                      {text.readTerms}
+                    </a>
+                    <a href="/legal/compliance" target="_blank" rel="noreferrer" className="text-[#541249] underline-offset-2 hover:underline">
+                      {text.readRisk}
+                    </a>
+                  </div>
+                </div>
+
                 <Button
                   onClick={handleSubscribe}
-                  disabled={submitting}
+                  disabled={submitting || !acceptAgreement || !acceptRisks}
                   className="btn-nexora w-full"
                 >
                   {submitting ? text.submitting : text.submit}
