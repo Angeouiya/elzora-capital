@@ -66,6 +66,7 @@ interface DashboardInvestment {
   createdAt: string;
   expectedRepayment: number | null;
   receivedToDate: number;
+  equityDividendReceived: number;
   remainingDue: number | null;
   availableBalance: number;
   projectionLabel: string | null;
@@ -643,6 +644,17 @@ export function InvestorDashboard() {
                                 ? "The displayed ownership is indicative until the funding closes and the legal issuance is completed."
                                 : "La participation affichée reste indicative jusqu’à la clôture de la collecte et à la réalisation de l’émission juridique."}
                         </p>
+                        {inv.equityDividendReceived > 0 && (
+                          <div className="mt-3 flex items-center justify-between rounded-lg border border-[#E8D8E4] bg-white px-3 py-2">
+                            <span className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+                              <Coins className="h-3.5 w-3.5 text-[#541249]" />
+                              {en ? "Net dividends received" : "Dividendes nets reçus"}
+                            </span>
+                            <span className="tnum text-sm font-bold text-[#541249]">
+                              {money(inv.equityDividendReceived)}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     )}
 

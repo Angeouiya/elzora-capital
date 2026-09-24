@@ -147,6 +147,7 @@ model Company {
   members         CompanyMember[]
   projects        Project[]
   equityIssuances EquityIssuance[]
+  equityDividends EquityDividend[]
 }
 
 model CompanyMember {
@@ -216,13 +217,14 @@ model Project {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  offer          Offer?
-  investments    Investment[]
-  payments       CompanyPayment[]
-  documents      ProjectDocument[]
-  timeline       ProjectEvent[]
-  disbursements  Disbursement[]
-  equityIssuance EquityIssuance?
+  offer           Offer?
+  investments     Investment[]
+  payments        CompanyPayment[]
+  documents       ProjectDocument[]
+  timeline        ProjectEvent[]
+  disbursements   Disbursement[]
+  equityIssuance  EquityIssuance?
+  equityDividends EquityDividend[]
 }
 
 model ProjectDocument {
@@ -289,11 +291,11 @@ model Offer {
 // ---------------------------------------------------------------------------
 
 model Investment {
-  id                   String                @id @default(cuid())
+  id                   String                     @id @default(cuid())
   offerId              String
-  offer                Offer                 @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  offer                Offer                      @relation(fields: [offerId], references: [id], onDelete: Cascade)
   projectId            String
-  project              Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project              Project                    @relation(fields: [projectId], references: [id], onDelete: Cascade)
   // Investisseur : particulier ou entreprise (relation polymorphique, pas de FK)
   investorType         String // "individual" | "company"
   investorId           String // userId ou companyId (stocké, pas de FK contrainte)
@@ -302,7 +304,7 @@ model Investment {
   amount               BigInt // montant investi
   sharePct             Float // part de l'offre (dette) ou de l'entreprise (capital)
   // État
-  status               String                @default("pending_payment")
+  status               String                     @default("pending_payment")
   // pending_payment, payment_pending, confirmed, rejected, refunded, cancelled
   // Signature
   signedAt             DateTime?
@@ -310,14 +312,15 @@ model Investment {
   // Paiement
   paymentRef           String? // référence unique
   paymentConfirmedAt   DateTime?
-  paymentEventId       String?               @unique // verrou d'idempotence du webhook
+  paymentEventId       String?                    @unique // verrou d'idempotence du webhook
   // Délai de rétractation
   reflectionEndsAt     DateTime?
   refundableUntil      DateTime?
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
+  createdAt            DateTime                   @default(now())
+  updatedAt            DateTime                   @updatedAt
   subscriptionEvidence SubscriptionEvidence?
   equityAllocation     EquityAllocation?
+  equityDividends      EquityDividendAllocation[]
 
   @@index([investorId])
   @@index([offerId])
@@ -374,27 +377,89 @@ model EquityIssuance {
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
   allocations            EquityAllocation[]
+  dividends              EquityDividend[]
 
   @@index([companyId, status])
 }
 
 model EquityAllocation {
-  id                String         @id @default(cuid())
+  id                String                     @id @default(cuid())
   issuanceId        String
-  issuance          EquityIssuance @relation(fields: [issuanceId], references: [id], onDelete: Cascade)
-  investmentId      String         @unique
-  investment        Investment     @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+  issuance          EquityIssuance             @relation(fields: [issuanceId], references: [id], onDelete: Cascade)
+  investmentId      String                     @unique
+  investment        Investment                 @relation(fields: [investmentId], references: [id], onDelete: Cascade)
   investorType      String
   investorId        String
   ownershipMicroPct BigInt
-  status            String         @default("pending_issuance")
-  certificateNo     String?        @unique
+  status            String                     @default("pending_issuance")
+  certificateNo     String?                    @unique
   issuedAt          DateTime?
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  createdAt         DateTime                   @default(now())
+  updatedAt         DateTime                   @updatedAt
+  dividends         EquityDividendAllocation[]
 
   @@index([investorId, status])
   @@index([issuanceId])
+}
+
+model EquityDividend {
+  id                  String                     @id @default(cuid())
+  issuanceId          String
+  issuance            EquityIssuance             @relation(fields: [issuanceId], references: [id], onDelete: Cascade)
+  projectId           String
+  project             Project                    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  companyId           String
+  company             Company                    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  totalDeclaredAmount BigInt
+  platformGrossAmount BigInt
+  withholdingAmount   BigInt                     @default(0)
+  netPayableAmount    BigInt
+  currency            String                     @default("XOF")
+  recordDate          String
+  resolutionRef       String
+  resolutionDate      String
+  taxReference        String?
+  rejectionReason     String?
+  status              String                     @default("submitted")
+  submittedBy         String
+  reviewedBy          String?
+  approvedBy          String?
+  reviewedAt          DateTime?
+  approvedAt          DateTime?
+  paymentRef          String?                    @unique
+  paymentEventId      String?                    @unique
+  paidAt              DateTime?
+  createdAt           DateTime                   @default(now())
+  updatedAt           DateTime                   @updatedAt
+  allocations         EquityDividendAllocation[]
+
+  @@unique([issuanceId, resolutionRef])
+  @@index([companyId, status])
+  @@index([projectId, createdAt])
+}
+
+model EquityDividendAllocation {
+  id                 String           @id @default(cuid())
+  dividendId         String
+  dividend           EquityDividend   @relation(fields: [dividendId], references: [id], onDelete: Cascade)
+  equityAllocationId String
+  equityAllocation   EquityAllocation @relation(fields: [equityAllocationId], references: [id], onDelete: Restrict)
+  investmentId       String
+  investment         Investment       @relation(fields: [investmentId], references: [id], onDelete: Restrict)
+  investorType       String
+  investorId         String
+  ownershipMicroPct  BigInt
+  grossAmount        BigInt
+  withholdingAmount  BigInt           @default(0)
+  netAmount          BigInt
+  status             String           @default("pending")
+  availableAt        DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@unique([dividendId, equityAllocationId])
+  @@index([investorId, status])
+  @@index([investmentId])
 }
 
 // ---------------------------------------------------------------------------

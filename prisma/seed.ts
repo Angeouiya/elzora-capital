@@ -15,6 +15,8 @@ async function main() {
 
   // Clean
   await db.ledgerEntry.deleteMany();
+  await db.equityDividendAllocation.deleteMany();
+  await db.equityDividend.deleteMany();
   await db.equityAllocation.deleteMany();
   await db.equityIssuance.deleteMany();
   await db.distribution.deleteMany();

@@ -11,6 +11,10 @@ import {
   settleCompanyPayment,
   type CompanyPaymentSettlement,
 } from "@/lib/company-payment-settlement";
+import {
+  settleEquityDividend,
+  type EquityDividendSettlement,
+} from "@/lib/equity-dividend-settlement";
 
 interface InvestmentPaymentRow extends Record<string, unknown> {
   id: string;
@@ -60,6 +64,9 @@ export async function POST(req: NextRequest) {
   }
   if (flow === "company_payment") {
     return handleCompanyPaymentWebhook(req, confirmed, token, totalAmount);
+  }
+  if (flow === "equity_dividend") {
+    return handleEquityDividendWebhook(req, confirmed, token, totalAmount);
   }
   return NextResponse.json({ error: "Transaction non reconnue" }, { status: 400 });
 }
@@ -229,6 +236,96 @@ async function reopenCompanyPayment(
         requestIp(req),
         now,
         payment.id,
+        eventId
+      ),
+  ]);
+}
+
+async function handleEquityDividendWebhook(
+  req: NextRequest,
+  confirmed: PayDunyaTransaction,
+  token: string,
+  totalAmount: number
+) {
+  const customData = confirmed.custom_data;
+  const dividendId = stringValue(customData?.equityDividendId);
+  if (!dividendId) {
+    return NextResponse.json({ error: "Transaction incohérente" }, { status: 400 });
+  }
+
+  const database = getD1();
+  const dividend = await database
+    .prepare(
+      `SELECT id, projectId, companyId, netPayableAmount, status, paymentRef
+       FROM EquityDividend WHERE id = ? LIMIT 1`
+    )
+    .bind(dividendId)
+    .first<EquityDividendSettlement>();
+  if (
+    !dividend ||
+    dividend.paymentRef !== token ||
+    dividend.projectId !== stringValue(customData?.projectId) ||
+    dividend.companyId !== stringValue(customData?.companyId) ||
+    Number(dividend.netPayableAmount) !== totalAmount
+  ) {
+    return NextResponse.json({ error: "Transaction non reconnue" }, { status: 400 });
+  }
+
+  const status = confirmed.status?.toLowerCase();
+  if (status === "completed") {
+    if (dividend.status === "paid") {
+      return NextResponse.json({ received: true, idempotent: true });
+    }
+    if (dividend.status !== "verifying") {
+      return NextResponse.json({ error: "Transaction à rapprocher" }, { status: 409 });
+    }
+    await settleEquityDividend(req, dividend, totalAmount);
+    return NextResponse.json({ received: true, status: "paid" });
+  }
+
+  if (status === "cancelled" || status === "failed") {
+    await reopenEquityDividend(req, dividend, status);
+    return NextResponse.json({ received: true, status });
+  }
+  return NextResponse.json({ received: true, status: status || "pending" });
+}
+
+async function reopenEquityDividend(
+  req: NextRequest,
+  dividend: EquityDividendSettlement,
+  providerStatus: string
+) {
+  if (dividend.status !== "verifying") return;
+  const database = getD1();
+  const now = isoNow();
+  const eventId = crypto.randomUUID();
+  await database.batch([
+    database
+      .prepare(
+        `UPDATE EquityDividend
+         SET status = 'approved', paymentRef = NULL,
+             paymentEventId = ?, updatedAt = ?
+         WHERE id = ? AND status = 'verifying' AND paymentRef = ?`
+      )
+      .bind(eventId, now, dividend.id, dividend.paymentRef),
+    database
+      .prepare(
+        `INSERT INTO AuditLog
+         (id, actorType, actorId, action, entityType, entityId, metadata, ipAddress, createdAt)
+         SELECT ?, 'system', 'paydunya', 'equity_dividend_payment_reopened',
+                'equity_dividend', ?, ?, ?, ?
+         WHERE EXISTS (
+           SELECT 1 FROM EquityDividend
+           WHERE id = ? AND status = 'approved' AND paymentEventId = ?
+         )`
+      )
+      .bind(
+        crypto.randomUUID(),
+        dividend.id,
+        JSON.stringify({ providerStatus }),
+        requestIp(req),
+        now,
+        dividend.id,
         eventId
       ),
   ]);

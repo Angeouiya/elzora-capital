@@ -26,6 +26,7 @@ import {
   Inbox,
   FileCheck2,
   Scale,
+  BadgeDollarSign,
 } from "lucide-react";
 
 interface OfferRow {
@@ -105,6 +106,36 @@ interface EquityFormState {
   shareRegisterRef?: string;
 }
 
+interface EquityDividendRow {
+  id: string;
+  status: string;
+  totalDeclaredAmount: number;
+  platformGrossAmount: number;
+  withholdingAmount: number;
+  netPayableAmount: number;
+  ownershipPct: number;
+  allocationCount: number;
+  resolutionRef: string;
+  resolutionDate: string;
+  recordDate: string;
+  taxReference: string | null;
+  rejectionReason: string | null;
+  reviewedBy: string | null;
+  approvedBy: string | null;
+  paidAt: string | null;
+  grossAllocated: number;
+  withholdingAllocated: number;
+  netAllocated: number;
+  project: {
+    title: string;
+    company: { legalName: string; tradeName?: string | null };
+  };
+}
+
+interface EquityDividendsResponse {
+  dividends: EquityDividendRow[];
+}
+
 const STATUS_LABEL: Record<string, string> = {
   open: "Ouverte",
   closing: "Clôture",
@@ -171,11 +202,15 @@ export function AdminFinance() {
   const [equityReload, setEquityReload] = useState(0);
   const [equityForms, setEquityForms] = useState<Record<string, EquityFormState>>({});
   const [equityAction, setEquityAction] = useState<string | null>(null);
+  const [dividendAction, setDividendAction] = useState<string | null>(null);
+  const [dividendReasons, setDividendReasons] = useState<Record<string, string>>({});
   const { data, loading } = useFetch<AdminStatsResponse>("/api/admin/stats");
   const { data: disbursementData, loading: disbursementsLoading } =
     useFetch<DisbursementsResponse>("/api/admin/disbursements");
   const { data: equityData, loading: equityLoading, error: equityError } =
     useFetch<EquityIssuancesResponse>(`/api/admin/equity-issuances?refresh=${equityReload}`);
+  const { data: dividendData, loading: dividendsLoading, error: dividendsError } =
+    useFetch<EquityDividendsResponse>(`/api/admin/equity-dividends?refresh=${equityReload}`);
 
   // Calculs live depuis les offres remontées par /api/admin/stats
   const { totalCollected, collections } = useMemo(() => {
@@ -187,7 +222,7 @@ export function AdminFinance() {
     return { totalCollected: sum, collections: list };
   }, [data]);
 
-  if (loading || disbursementsLoading || equityLoading || !data) {
+  if (loading || disbursementsLoading || equityLoading || dividendsLoading || !data) {
     return (
       <div className="p-4 sm:p-6 lg:p-8">
         <Skeleton className="mb-6 h-9 w-72" />
@@ -207,6 +242,7 @@ export function AdminFinance() {
     .reduce((sum, item) => sum + Number(item.netAmount || 0), 0);
   const totalRepaid = Number(data.stats.totalRepaid || 0);
   const equityIssuances = equityData?.issuances ?? [];
+  const equityDividends = dividendData?.dividends ?? [];
 
   const updateEquityForm = (id: string, key: keyof EquityFormState, value: string) => {
     setEquityForms((current) => ({
@@ -262,6 +298,43 @@ export function AdminFinance() {
       });
     } finally {
       setEquityAction(null);
+    }
+  };
+
+  const runDividendAction = async (
+    dividend: EquityDividendRow,
+    action: "review" | "approve" | "reject"
+  ) => {
+    setDividendAction(`${dividend.id}:${action}`);
+    try {
+      const response = await fetch("/api/admin/equity-dividends", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          dividendId: dividend.id,
+          action,
+          ...(action === "reject" ? { reason: dividendReasons[dividend.id] ?? "" } : {}),
+        }),
+      });
+      const result = (await response.json()) as { error?: string };
+      if (!response.ok) throw new Error(result.error || "Action indisponible");
+      toast({
+        title:
+          action === "review"
+            ? "Contrôle juridique enregistré"
+            : action === "approve"
+              ? "Distribution validée"
+              : "Déclaration retournée à l’entreprise",
+      });
+      setEquityReload((value) => value + 1);
+    } catch (error) {
+      toast({
+        title: "Action non enregistrée",
+        description: error instanceof Error ? error.message : "Erreur inconnue",
+        variant: "destructive",
+      });
+    } finally {
+      setDividendAction(null);
     }
   };
 
@@ -608,7 +681,175 @@ export function AdminFinance() {
         </CardContent>
       </Card>
 
-      {/* 4. Remboursements (empty state) */}
+      {/* 4. Dividendes */}
+      <Card className="mt-6 overflow-hidden p-0">
+        <CardHeader className="bg-secondary/40 pb-3 pt-4">
+          <CardTitle className="flex items-center gap-2 text-base font-semibold">
+            <BadgeDollarSign className="h-4 w-4" />
+            Dividendes des participations
+            <span className="tnum text-xs font-normal text-muted-foreground">
+              ({equityDividends.length})
+            </span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {dividendsError ? (
+            <EmptyState
+              title="Accès aux distributions non disponible"
+              desc="Votre rôle ne permet pas de contrôler les déclarations de dividendes."
+              icon={BadgeDollarSign}
+            />
+          ) : equityDividends.length === 0 ? (
+            <EmptyState
+              title="Aucune distribution déclarée"
+              desc="Les décisions de distribution transmises par les entreprises apparaîtront ici."
+              icon={BadgeDollarSign}
+            />
+          ) : (
+            <div className="divide-y divide-border">
+              {equityDividends.map((dividend) => {
+                const busy = dividendAction?.startsWith(`${dividend.id}:`) ?? false;
+                const statusLabel: Record<string, string> = {
+                  submitted: "Contrôle juridique",
+                  reviewed: "Validation financière",
+                  approved: "Prête au règlement",
+                  verifying: "Paiement en vérification",
+                  paid: "Distribuée",
+                  rejected: "À corriger",
+                  cancelled: "Annulée",
+                };
+                return (
+                  <div key={dividend.id} className="p-4 sm:p-5">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">
+                          {dividend.project.title}
+                        </p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {dividend.project.company.tradeName || dividend.project.company.legalName}
+                          {" · "}{dividend.resolutionRef}
+                        </p>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className={
+                          dividend.status === "paid"
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                            : dividend.status === "rejected"
+                              ? "border-red-200 bg-red-50 text-red-800"
+                              : "border-[#D9BFD4] bg-[#FCF8FB] text-[#541249]"
+                        }
+                      >
+                        {statusLabel[dividend.status] || dividend.status}
+                      </Badge>
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
+                      <div>
+                        <p className="text-muted-foreground">Dividende total décidé</p>
+                        <p className="tnum font-semibold">{fmtFCFA(dividend.totalDeclaredAmount)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Part brute des investisseurs</p>
+                        <p className="tnum font-semibold">{fmtFCFA(dividend.platformGrossAmount)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Retenue déclarée</p>
+                        <p className="tnum font-semibold">{fmtFCFA(dividend.withholdingAmount)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Net à régler</p>
+                        <p className="tnum font-semibold text-[#541249]">{fmtFCFA(dividend.netPayableAmount)}</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 rounded-lg border border-border bg-secondary/20 px-3 py-2 text-[11px] text-muted-foreground">
+                      Date de référence : {new Date(`${dividend.recordDate}T00:00:00Z`).toLocaleDateString("fr-FR")}
+                      {" · "}{dividend.allocationCount} associé(s) inscrit(s)
+                      {" · "}{dividend.ownershipPct.toLocaleString("fr-FR", { maximumFractionDigits: 6 })} % du capital traité
+                      {dividend.taxReference ? ` · Référence fiscale : ${dividend.taxReference}` : ""}
+                    </div>
+
+                    {dividend.status === "submitted" && (
+                      <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3">
+                        <p className="text-xs font-semibold text-amber-950">
+                          Vérifier la décision sociale, la date de référence et la retenue déclarée.
+                        </p>
+                        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                          <Button
+                            size="sm"
+                            disabled={busy}
+                            onClick={() => void runDividendAction(dividend, "review")}
+                          >
+                            Valider le contrôle juridique
+                          </Button>
+                          <Input
+                            value={dividendReasons[dividend.id] ?? ""}
+                            onChange={(event) =>
+                              setDividendReasons((current) => ({
+                                ...current,
+                                [dividend.id]: event.target.value,
+                              }))
+                            }
+                            className="h-9 sm:max-w-sm"
+                            placeholder="Motif précis si correction requise"
+                          />
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={busy || !(dividendReasons[dividend.id] ?? "").trim()}
+                            onClick={() => void runDividendAction(dividend, "reject")}
+                          >
+                            Demander une correction
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {dividend.status === "reviewed" && (
+                      <div className="mt-4 flex flex-col gap-3 rounded-xl border border-[#D9BFD4] bg-[#FCF8FB] p-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-xs font-semibold text-[#541249]">Second contrôle obligatoire</p>
+                          <p className="mt-0.5 text-[11px] text-muted-foreground">
+                            Un responsable différent confirme les montants avant d’autoriser le règlement.
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          disabled={busy}
+                          onClick={() => void runDividendAction(dividend, "approve")}
+                        >
+                          Valider financièrement
+                        </Button>
+                      </div>
+                    )}
+
+                    {dividend.status === "approved" && (
+                      <p className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900">
+                        Les contrôles sont terminés. L’entreprise peut maintenant régler le montant net via le prestataire autorisé.
+                      </p>
+                    )}
+
+                    {dividend.status === "paid" && (
+                      <p className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900">
+                        Répartition terminée : {fmtFCFA(dividend.netAllocated)} crédités dans les portefeuilles des associés.
+                      </p>
+                    )}
+
+                    {dividend.status === "rejected" && dividend.rejectionReason && (
+                      <p className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-900">
+                        Correction demandée : {dividend.rejectionReason}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* 5. Remboursements (empty state) */}
       <Card className="mt-6 overflow-hidden p-0">
         <CardHeader className="bg-secondary/40 pb-3 pt-4">
           <CardTitle className="flex items-center gap-2 text-base font-semibold">

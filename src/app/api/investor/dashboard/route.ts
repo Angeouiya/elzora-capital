@@ -44,6 +44,7 @@ interface InvestmentDashboardRow extends Record<string, unknown> {
   upfrontCommissionPct: number;
   annualFollowUpPct: number;
   receivedToDate: number;
+  equityDividendReceived: number;
   offerStatus: string;
   equityAllocationStatus: string | null;
   ownershipMicroPct: number | null;
@@ -98,16 +99,21 @@ export async function GET(req: Request) {
            ea.status AS equityAllocationStatus,
            ea.ownershipMicroPct, ea.certificateNo, ea.issuedAt AS equityIssuedAt,
            ei.status AS equityIssuanceStatus, ei.shareClass AS equityShareClass,
-           COALESCE(SUM(d.amount), 0) AS receivedToDate
+           COALESCE((
+             SELECT SUM(d.amount) FROM Distribution d
+             WHERE d.investmentId = i.id AND d.status = 'available'
+           ), 0) AS receivedToDate,
+           COALESCE((
+             SELECT SUM(eda.netAmount) FROM EquityDividendAllocation eda
+             WHERE eda.investmentId = i.id AND eda.status = 'available'
+           ), 0) AS equityDividendReceived
          FROM Investment i
          JOIN Project p ON p.id = i.projectId
          JOIN Company c ON c.id = p.companyId
          JOIN Offer o ON o.id = i.offerId
-         LEFT JOIN Distribution d ON d.investmentId = i.id
          LEFT JOIN EquityAllocation ea ON ea.investmentId = i.id
          LEFT JOIN EquityIssuance ei ON ei.id = ea.issuanceId
          WHERE i.investorId = ?
-         GROUP BY i.id
          ORDER BY i.createdAt DESC`
       )
       .bind(session.userId)
@@ -143,7 +149,8 @@ export async function GET(req: Request) {
 
   const investments = investmentResult.results.map((row) => {
     const amount = Number(row.amount);
-    const receivedToDate = Number(row.receivedToDate || 0);
+    const equityDividendReceived = Number(row.equityDividendReceived || 0);
+    const receivedToDate = Number(row.receivedToDate || 0) + equityDividendReceived;
     receivedTotal += receivedToDate;
     if (row.status === "pending_payment") pendingPayments += 1;
     if (row.status === "confirmed") {
@@ -187,6 +194,7 @@ export async function GET(req: Request) {
       createdAt: row.createdAt,
       expectedRepayment,
       receivedToDate,
+      equityDividendReceived,
       remainingDue,
       availableBalance,
       projectionLabel,

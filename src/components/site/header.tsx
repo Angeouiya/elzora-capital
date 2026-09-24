@@ -157,9 +157,9 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
             <button
               data-control="nav"
               key={item.view}
-              onClick={() => setView(item.view)}
+              onClick={() => setView(userEmail && item.view === "register" ? "company_dashboard" : item.view)}
               className={`relative rounded-xl px-3.5 py-2 text-sm font-semibold transition-all ${
-                view === item.view
+                view === (userEmail && item.view === "register" ? "company_dashboard" : item.view)
                   ? "bg-[#f4ebf2] text-[#541249]"
                   : "text-muted-foreground hover:bg-[#faf4f9] hover:text-[#541249]"
               }`}
