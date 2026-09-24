@@ -43,12 +43,12 @@ export function OfferCard({ offer, eager = false, compactOnMobile = false }: { o
   const isShowcase = offer.id.startsWith("showcase-");
 
   return (
-    <Card className={`group gap-0 overflow-hidden rounded-[1.35rem] border border-[#541249]/10 bg-white/90 p-0 transition-all duration-300 hover:-translate-y-1 hover:border-[#541249]/25 hover:shadow-[0_24px_60px_rgba(56,12,49,.12)] ${compactOnMobile ? "flex flex-row sm:flex-col" : "flex flex-col"}`}>
+    <Card className={`group h-full gap-0 overflow-hidden rounded-[1.35rem] border border-[#541249]/10 bg-white/90 p-0 transition-all duration-300 hover:-translate-y-1 hover:border-[#541249]/25 hover:shadow-[0_24px_60px_rgba(56,12,49,.12)] ${compactOnMobile ? "flex flex-row sm:flex-col" : "flex flex-col"}`}>
       {/* Image */}
       <button
         data-control="media"
         onClick={() => openOffer(offer.id)}
-        className={`relative overflow-hidden ${compactOnMobile ? "block min-h-40 w-[38%] shrink-0 sm:h-44 sm:w-full" : "block h-40 w-full sm:h-44"}`}
+        className={`relative overflow-hidden ${compactOnMobile ? "block min-h-44 w-[35%] shrink-0 sm:h-40 sm:w-full" : "block h-40 w-full sm:h-44"}`}
         aria-label={`${locale === "fr" ? "Voir l’offre" : "View offer"} ${offer.project.title}`}
       >
         <Image
@@ -87,7 +87,7 @@ export function OfferCard({ offer, eager = false, compactOnMobile = false }: { o
       </button>
 
       {/* Content */}
-      <div className={`flex min-w-0 flex-1 flex-col ${compactOnMobile ? "gap-2.5 p-3 sm:gap-3 sm:p-4" : "gap-3 p-4"}`}>
+      <div className={`flex min-w-0 flex-1 flex-col ${compactOnMobile ? "gap-2 p-3 sm:gap-3 sm:p-4" : "gap-3 p-4"}`}>
         <div>
           <p className="text-xs font-medium text-muted-foreground">
             {offer.project.company.tradeName || offer.project.company.legalName}
@@ -95,6 +95,11 @@ export function OfferCard({ offer, eager = false, compactOnMobile = false }: { o
           <h3 className="mt-1 line-clamp-2 text-base font-semibold leading-snug tracking-[-.012em] text-foreground">
             {offer.project.title}
           </h3>
+          {compactOnMobile ? (
+            <p className="mt-1 line-clamp-1 text-xs font-semibold text-positive sm:hidden">
+              {yieldLabel(offer, locale)}
+            </p>
+          ) : null}
         </div>
 
         {/* Rémunération */}

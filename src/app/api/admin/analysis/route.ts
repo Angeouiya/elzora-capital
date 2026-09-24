@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { getD1, isoNow, requestIp } from "@/lib/d1";
 import { canActorTransition, canTransition } from "@/lib/workflow";
+import {
+  isRegulatoryClearanceComplete,
+  missingRegulatoryRequirements,
+  type RegulatoryReviewInput,
+} from "@/lib/regulatory-review";
 
 interface AnalysisProjectRow extends Record<string, unknown> {
   id: string;
@@ -60,6 +65,26 @@ interface OfferRow extends Record<string, unknown> {
   fundingGoal: number;
 }
 
+interface RegulatoryReviewRow extends Record<string, unknown> {
+  id: string;
+  projectId: string;
+  distributionScope: RegulatoryReviewInput["distributionScope"];
+  marketAuthorityPath: RegulatoryReviewInput["marketAuthorityPath"];
+  corporateActsStatus: RegulatoryReviewInput["corporateActsStatus"];
+  paymentSafeguardingStatus: RegulatoryReviewInput["paymentSafeguardingStatus"];
+  beneficialOwnersStatus: RegulatoryReviewInput["beneficialOwnersStatus"];
+  riskDisclosureStatus: RegulatoryReviewInput["riskDisclosureStatus"];
+  countryOpinionRef: string | null;
+  authorityReference: string | null;
+  restrictions: string | null;
+  decision: RegulatoryReviewInput["decision"];
+  preparedBy: string;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export async function GET(req: Request) {
   let admin;
   try {
@@ -69,7 +94,7 @@ export async function GET(req: Request) {
   }
 
   const database = getD1();
-  const [projectResult, eventResult, offerResult] = await Promise.all([
+  const [projectResult, eventResult, offerResult, reviewResult] = await Promise.all([
     database
       .prepare(
         `SELECT p.id, p.companyId, p.submittedBy, p.title, p.description,
@@ -103,6 +128,9 @@ export async function GET(req: Request) {
          FROM Offer`
       )
       .all<OfferRow>(),
+    database
+      .prepare(`SELECT * FROM RegulatoryReview ORDER BY updatedAt DESC`)
+      .all<RegulatoryReviewRow>(),
   ]);
 
   const eventsByProject = new Map<string, EventRow[]>();
@@ -112,9 +140,13 @@ export async function GET(req: Request) {
     eventsByProject.set(event.projectId, events);
   }
   const offersByProject = new Map(offerResult.results.map((offer) => [offer.projectId, offer]));
+  const reviewsByProject = new Map(
+    reviewResult.results.map((review) => [review.projectId, review])
+  );
 
   const projects = projectResult.results.map((row) => {
     const offer = offersByProject.get(row.id);
+    const regulatoryReview = reviewsByProject.get(row.id);
     return {
       id: row.id,
       title: row.title,
@@ -153,6 +185,7 @@ export async function GET(req: Request) {
         country: row.companyCountry,
       },
       timeline: eventsByProject.get(row.id) || [],
+      regulatoryReview: regulatoryReview ? mapRegulatoryReview(regulatoryReview) : null,
       offer: offer
         ? {
             id: offer.id,
@@ -243,6 +276,24 @@ export async function PATCH(req: NextRequest) {
       { error: "Cette évolution n'est pas autorisée pour le statut actuel." },
       { status: 400 }
     );
+  }
+
+  if (["approved", "published"].includes(targetStatus)) {
+    const review = await database
+      .prepare(`SELECT * FROM RegulatoryReview WHERE projectId = ? LIMIT 1`)
+      .bind(projectId)
+      .first<RegulatoryReviewRow>();
+    const reviewInput = review ? regulatoryReviewInput(review) : null;
+    if (!isRegulatoryClearanceComplete(reviewInput)) {
+      return NextResponse.json(
+        {
+          error:
+            "La validation du cadre de publication doit être terminée avant cette décision.",
+          missing: missingRegulatoryRequirements(reviewInput),
+        },
+        { status: 409 }
+      );
+    }
   }
 
   const now = isoNow();
@@ -391,4 +442,28 @@ export async function PATCH(req: NextRequest) {
     project: { id: projectId, status: targetStatus, updatedAt: now },
     offer: offerId ? { id: offerId, status: "open" } : null,
   });
+}
+
+function regulatoryReviewInput(row: RegulatoryReviewRow): RegulatoryReviewInput {
+  return {
+    distributionScope: row.distributionScope,
+    marketAuthorityPath: row.marketAuthorityPath,
+    corporateActsStatus: row.corporateActsStatus,
+    paymentSafeguardingStatus: row.paymentSafeguardingStatus,
+    beneficialOwnersStatus: row.beneficialOwnersStatus,
+    riskDisclosureStatus: row.riskDisclosureStatus,
+    countryOpinionRef: row.countryOpinionRef || "",
+    authorityReference: row.authorityReference,
+    restrictions: row.restrictions,
+    decision: row.decision,
+  };
+}
+
+function mapRegulatoryReview(row: RegulatoryReviewRow) {
+  const input = regulatoryReviewInput(row);
+  return {
+    ...row,
+    complete: isRegulatoryClearanceComplete(input),
+    missing: missingRegulatoryRequirements(input),
+  };
 }

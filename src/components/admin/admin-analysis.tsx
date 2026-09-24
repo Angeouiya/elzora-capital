@@ -27,6 +27,10 @@ import { toast } from "@/hooks/use-toast";
 import { fmtCompact, fmtFCFA } from "@/lib/finance";
 import { TRANSITIONS, canActorTransition } from "@/lib/workflow";
 import {
+  RegulatoryReviewDialog,
+  type AdminRegulatoryReview,
+} from "@/components/admin/regulatory-review-dialog";
+import {
   FileSearch,
   ChevronDown,
   ChevronRight,
@@ -43,6 +47,8 @@ import {
   PauseCircle,
   CheckCheck,
   Banknote,
+  Scale,
+  ShieldAlert,
   type LucideIcon,
 } from "lucide-react";
 
@@ -100,6 +106,7 @@ interface ProjectRow {
   };
   timeline?: ProjectEventRow[];
   offer?: OfferInline | null;
+  regulatoryReview: AdminRegulatoryReview | null;
 }
 
 interface AnalysisResponse {
@@ -297,6 +304,7 @@ export function AdminAnalysis() {
     target: string;
     project: ProjectRow;
   } | null>(null);
+  const [reviewProject, setReviewProject] = useState<ProjectRow | null>(null);
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -339,7 +347,9 @@ export function AdminAnalysis() {
           note: note.trim() || undefined,
         }),
       });
-      const j = (await res.json().catch(() => null)) as { error?: string } | null;
+      const j = (await res.json().catch(() => null)) as
+        | { error?: string; missing?: string[] }
+        | null;
       if (!res.ok) {
         // Messages d&rsquo;erreur précis selon 400/403
         if (res.status === 403) {
@@ -349,11 +359,19 @@ export function AdminAnalysis() {
               j?.error || "Votre rôle ne permet pas cette transition.",
             variant: "destructive",
           });
+        } else if (res.status === 409) {
+          toast({
+            title: "Cadre de publication incomplet",
+            description: j?.missing?.length
+              ? `À compléter : ${j.missing.join(", ")}.`
+              : j?.error || "Terminez la revue avant de poursuivre.",
+            variant: "destructive",
+          });
         } else if (res.status === 400) {
           toast({
-            title: "Transition invalide",
+            title: "Décision indisponible",
             description:
-              j?.error || "Cette transition n&rsquo;est pas dans la machine à états.",
+              j?.error || "Cette décision n’est pas disponible à cette étape.",
             variant: "destructive",
           });
         } else {
@@ -413,8 +431,7 @@ export function AdminAnalysis() {
             Analyse des dossiers
           </h1>
           <p className="text-sm text-muted-foreground">
-            Machine à états : soumission → analyse → décision → publication →
-            financement → remboursement → clôture.
+            Suivez l’étude, la décision, la publication et le financement de chaque dossier.
           </p>
         </div>
         <Select value={filter} onValueChange={setFilter}>
@@ -490,6 +507,19 @@ export function AdminAnalysis() {
                       {hasOffer && (
                         <Badge className="border-0 bg-nexora-lime text-[10px] text-nexora-black">
                           Offre créée
+                        </Badge>
+                      )}
+                      {p.regulatoryReview?.complete ? (
+                        <Badge className="border border-emerald-200 bg-emerald-50 text-[10px] text-emerald-800">
+                          Cadre confirmé
+                        </Badge>
+                      ) : p.regulatoryReview?.decision === "blocked" ? (
+                        <Badge className="border border-red-200 bg-red-50 text-[10px] text-red-800">
+                          Publication suspendue
+                        </Badge>
+                      ) : (
+                        <Badge className="border border-amber-200 bg-amber-50 text-[10px] text-amber-900">
+                          Cadre à compléter
                         </Badge>
                       )}
                     </div>
@@ -667,6 +697,48 @@ export function AdminAnalysis() {
 
                       {/* Actions */}
                       <div className="lg:col-span-1">
+                        <div
+                          className={`mb-4 rounded-xl border p-3 ${
+                            p.regulatoryReview?.complete
+                              ? "border-emerald-200 bg-emerald-50/70"
+                              : p.regulatoryReview?.decision === "blocked"
+                                ? "border-red-200 bg-red-50/70"
+                                : "border-amber-200 bg-amber-50/70"
+                          }`}
+                        >
+                          <div className="flex items-start gap-2.5">
+                            {p.regulatoryReview?.complete ? (
+                              <Scale className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" />
+                            ) : (
+                              <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-800" />
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-semibold text-foreground">
+                                Cadre de publication
+                              </p>
+                              <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+                                {p.regulatoryReview?.complete
+                                  ? "Les éléments requis sont confirmés."
+                                  : p.regulatoryReview?.decision === "blocked"
+                                    ? "La publication est suspendue dans l’attente d’une décision."
+                                    : p.regulatoryReview?.missing?.length
+                                      ? `${p.regulatoryReview.missing.length} élément${
+                                          p.regulatoryReview.missing.length > 1 ? "s" : ""
+                                        } à compléter.`
+                                      : "La revue doit être préparée avant l’approbation."}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="mt-3 w-full bg-white/80"
+                            onClick={() => setReviewProject(p)}
+                          >
+                            <Scale className="mr-2 h-4 w-4" />
+                            Examiner le cadre
+                          </Button>
+                        </div>
                         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                           Actions valides
                         </p>
@@ -676,11 +748,20 @@ export function AdminAnalysis() {
                               const cfg = TARGET_META[target];
                               if (!cfg) return null;
                               const Icon = cfg.icon;
+                              const needsClearance = ["approved", "published"].includes(target);
+                              const clearanceMissing =
+                                needsClearance && !p.regulatoryReview?.complete;
                               return (
                                 <Button
                                   key={target}
                                   size="sm"
                                   className={cfg.btnClass}
+                                  disabled={clearanceMissing}
+                                  title={
+                                    clearanceMissing
+                                      ? "Terminez d’abord la revue du cadre de publication."
+                                      : undefined
+                                  }
                                   onClick={() => {
                                     setAction({ target, project: p });
                                     setNote("");
@@ -751,10 +832,7 @@ export function AdminAnalysis() {
               {action ? TARGET_META[action.target]?.label : ""}
             </DialogTitle>
             <DialogDescription className="text-xs">
-              {action?.project.title} — transition{" "}
-              <span className="font-mono">
-                {action?.project.status} → {action?.target}
-              </span>
+              {action?.project.title} — confirmez la décision pour ce dossier.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
@@ -810,6 +888,22 @@ export function AdminAnalysis() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {reviewProject ? (
+        <RegulatoryReviewDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setReviewProject(null);
+          }}
+          projectId={reviewProject.id}
+          projectTitle={reviewProject.title}
+          review={reviewProject.regulatoryReview}
+          onSaved={() => {
+            setReviewProject(null);
+            setRefetchKey((key) => key + 1);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

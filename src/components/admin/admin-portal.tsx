@@ -37,6 +37,8 @@ export function AdminPortal() {
         }>;
       })
       .then((payload) => {
+        if (controller.signal.aborted) return;
+        setSessionPending(false);
         if (!payload?.admin) return;
         restoreAdmin(
           payload.admin.email,
@@ -47,8 +49,6 @@ export function AdminPortal() {
       })
       .catch((error: unknown) => {
         if (error instanceof DOMException && error.name === "AbortError") return;
-      })
-      .finally(() => {
         if (!controller.signal.aborted) setSessionPending(false);
       });
 
