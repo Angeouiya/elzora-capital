@@ -6,7 +6,7 @@ import {
   FileText,
   Coins,
   CalendarDays,
-  Building2,
+  BriefcaseBusiness,
   ShieldCheck,
   TriangleAlert,
   LayoutGrid,
@@ -78,7 +78,7 @@ const COPY = {
 } as const;
 
 const INVESTOR_ICONS = [Search, FileText, Coins, CalendarDays];
-const COMPANY_ICONS = [Building2, FileText, LayoutGrid, Wallet];
+const COMPANY_ICONS = [BriefcaseBusiness, FileText, LayoutGrid, Wallet];
 
 export function HowItWorks() {
   const locale = useAppStore((state) => state.locale);
@@ -88,20 +88,20 @@ export function HowItWorks() {
   const pricingItems: ReadonlyArray<readonly [string, string, string, string]> = copy.pricingItems;
   return (
     <div className="page-shell reveal-in">
-      <div className="mb-8">
-        <p className="page-kicker">{copy.kicker}</p>
-        <h1 className="page-title mt-1">
+      <section className="public-hero mb-8 px-6 py-9 text-white sm:px-10 sm:py-12">
+        <p className="editorial-kicker">{copy.kicker}</p>
+        <h1 className="mt-5 max-w-3xl text-4xl font-black leading-[.95] tracking-[-.055em] sm:text-6xl">
           {copy.title}
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-5 max-w-2xl text-sm leading-7 text-white/65 sm:text-base">
           {copy.intro}
         </p>
-      </div>
+      </section>
 
       {/* Two columns */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Investisseurs */}
-        <Card>
+        <Card className="rounded-[1.5rem] border-[#541249]/10 bg-white/85">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Wallet className="h-5 w-5" />
@@ -112,7 +112,7 @@ export function HowItWorks() {
             {investorSteps.map(([title, description], i) => {
               const Icon = INVESTOR_ICONS[i];
               return <div key={title} className="flex items-start gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-nexora-pale text-positive">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#541249]/10 bg-[#f7eaf5] text-positive">
                   <Icon className="h-5 w-5" />
                 </span>
                 <div>
@@ -134,10 +134,10 @@ export function HowItWorks() {
         </Card>
 
         {/* Entreprises */}
-        <Card>
+        <Card className="rounded-[1.5rem] border-[#541249]/10 bg-[#f4ebf2]">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Building2 className="h-5 w-5" />
+              <BriefcaseBusiness className="h-5 w-5" />
               {copy.companyTitle}
             </CardTitle>
           </CardHeader>
@@ -145,7 +145,7 @@ export function HowItWorks() {
             {companySteps.map(([title, description], i) => {
               const Icon = COMPANY_ICONS[i];
               return <div key={title} className="flex items-start gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-nexora-pale text-positive">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#541249]/10 bg-white text-positive">
                   <Icon className="h-5 w-5" />
                 </span>
                 <div>
@@ -166,7 +166,7 @@ export function HowItWorks() {
       </div>
 
       {/* Notre rôle */}
-      <Card className="mt-6">
+      <Card className="mt-6 rounded-[1.5rem] border-[#541249]/10 bg-white/85">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <ShieldCheck className="h-5 w-5" />
@@ -181,7 +181,7 @@ export function HowItWorks() {
       </Card>
 
       {/* Tarification */}
-      <Card className="mt-6">
+      <Card className="mt-6 rounded-[1.5rem] border-[#541249]/10 bg-white/85">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Coins className="h-5 w-5" />

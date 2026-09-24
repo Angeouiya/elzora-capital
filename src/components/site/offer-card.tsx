@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useAppStore } from "@/lib/store";
 import { fmtPct } from "@/lib/finance";
 import { formatDisplayMoney } from "@/lib/display-money";
-import { Bookmark, Users, MapPin } from "lucide-react";
+import { ArrowUpRight, Users, MapPin } from "lucide-react";
 import type { OfferDTO } from "@/lib/types";
 import { getCountryLabel, getSectorLabel } from "@/lib/countries";
 
@@ -42,12 +42,12 @@ export function OfferCard({ offer }: { offer: OfferDTO }) {
   const isEquity = offer.project.instrumentType === "equity";
 
   return (
-    <Card className="group flex flex-col gap-0 overflow-hidden rounded-2xl border border-border bg-white p-0 transition-all duration-300 hover:-translate-y-1 hover:border-black/15 hover:shadow-[0_20px_45px_rgba(18,20,15,.10)]">
+    <Card className="group flex flex-col gap-0 overflow-hidden rounded-[1.35rem] border border-[#541249]/10 bg-white/90 p-0 transition-all duration-300 hover:-translate-y-1 hover:border-[#541249]/25 hover:shadow-[0_24px_60px_rgba(56,12,49,.12)]">
       {/* Image */}
       <button
         data-control="media"
         onClick={() => openOffer(offer.id)}
-        className="relative block h-36 w-full overflow-hidden sm:h-40"
+        className="relative block h-44 w-full overflow-hidden sm:h-48"
         aria-label={`${locale === "fr" ? "Voir l’offre" : "View offer"} ${offer.project.title}`}
       >
         <Image
@@ -56,7 +56,7 @@ export function OfferCard({ offer }: { offer: OfferDTO }) {
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           unoptimized
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.045]"
         />
         <div className="absolute left-3 top-3 flex gap-1.5">
           <Badge className="bg-background/95 text-foreground shadow-sm">
@@ -80,18 +80,18 @@ export function OfferCard({ offer }: { offer: OfferDTO }) {
       </button>
 
       {/* Content */}
-      <div className="flex flex-1 flex-col gap-3 p-4 sm:p-5">
+      <div className="flex flex-1 flex-col gap-4 p-4 sm:p-5">
         <div>
           <p className="text-xs font-medium text-muted-foreground">
             {offer.project.company.tradeName || offer.project.company.legalName}
           </p>
-          <h3 className="mt-0.5 line-clamp-2 text-sm font-bold leading-snug text-foreground">
+          <h3 className="mt-1 line-clamp-2 text-base font-extrabold leading-snug tracking-[-.015em] text-foreground">
             {offer.project.title}
           </h3>
         </div>
 
         {/* Rémunération */}
-        <div className="rounded-md bg-secondary/60 px-3 py-2">
+        <div className="rounded-xl border border-[#541249]/8 bg-[#f8f2f7] px-3.5 py-2.5">
           <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
             {locale === "fr" ? "Rémunération" : "Return"}
           </p>
@@ -136,20 +136,12 @@ export function OfferCard({ offer }: { offer: OfferDTO }) {
           </div>
           <div className="flex items-center gap-1.5">
             <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:bg-secondary hover:text-foreground"
-              aria-label={locale === "fr" ? "Sauvegarder l’offre" : "Save offer"}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Bookmark className="h-4 w-4" />
-            </Button>
-            <Button
               size="sm"
               onClick={() => openOffer(offer.id)}
               className="btn-nexora"
             >
               {locale === "fr" ? "Voir l’offre" : "View offer"}
+              <ArrowUpRight className="h-4 w-4" />
             </Button>
           </div>
         </div>

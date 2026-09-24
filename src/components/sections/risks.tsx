@@ -7,7 +7,7 @@ import {
   BanknoteArrowDown,
   BriefcaseBusiness,
   FileCheck2,
-  Landmark,
+  ScanSearch,
   Scale,
   ShieldAlert,
 } from "lucide-react";
@@ -49,7 +49,7 @@ const COPY = {
   },
 } as const;
 
-const RISK_ICONS = [BanknoteArrowDown, BriefcaseBusiness, Landmark, Scale];
+const RISK_ICONS = [BanknoteArrowDown, BriefcaseBusiness, ScanSearch, Scale];
 
 export function Risks() {
   const setView = useAppStore((state) => state.setView);
@@ -59,19 +59,19 @@ export function Risks() {
 
   return (
     <div className="page-shell reveal-in">
-      <div className="max-w-3xl">
-        <p className="page-kicker">{copy.kicker}</p>
-        <h1 className="page-title mt-2">{copy.title}</h1>
-        <p className="mt-4 text-sm leading-6 text-muted-foreground sm:text-base">
+      <section className="public-hero px-6 py-10 text-white sm:px-10 sm:py-14">
+        <p className="editorial-kicker">{copy.kicker}</p>
+        <h1 className="mt-5 max-w-4xl text-4xl font-black leading-[.95] tracking-[-.055em] sm:text-6xl">{copy.title}</h1>
+        <p className="mt-5 max-w-2xl text-sm leading-7 text-white/68 sm:text-base">
           {copy.intro}
         </p>
-      </div>
+      </section>
 
       <section className="mt-8 grid gap-4 sm:grid-cols-2">
         {risks.map(([title, description], index) => {
           const Icon = RISK_ICONS[index];
           return (
-          <article key={title} className="surface-card rounded-2xl border border-border bg-white/80 p-5 sm:p-6">
+          <article key={title} className="public-panel p-5 sm:p-6">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-nexora-pale text-positive">
               <Icon className="h-5 w-5" />
             </span>

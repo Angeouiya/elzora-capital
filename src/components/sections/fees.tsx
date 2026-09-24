@@ -2,7 +2,7 @@
 
 import { useAppStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Building2, CircleDollarSign, ReceiptText, WalletCards } from "lucide-react";
+import { ArrowRight, BriefcaseBusiness, CircleDollarSign, ReceiptText, WalletCards } from "lucide-react";
 
 const COPY = {
   fr: {
@@ -35,7 +35,7 @@ const COPY = {
   },
 } as const;
 
-const FEE_ICONS = [Building2, ReceiptText, CircleDollarSign];
+const FEE_ICONS = [BriefcaseBusiness, ReceiptText, CircleDollarSign];
 
 export function Fees() {
   const setView = useAppStore((state) => state.setView);
@@ -45,12 +45,12 @@ export function Fees() {
 
   return (
     <div className="page-shell reveal-in">
-      <section className="overflow-hidden rounded-[1.4rem] border border-[#541249]/15 bg-[linear-gradient(135deg,#541249_0%,#380C31_55%,#130410_100%)] px-5 py-7 text-white shadow-[0_22px_60px_rgba(56,12,49,.18)] sm:px-9 sm:py-10">
-        <p className="page-kicker hero-kicker">{copy.kicker}</p>
-        <h1 className="mt-3 max-w-3xl text-3xl font-black tracking-[-.045em] sm:text-5xl">
+      <section className="public-hero px-6 py-10 text-white sm:px-10 sm:py-14">
+        <p className="editorial-kicker">{copy.kicker}</p>
+        <h1 className="mt-5 max-w-4xl text-4xl font-black leading-[.95] tracking-[-.055em] sm:text-6xl">
           {copy.title}
         </h1>
-        <p className="mt-4 max-w-2xl text-sm leading-6 text-white/70 sm:text-base">
+        <p className="mt-5 max-w-2xl text-sm leading-7 text-white/68 sm:text-base">
           {copy.intro}
         </p>
       </section>
@@ -59,7 +59,7 @@ export function Fees() {
         {fees.map(([audience, title, value, description], index) => {
           const Icon = FEE_ICONS[index];
           return (
-          <article key={title} className="surface-card rounded-2xl border border-border bg-white/80 p-5 sm:p-6">
+          <article key={title} className="public-panel p-5 sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-nexora-pale text-positive">
                 <Icon className="h-5 w-5" />

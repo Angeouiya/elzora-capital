@@ -17,7 +17,7 @@ import {
 import { COUNTRIES, getCountryLabel } from "@/lib/countries";
 import {
   UserRound,
-  Building2,
+  BriefcaseBusiness,
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
@@ -176,7 +176,11 @@ export function Register() {
   };
 
   return (
-    <section className="page-shell max-w-2xl reveal-in">
+    <section className="page-shell max-w-4xl reveal-in">
+      <div className="mb-5 overflow-hidden rounded-[1.5rem] bg-[linear-gradient(135deg,#380c31,#130410)] px-5 py-6 text-white sm:px-8 sm:py-8">
+        <p className="editorial-kicker">NEXORA</p>
+        <h1 className="mt-4 text-2xl font-black tracking-[-.04em] sm:text-4xl">{copy.titles[Math.min(step - 1, copy.titles.length - 1)]}</h1>
+      </div>
       {/* Progress bar */}
       <div className="mb-6">
         <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
@@ -188,7 +192,7 @@ export function Register() {
         <Progress value={progressPct} className="h-1.5" />
       </div>
 
-      <Card>
+      <Card className="rounded-[1.5rem] border-[#541249]/10 bg-white/90">
         <CardHeader>
           <CardTitle className="text-lg font-bold tracking-tight">
             {step === 1 && copy.titles[0]}
@@ -240,7 +244,7 @@ export function Register() {
                   }`}
                 >
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-nexora-black">
-                    <Building2 className="h-5 w-5 text-nexora-lime" />
+                    <BriefcaseBusiness className="h-5 w-5 text-nexora-lime" />
                   </div>
                   <div>
                     <p className="text-sm font-bold text-foreground">{copy.company}</p>
@@ -332,7 +336,7 @@ export function Register() {
                 </div>
                 {country && (
                   <p className="mt-1 text-[11px] text-muted-foreground">
-                    {copy.settlementCurrency} : {country.currencyDisplay} ({country.currency}) · {copy.reflection} : {country.reflectionPeriodDays} {copy.days}
+                    {copy.settlementCurrency} : {country.currency} · {copy.reflection} : {country.reflectionPeriodDays} {copy.days}
                   </p>
                 )}
               </div>
@@ -399,7 +403,7 @@ export function Register() {
                     id: "finance" as const,
                     label: copy.goals[1][0],
                     desc: copy.goals[1][1],
-                    icon: Building2,
+                    icon: BriefcaseBusiness,
                   },
                   {
                     id: "both" as const,

@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NEXORA Capital — Financement participatif en Afrique de l'Ouest",
+  title: "NEXORA Capital — Capital privé · Private capital",
   description:
-    "Plateforme de financement participatif pour l'Afrique de l'Ouest. Investissez en dette ou en capital dans des entreprises vérifiées. À partir de 10 000 FCFA.",
+    "Capital privé en Afrique de l'Ouest · Private capital in West Africa. Dette et capital, dès 10 000 XOF.",
   keywords: [
     "financement participatif",
     "Afrique de l'Ouest",
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "NEXORA Capital",
-    description: "Financement participatif pour l'Afrique de l'Ouest.",
+    description: "Capital privé en Afrique de l'Ouest · Private capital in West Africa.",
     siteName: "NEXORA Capital",
     type: "website",
   },

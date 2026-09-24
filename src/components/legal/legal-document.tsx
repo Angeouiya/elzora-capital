@@ -10,12 +10,12 @@ import {
   ArrowLeft,
   ArrowUpRight,
   Banknote,
-  Building2,
+  Handshake,
   Database,
   FileCheck2,
   Fingerprint,
   Globe2,
-  Landmark,
+  ScrollText,
   LockKeyhole,
   Scale,
   ShieldAlert,
@@ -126,7 +126,7 @@ const COPY = {
   },
 } as const;
 
-const SECTION_ICONS = [UserCheck, FileCheck2, WalletCards, Building2, Database, ShieldAlert];
+const SECTION_ICONS = [UserCheck, FileCheck2, WalletCards, Handshake, Database, ShieldAlert];
 
 export function LegalDocument({ document }: { document: LegalDocumentKind }) {
   const locale = useAppStore((state) => state.locale);
@@ -137,13 +137,18 @@ export function LegalDocument({ document }: { document: LegalDocumentKind }) {
   const content = copy[document];
   const version = document === "terms" ? LEGAL_VERSIONS.terms : document === "privacy" ? LEGAL_VERSIONS.privacy : LEGAL_VERSIONS.risk;
 
+  useEffect(() => {
+    window.document.documentElement.lang = locale;
+    window.document.title = `${content.title} — NEXORA Capital`;
+  }, [content.title, locale]);
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(84,18,73,.08),transparent_34%),#FCFBFC] text-foreground">
       <header className="sticky top-0 z-40 border-b border-[#541249]/10 bg-white/90 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
           <Link href="/" className="flex items-center gap-2.5 rounded-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#7B286D]/18">
             <Image src="/logo.svg" alt="" width={36} height={36} className="h-9 w-9" />
-            <span><span className="block text-sm font-black tracking-tight">NEXORA</span><span className="block text-[9px] font-bold uppercase tracking-[.18em] text-[#6C195E]">Capital privé</span></span>
+            <span><span className="block text-sm font-black tracking-tight">NEXORA</span><span className="block text-[9px] font-bold uppercase tracking-[.18em] text-[#6C195E]">{locale === "fr" ? "Capital privé" : "Private capital"}</span></span>
           </Link>
           <button type="button" onClick={() => setLocale(locale === "fr" ? "en" : "fr")} className="rounded-xl border border-[#541249]/15 bg-white px-3 py-2 text-xs font-bold text-[#541249] shadow-sm hover:bg-[#F7EAF5]">
             {locale === "fr" ? "English" : "Français"}
@@ -199,7 +204,7 @@ export function LegalDocument({ document }: { document: LegalDocumentKind }) {
 function OfficialSources({ locale }: { locale: "fr" | "en" }) {
   const copy = COPY[locale];
   const sources = [
-    { icon: Landmark, label: "AMF‑UMOA", detail: locale === "fr" ? "Convention et règlement du marché" : "Market convention and regulation", href: REGULATORY_SOURCES.amfFramework },
+    { icon: ScrollText, label: "AMF‑UMOA", detail: locale === "fr" ? "Convention et règlement du marché" : "Market convention and regulation", href: REGULATORY_SOURCES.amfFramework },
     { icon: Globe2, label: "AMF‑UMOA", detail: locale === "fr" ? "Note sectorielle sur le financement participatif" : "Sector note on crowdfunding", href: REGULATORY_SOURCES.amfCrowdfunding },
     { icon: Banknote, label: "BCEAO", detail: locale === "fr" ? "FinTech et cadre de supervision" : "FinTech and supervisory framework", href: REGULATORY_SOURCES.bceaoFintech },
     { icon: WalletCards, label: "BCEAO", detail: locale === "fr" ? "Instruction relative aux services de paiement" : "Payment services instruction", href: REGULATORY_SOURCES.bceaoPayments },

@@ -37,9 +37,10 @@ export function Footer() {
   const legalItems: ReadonlyArray<readonly [string, string]> = copy.legalItems;
 
   return (
-    <footer className="mt-auto bg-[linear-gradient(135deg,#250820_0%,#130410_58%,#090208_100%)] text-white">
-      <div className="mx-auto max-w-7xl px-4 py-9 sm:px-6 lg:px-8 lg:py-11">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
+    <footer className="mt-auto overflow-hidden bg-[linear-gradient(135deg,#250820_0%,#130410_58%,#090208_100%)] text-white">
+      <div className="mx-auto max-w-[82rem] px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+        <div className="mb-10 h-px w-full bg-[linear-gradient(90deg,#b57277,rgba(181,114,119,.08),transparent)]" />
+        <div className="grid grid-cols-1 gap-9 md:grid-cols-[1.5fr_.75fr_.85fr_1fr]">
           {/* Brand */}
           <div className="md:col-span-1">
             <div className="flex items-center gap-2">
@@ -48,14 +49,14 @@ export function Footer() {
                 NEXORA
               </span>
             </div>
-            <p className="mt-3 max-w-xs text-sm leading-6 text-white/55">
+            <p className="mt-4 max-w-sm text-sm leading-6 text-white/55">
               {copy.tagline}
             </p>
           </div>
 
           {/* Produit */}
           <div>
-            <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-white/85">
+            <h4 className="mb-4 text-[10px] font-bold uppercase tracking-[.18em] text-[#dca8c7]">
               {copy.product}
             </h4>
             <ul className="space-y-2 text-sm text-white/55">
@@ -75,7 +76,7 @@ export function Footer() {
 
           {/* Légal */}
           <div>
-            <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-white/85">
+            <h4 className="mb-4 text-[10px] font-bold uppercase tracking-[.18em] text-[#dca8c7]">
               {copy.legal}
             </h4>
             <ul className="space-y-2 text-sm text-white/55">
@@ -92,7 +93,7 @@ export function Footer() {
 
           {/* Contact */}
           <div>
-            <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-white/85">
+            <h4 className="mb-4 text-[10px] font-bold uppercase tracking-[.18em] text-[#dca8c7]">
               {copy.contact}
             </h4>
             <ul className="space-y-2 text-sm text-white/55">
@@ -110,7 +111,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-8 flex flex-col gap-4 border-t border-white/10 pt-6 text-xs text-white/45 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-10 flex flex-col gap-4 border-t border-white/10 pt-6 text-xs text-white/45 sm:flex-row sm:items-center sm:justify-between">
           <p>© 2026 NEXORA Capital. {copy.rights}</p>
           <p className="flex items-center gap-1.5">
             <ShieldCheck className="h-3.5 w-3.5 text-nexora-lime" />

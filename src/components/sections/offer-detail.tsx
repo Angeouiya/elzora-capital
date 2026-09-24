@@ -21,7 +21,7 @@ import {
   Users,
   Coins,
   Wallet,
-  Building2,
+  BriefcaseBusiness,
   ShieldCheck,
   TriangleAlert,
   FileText,
@@ -179,7 +179,7 @@ export function OfferDetail() {
       </Button>
 
       {/* Hero */}
-      <div className="relative mb-6 h-56 overflow-hidden rounded-xl sm:h-72">
+      <div className="relative mb-6 h-64 overflow-hidden rounded-[1.65rem] shadow-[0_24px_65px_rgba(56,12,49,.16)] sm:h-80">
         <Image
           src={offer.project.imageUrl}
           alt={offer.project.title}
@@ -188,7 +188,7 @@ export function OfferDetail() {
           unoptimized
           className="h-full w-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#130410]/95 via-[#250820]/45 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-8">
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <Badge className="bg-background/95 text-foreground">
@@ -208,7 +208,7 @@ export function OfferDetail() {
               {offer.project.city}, {getCountryLabel(offer.project.country, locale)}
             </Badge>
           </div>
-          <h1 className="text-xl font-black tracking-tight text-white sm:text-3xl">
+          <h1 className="max-w-4xl text-2xl font-black leading-tight tracking-[-.035em] text-white sm:text-4xl">
             {offer.project.title}
           </h1>
           <p className="mt-1 text-sm text-white/80">
@@ -349,7 +349,7 @@ export function OfferDetail() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
-                <Building2 className="h-5 w-5" />
+                <BriefcaseBusiness className="h-5 w-5" />
                 {text.company}
               </CardTitle>
             </CardHeader>
@@ -446,7 +446,7 @@ export function OfferDetail() {
         {/* Right col — Simulateur */}
         <div className="lg:col-span-1">
           <div className="lg:sticky lg:top-20">
-            <Card className="border-2 border-[#541249]">
+            <Card className="rounded-[1.35rem] border border-[#541249]/25 bg-white/95 shadow-[0_22px_55px_rgba(56,12,49,.12)]">
               <CardHeader>
                 <CardTitle className="text-base">
                   {text.simulator}

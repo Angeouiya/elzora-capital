@@ -1,90 +1,44 @@
 "use client";
+
+import Image from "next/image";
 import { useAppStore } from "@/lib/store";
 import { useFetch } from "@/hooks/use-fetch";
 import { OfferCard } from "@/components/site/offer-card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SECTORS, getSectorLabel } from "@/lib/countries";
-import {
-  Search,
-  Building2,
-  FileText,
-  ArrowRight,
-  LayoutGrid,
-  ShieldCheck,
-  Landmark,
-  Smartphone,
-  CircleCheck,
-} from "lucide-react";
+import { ArrowRight, BadgeCheck, CircleCheck, Compass, FileSearch, Handshake, Network, Send, Smartphone } from "lucide-react";
 import type { OfferDTO } from "@/lib/types";
 import { formatDisplayMoney } from "@/lib/display-money";
 
 const COPY = {
   fr: {
-    kicker: "Investissement privé · Zone UEMOA",
-    title: "Le capital qui fait grandir l’Afrique de l’Ouest.",
-    intro: "Accédez à des entreprises sélectionnées, analysez chaque opportunité et investissez simplement en dette ou en capital.",
-    opportunities: "Voir les opportunités",
-    raise: "Lever des fonds",
-    proof: [
-      ["Dossiers vérifiés", "Sélection rigoureuse"],
-      ["Cadre régional", "8 pays UEMOA"],
-      ["Paiements", "Carte & Mobile Money"],
-    ],
-    market: "Marché privé",
-    open: "Opportunités ouvertes",
-    loading: "Chargement…",
-    offerCount: (count: number) => `${count} offre${count > 1 ? "s" : ""} ouverte${count > 1 ? "s" : ""} aux souscriptions`,
-    all: "Tout voir",
-    next: "La prochaine sélection est en préparation",
-    nextText: "Chaque dossier est vérifié avant sa publication. Créez votre compte pour suivre les nouvelles opportunités.",
-    notify: "Être informé",
-    journey: "Parcours encadré",
-    journeyTitle: "Simple pour investir. Exigeant pour sélectionner.",
-    step: "Étape",
-    more: "En savoir plus",
-    economy: "Économie réelle",
-    sectors: "Secteurs financés",
-    steps: [
-      ["Dépôt", "L’entreprise soumet un dossier analysé par l’équipe NEXORA."],
-      ["Analyse", "Cabinet indépendant, structuration financière, publication de l’offre."],
-      ["Financement", "Les investisseurs souscrivent ; les fonds sont décaissés à l’entreprise."],
-    ],
+    kicker: "Capital privé · Afrique de l’Ouest",
+    title: "Investir dans ce qui transforme la région.",
+    intro: "Une expérience claire pour découvrir des entreprises sélectionnées, comprendre chaque dossier et engager son capital avec discernement.",
+    from: "Accessible dès", opportunities: "Découvrir les opportunités", raise: "Présenter mon projet",
+    proof: [["Sélection", "Dossiers analysés"], ["Territoire", "8 pays UEMOA"], ["Règlement", "Carte & Mobile Money"]],
+    signature: "Notre conviction", signatureTitle: "Le capital mérite mieux qu’une simple liste d’offres.", signatureText: "NEXORA organise l’information, met les risques au premier plan et rend chaque décision plus lisible — sans promettre ce qui ne peut pas l’être.",
+    market: "Sélection actuelle", open: "Opportunités ouvertes", loading: "Chargement…",
+    offerCount: (count: number) => `${count} offre${count > 1 ? "s" : ""} ouverte${count > 1 ? "s" : ""} aux souscriptions`, all: "Explorer tout le marché",
+    next: "La prochaine sélection est en préparation", nextText: "Chaque dossier passe par une analyse avant publication. Créez votre compte pour suivre les prochaines ouvertures.", notify: "Créer mon accès",
+    journey: "La méthode NEXORA", journeyTitle: "Simple à parcourir. Sérieux dans le fond.", step: "0", more: "Comprendre tout le parcours", economy: "Économie réelle", sectors: "Des secteurs qui façonnent le quotidien",
+    steps: [["Candidature", "L’entreprise transmet ses informations financières, juridiques et opérationnelles."], ["Lecture approfondie", "Le dossier est analysé, structuré et documenté avant toute publication."], ["Mise en relation", "Les investisseurs décident, souscrivent puis suivent leur engagement dans la durée."]],
   },
   en: {
-    kicker: "Private investment · WAEMU region",
-    title: "Capital that helps West Africa grow.",
-    intro: "Access selected businesses, review every opportunity and invest simply through debt or equity.",
-    opportunities: "View opportunities",
-    raise: "Raise capital",
-    proof: [
-      ["Verified applications", "Rigorous selection"],
-      ["Regional scope", "8 WAEMU countries"],
-      ["Payments", "Card & Mobile Money"],
-    ],
-    market: "Private market",
-    open: "Open opportunities",
-    loading: "Loading…",
-    offerCount: (count: number) => `${count} opportunit${count === 1 ? "y" : "ies"} open for investment`,
-    all: "View all",
-    next: "The next selection is being prepared",
-    nextText: "Every application is reviewed before publication. Create an account to follow new opportunities.",
-    notify: "Keep me informed",
-    journey: "Structured journey",
-    journeyTitle: "Simple to invest. Rigorous in selection.",
-    step: "Step",
-    more: "Learn more",
-    economy: "Real economy",
-    sectors: "Funded sectors",
-    steps: [
-      ["Application", "The company submits an application reviewed by the NEXORA team."],
-      ["Review", "Independent assessment, financial structuring and offer publication."],
-      ["Funding", "Investors subscribe and the funds are released to the company."],
-    ],
+    kicker: "Private capital · West Africa", title: "Invest in what is transforming the region.", intro: "A clear experience to discover selected businesses, understand each opportunity and commit capital with discernment.",
+    from: "Accessible from", opportunities: "Discover opportunities", raise: "Present my project",
+    proof: [["Selection", "Reviewed applications"], ["Coverage", "8 WAEMU countries"], ["Settlement", "Card & Mobile Money"]],
+    signature: "Our conviction", signatureTitle: "Capital deserves more than a simple list of deals.", signatureText: "NEXORA organizes information, puts risk in full view and makes each decision clearer — without promising what cannot be guaranteed.",
+    market: "Current selection", open: "Open opportunities", loading: "Loading…", offerCount: (count: number) => `${count} opportunit${count === 1 ? "y" : "ies"} open for investment`, all: "Explore the full market",
+    next: "The next selection is being prepared", nextText: "Every application is reviewed before publication. Create your account to follow upcoming openings.", notify: "Create my access",
+    journey: "The NEXORA method", journeyTitle: "Simple to navigate. Serious underneath.", step: "0", more: "Understand the full journey", economy: "Real economy", sectors: "Sectors shaping everyday life",
+    steps: [["Application", "The company shares its financial, legal and operational information."], ["Deep review", "The application is reviewed, structured and documented before publication."], ["Connection", "Investors decide, subscribe and follow their commitment over time."]],
   },
 } as const;
 
-const STEP_ICONS = [Building2, FileText, LayoutGrid];
+const STEP_ICONS = [Send, FileSearch, Network];
+const PROOF_ICONS = [BadgeCheck, Compass, Smartphone];
 
 export function Home() {
   const setView = useAppStore((s) => s.setView);
@@ -92,7 +46,6 @@ export function Home() {
   const locale = useAppStore((s) => s.locale);
   const displayCurrency = useAppStore((s) => s.displayCurrency);
   const { data, loading } = useFetch<{ offers: OfferDTO[] }>("/api/offers");
-
   const offers = data?.offers ?? [];
   const copy = COPY[locale];
   const proofItems: ReadonlyArray<readonly [string, string]> = copy.proof;
@@ -100,173 +53,55 @@ export function Home() {
 
   return (
     <div className="page-shell reveal-in">
-      <section className="relative overflow-hidden rounded-[1.4rem] border border-[#541249]/20 bg-[linear-gradient(135deg,#541249_0%,#380C31_45%,#130410_100%)] px-5 py-7 text-white shadow-[0_24px_70px_rgba(56,12,49,.24)] sm:px-9 sm:py-10 lg:px-12 lg:py-12">
-        <div className="pointer-events-none absolute -right-20 -top-32 h-80 w-80 rounded-full bg-[#A55B98]/25 blur-3xl" />
-        <div className="pointer-events-none absolute bottom-0 right-0 h-40 w-1/2 bg-[linear-gradient(135deg,transparent,rgba(165,91,152,.12))]" />
-        <div className="relative grid items-end gap-8 lg:grid-cols-[1.45fr_.55fr]">
-          <div className="max-w-3xl">
-            <p className="page-kicker hero-kicker">
-              <span className="h-1.5 w-1.5 rounded-full bg-current" />
-              {copy.kicker}
-            </p>
-            <h1 className="mt-4 max-w-3xl text-[2.15rem] font-black leading-[.98] tracking-[-.055em] sm:text-5xl lg:text-[3.65rem]">
-              {copy.title}
-            </h1>
-            <p className="mt-5 max-w-2xl text-sm leading-6 text-white/68 sm:text-base sm:leading-7">
-              {copy.intro} {locale === "fr" ? "Dès" : "From"}{" "}
-              {formatDisplayMoney(10_000, displayCurrency, locale)}.
-            </p>
+      <section className="public-hero min-h-[38rem] text-white sm:min-h-[40rem] lg:min-h-[43rem]">
+        <Image src="/capital-landscape.png" alt="" fill priority sizes="(max-width: 768px) 100vw, 1320px" className="-z-10 object-cover object-[68%_center] opacity-70 sm:object-center" />
+        <div className="relative flex min-h-[38rem] flex-col justify-between p-5 sm:min-h-[40rem] sm:p-9 lg:min-h-[43rem] lg:p-12">
+          <div className="max-w-[48rem] pt-5 sm:pt-8 lg:pt-10">
+            <p className="editorial-kicker">{copy.kicker}</p>
+            <h1 className="display-title mt-6 max-w-[47rem]">{copy.title}</h1>
+            <p className="mt-6 max-w-[38rem] text-sm leading-6 text-white/72 sm:text-base sm:leading-7">{copy.intro}</p>
+            <p className="mt-3 text-xs font-semibold uppercase tracking-[.14em] text-[#e8bdbe]">{copy.from} {formatDisplayMoney(10_000, displayCurrency, locale)}</p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-            <Button
-              onClick={() => setView("explore")}
-              className="btn-nexora w-full sm:w-auto"
-              size="lg"
-            >
-              <Search className="h-4 w-4" />
-              {copy.opportunities}
-            </Button>
-            <Button
-              onClick={() => setView("register")}
-              variant="outline"
-              size="lg"
-              className="w-full border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white sm:w-auto"
-            >
-              <Building2 className="h-4 w-4" />
-              {copy.raise}
-            </Button>
-          </div>
-          </div>
-          <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-1">
-            {proofItems.map(([label, value], index) => {
-              const Icon = [ShieldCheck, Landmark, Smartphone][index];
-              return (
-              <div key={label} className="rounded-xl border border-white/10 bg-white/[.055] p-3.5 backdrop-blur-sm last:col-span-2 lg:last:col-span-1">
-                <div className="flex items-center gap-2 text-[#F2C7EB]">
-                  <Icon className="h-4 w-4" />
-                  <span className="text-[10px] font-bold uppercase tracking-[.12em]">{label}</span>
-                </div>
-                <p className="mt-1.5 text-sm font-semibold text-white">{value}</p>
-              </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Offres en cours */}
-      <section className="mt-9 sm:mt-12">
-        <div className="mb-5 flex items-end justify-between gap-4">
-          <div>
-            <p className="page-kicker">{copy.market}</p>
-            <h2 className="mt-1 text-xl font-extrabold tracking-[-.025em] text-foreground sm:text-2xl">
-              {copy.open}
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {loading
-                ? copy.loading
-                : copy.offerCount(offers.length)}
-            </p>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setView("explore")}
-            className="text-foreground"
-          >
-            {copy.all}
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {loading ? (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-[420px] w-full rounded-lg" />
-            ))}
-          </div>
-        ) : offers.length === 0 ? (
-          <div className="surface-card rounded-2xl border border-dashed border-border bg-white/65 px-5 py-8 text-center sm:py-10">
-            <CircleCheck className="mx-auto h-8 w-8 text-positive" />
-            <p className="mt-3 text-sm font-semibold text-foreground">{copy.next}</p>
-            <p className="mx-auto mt-1 max-w-md text-xs leading-5 text-muted-foreground">
-              {copy.nextText}
-            </p>
-            <Button variant="outline" size="sm" className="mt-4" onClick={() => setView("register")}>
-              {copy.notify}
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {offers.slice(0, 6).map((o) => (
-              <OfferCard key={o.id} offer={o} />
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Comment ça marche */}
-      <section className="mt-10 section-rule pt-9 sm:mt-12 sm:pt-11">
-        <p className="page-kicker">{copy.journey}</p>
-        <h2 className="mb-5 mt-1 text-xl font-extrabold tracking-[-.025em] text-foreground sm:text-2xl">{copy.journeyTitle}</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {journeySteps.map(([title, description], i) => {
-            const Icon = STEP_ICONS[i];
-            return (
-            <div
-              key={title}
-              className="surface-card rounded-2xl border border-border bg-white/75 p-5 transition duration-200 hover:-translate-y-0.5 hover:border-black/15"
-            >
-              <div className="flex items-center gap-3">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-nexora-pale text-positive">
-                  <Icon className="h-5 w-5" />
-                </span>
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  {copy.step} {i + 1}
-                </span>
-              </div>
-              <h3 className="mt-3 text-base font-bold text-foreground">
-                {title}
-              </h3>
-              <p
-                className="mt-1 text-sm text-muted-foreground"
-              >{description}</p>
+              <Button onClick={() => setView("explore")} className="btn-nexora h-12 w-full px-5 sm:w-auto">{copy.opportunities}<ArrowRight className="h-4 w-4" /></Button>
+              <Button onClick={() => setView("register")} variant="outline" className="h-12 w-full border-white/20 bg-white/7 px-5 text-white hover:bg-white/13 hover:text-white sm:w-auto"><Handshake className="h-4 w-4" />{copy.raise}</Button>
             </div>
-            );
-          })}
-        </div>
-        <div className="mt-3 text-right">
-          <Button
-            variant="link"
-            size="sm"
-            onClick={() => setView("how")}
-            className="px-0 text-foreground"
-          >
-            {copy.more}
-            <ArrowRight className="h-4 w-4" />
-          </Button>
+          </div>
+          <div className="mt-10 grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 sm:grid-cols-3">
+            {proofItems.map(([label, value], index) => { const Icon = PROOF_ICONS[index]; return (
+              <div key={label} className="flex items-center gap-3 bg-[#160513]/72 px-4 py-4 backdrop-blur-xl sm:px-5"><Icon className="h-5 w-5 shrink-0 text-[#d79c9f]" /><div><p className="text-[10px] font-bold uppercase tracking-[.15em] text-white/48">{label}</p><p className="mt-1 text-sm font-semibold text-white">{value}</p></div></div>
+            ); })}
+          </div>
         </div>
       </section>
 
-      {/* Secteurs */}
-      <section className="mt-10 section-rule pt-9 sm:mt-12 sm:pt-11">
-        <div className="mb-4 flex items-end justify-between gap-4">
-          <div><p className="page-kicker">{copy.economy}</p><h2 className="mt-1 text-xl font-extrabold tracking-[-.025em] text-foreground sm:text-2xl">{copy.sectors}</h2></div>
+      <section className="grid gap-6 py-10 sm:py-14 lg:grid-cols-[.72fr_1.28fr] lg:items-end">
+        <div><p className="page-kicker">{copy.signature}</p><div className="copper-line mt-4 max-w-32" /></div>
+        <div><h2 className="max-w-3xl text-2xl font-black leading-tight tracking-[-.04em] text-foreground sm:text-4xl">{copy.signatureTitle}</h2><p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">{copy.signatureText}</p></div>
+      </section>
+
+      <section className="border-t border-[#541249]/10 pt-8 sm:pt-10">
+        <div className="mb-6 flex items-end justify-between gap-4">
+          <div><p className="page-kicker">{copy.market}</p><h2 className="mt-2 text-2xl font-black tracking-[-.035em] sm:text-3xl">{copy.open}</h2><p className="mt-1.5 text-sm text-muted-foreground">{loading ? copy.loading : copy.offerCount(offers.length)}</p></div>
+          <Button variant="ghost" onClick={() => setView("explore")} className="hidden text-[#541249] sm:inline-flex">{copy.all}<ArrowRight className="h-4 w-4" /></Button>
         </div>
-        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-2 scroll-area-fancy sm:flex-wrap sm:overflow-visible">
-          {SECTORS.map((s) => (
-            <Button
-              key={s}
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => openExploreSector(s)}
-              className="shrink-0 rounded-full"
-            >
-              {getSectorLabel(s, locale)}
-            </Button>
-          ))}
+        {loading ? <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[25rem] rounded-2xl" />)}</div>
+          : offers.length === 0 ? <div className="public-panel px-5 py-9 text-center sm:py-11"><CircleCheck className="mx-auto h-8 w-8 text-[#541249]" /><p className="mt-3 text-sm font-bold">{copy.next}</p><p className="mx-auto mt-1 max-w-md text-xs leading-5 text-muted-foreground">{copy.nextText}</p><Button variant="outline" className="mt-4" onClick={() => setView("register")}>{copy.notify}<ArrowRight className="h-4 w-4" /></Button></div>
+          : <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{offers.slice(0, 6).map((offer) => <OfferCard key={offer.id} offer={offer} />)}</div>}
+        <Button variant="outline" onClick={() => setView("explore")} className="mt-5 w-full sm:hidden">{copy.all}<ArrowRight className="h-4 w-4" /></Button>
+      </section>
+
+      <section className="mt-12 overflow-hidden rounded-[1.75rem] bg-[#f1e9ef] p-5 sm:p-8 lg:p-10">
+        <div className="grid gap-8 lg:grid-cols-[.7fr_1.3fr]">
+          <div><p className="page-kicker">{copy.journey}</p><h2 className="mt-3 text-2xl font-black tracking-[-.04em] sm:text-4xl">{copy.journeyTitle}</h2><Button variant="link" onClick={() => setView("how")} className="mt-4 h-auto p-0 text-[#541249]">{copy.more}<ArrowRight className="h-4 w-4" /></Button></div>
+          <div className="grid gap-3">{journeySteps.map(([title, description], index) => { const Icon = STEP_ICONS[index]; return (
+            <article key={title} className="grid grid-cols-[auto_1fr] gap-4 rounded-2xl border border-white/70 bg-white/70 p-4 sm:grid-cols-[auto_10rem_1fr] sm:items-center"><span className="index-mark">{copy.step}{index + 1}</span><h3 className="text-sm font-extrabold"><Icon className="mr-2 inline h-4 w-4 text-[#7b286d]" />{title}</h3><p className="col-start-2 text-sm leading-6 text-muted-foreground sm:col-start-3">{description}</p></article>
+          ); })}</div>
         </div>
+      </section>
+
+      <section className="py-11 sm:py-14">
+        <p className="page-kicker">{copy.economy}</p><h2 className="mt-2 text-2xl font-black tracking-[-.035em] sm:text-3xl">{copy.sectors}</h2>
+        <div className="-mx-1 mt-5 flex gap-2 overflow-x-auto px-1 pb-2 scroll-area-fancy sm:flex-wrap sm:overflow-visible">{SECTORS.map((sector) => <Button key={sector} variant="outline" onClick={() => openExploreSector(sector)} className="shrink-0 rounded-full border-[#541249]/14 bg-white/75 hover:border-[#541249]/30 hover:bg-[#f7eaf5]">{getSectorLabel(sector, locale)}</Button>)}</div>
       </section>
     </div>
   );

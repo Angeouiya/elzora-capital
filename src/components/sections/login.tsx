@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck, Lock, Mail, ArrowRight, AlertCircle } from "lucide-react";
+import { ShieldCheck, Lock, Mail, ArrowRight, AlertCircle, Fingerprint, ScanLine } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 export function Login() {
@@ -25,6 +25,7 @@ export function Login() {
     noAccount: "Pas encore de compte ?",
     register: "Créer un compte",
     security: "Votre mot de passe n’est jamais stocké en clair. La session est conservée dans un cookie sécurisé inaccessible aux scripts de la page.",
+    kicker: "Votre espace privé", asideTitle: "Retrouvez vos décisions, pas du bruit.", asideText: "Suivez vos engagements, vos documents et vos mouvements depuis un espace unique, pensé pour rester lisible.", protected: "Session protégée", verified: "Identité vérifiée avant souscription",
   } : {
     title: "Sign in to your account",
     intro: "Access your portfolio or company workspace.",
@@ -34,6 +35,7 @@ export function Login() {
     noAccount: "Don’t have an account yet?",
     register: "Create account",
     security: "Your password is never stored in plain text. Your session is kept in a secure cookie that page scripts cannot access.",
+    kicker: "Your private space", asideTitle: "Find your decisions, not the noise.", asideText: "Track commitments, documents and movements from one clear, carefully designed space.", protected: "Protected session", verified: "Identity verified before subscription",
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -91,20 +93,29 @@ export function Login() {
   };
 
   return (
-    <section className="page-shell max-w-md py-10 sm:py-14 reveal-in">
-      <Card className="border-border/60">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-nexora-black">
-            <Lock className="h-6 w-6 text-nexora-lime" />
+    <section className="page-shell reveal-in">
+      <div className="auth-stage grid overflow-hidden lg:grid-cols-[.9fr_1.1fr]">
+        <aside className="relative hidden min-h-[38rem] flex-col justify-between overflow-hidden p-10 text-white lg:flex">
+          <div className="pointer-events-none absolute -right-16 top-20 h-72 w-72 rounded-full border border-white/10" />
+          <div className="pointer-events-none absolute -right-28 top-8 h-72 w-72 rounded-full border border-[#c5878a]/25" />
+          <p className="editorial-kicker">{copy.kicker}</p>
+          <div className="relative">
+            <h1 className="max-w-md text-5xl font-black leading-[.95] tracking-[-.055em]">{copy.asideTitle}</h1>
+            <p className="mt-5 max-w-sm text-sm leading-7 text-white/62">{copy.asideText}</p>
+            <div className="mt-8 grid gap-3 text-xs text-white/72">
+              <p className="flex items-center gap-3"><Fingerprint className="h-4 w-4 text-[#d79c9f]" />{copy.protected}</p>
+              <p className="flex items-center gap-3"><ScanLine className="h-4 w-4 text-[#d79c9f]" />{copy.verified}</p>
+            </div>
           </div>
-          <CardTitle className="text-xl font-bold tracking-tight">
-            {copy.title}
-          </CardTitle>
-          <CardDescription className="mt-1 text-sm text-muted-foreground">
-            {copy.intro}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+        </aside>
+
+        <Card className="m-1 rounded-[1.75rem] border-0 bg-[#fffefd] shadow-none sm:m-2 lg:rounded-l-[1.35rem]">
+          <CardHeader className="px-5 pb-4 pt-8 sm:px-10 sm:pt-12">
+            <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-full bg-[#f3e6f0] text-[#541249]"><Lock className="h-5 w-5" /></div>
+            <CardTitle className="text-2xl font-black tracking-[-.035em] sm:text-3xl">{copy.title}</CardTitle>
+            <CardDescription className="mt-1 text-sm text-muted-foreground">{copy.intro}</CardDescription>
+          </CardHeader>
+          <CardContent className="px-5 pb-8 sm:px-10 sm:pb-12">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label htmlFor="login-email" className="text-xs">
@@ -155,7 +166,7 @@ export function Login() {
             <Button
               type="submit"
               disabled={submitting || !email.trim() || !password}
-              className="btn-nexora w-full"
+              className="btn-nexora h-12 w-full"
             >
               {submitting ? (
                 copy.submitting
@@ -176,14 +187,15 @@ export function Login() {
             </Button>
           </p>
 
-          <div className="mt-4 flex items-start gap-2 rounded-md bg-nexora-pale p-3">
+          <div className="mt-5 flex items-start gap-2 rounded-xl border border-[#541249]/8 bg-nexora-pale p-3.5">
             <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-positive" />
             <p className="text-[11px] leading-relaxed text-positive">
               {copy.security}
             </p>
           </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </section>
   );
 }

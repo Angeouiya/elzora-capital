@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Menu, X, Wallet, Building2, LogOut, ChevronDown, Languages, Check } from "lucide-react";
+import { Menu, X, Wallet, BriefcaseBusiness, LogOut, ChevronDown, Languages, Check } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "@/hooks/use-toast";
 
@@ -76,6 +76,13 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
   const copy = COPY[locale];
 
   useEffect(() => {
+    document.documentElement.lang = locale;
+    document.title = locale === "fr"
+      ? "NEXORA Capital — Capital privé en Afrique de l’Ouest"
+      : "NEXORA Capital — Private capital in West Africa";
+  }, [locale]);
+
+  useEffect(() => {
     if (!open) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -123,14 +130,14 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
           type="button"
           aria-label={copy.closeMenu}
           onClick={() => setOpen(false)}
-          className="fixed inset-0 z-40 cursor-default bg-black/35 backdrop-blur-[2px] lg:hidden"
+          className="fixed inset-0 z-40 cursor-default bg-black/35 backdrop-blur-[2px] xl:hidden"
         />
       )}
     <header
-      className="sticky top-0 z-50 w-full border-b border-black/[.06] bg-white/85 backdrop-blur-2xl"
+      className="sticky top-0 z-50 w-full border-b border-[#541249]/[.07] bg-[#fffefd]/88 backdrop-blur-2xl"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
-      <div className="mx-auto flex h-[4.25rem] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-[4.5rem] max-w-[82rem] items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <button
           data-control="brand"
@@ -145,7 +152,7 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
         </button>
 
         {/* Desktop nav */}
-        <nav className="hidden items-center gap-1 rounded-2xl border border-[#541249]/8 bg-[#FAF4F9]/72 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,.8)] lg:flex">
+        <nav className="hidden items-center gap-1 xl:flex">
           {copy.nav.map((item) => (
             <button
               data-control="nav"
@@ -153,8 +160,8 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
               onClick={() => setView(item.view)}
               className={`relative rounded-xl px-3.5 py-2 text-sm font-semibold transition-all ${
                 view === item.view
-                  ? "bg-white text-[#541249] shadow-[0_5px_15px_rgba(56,12,49,.10)]"
-                  : "text-muted-foreground hover:bg-white/70 hover:text-[#541249]"
+                  ? "bg-[#f4ebf2] text-[#541249]"
+                  : "text-muted-foreground hover:bg-[#faf4f9] hover:text-[#541249]"
               }`}
             >
               {item.label}
@@ -240,7 +247,7 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
                   onClick={() => setView("company_dashboard")}
                   className="cursor-pointer"
                 >
-                  <Building2 className="mr-2 h-4 w-4" />
+                  <BriefcaseBusiness className="mr-2 h-4 w-4" />
                   {copy.company}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -260,7 +267,7 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
                 variant="ghost"
                 size="sm"
                 onClick={() => setView("login")}
-                className="text-foreground hover:bg-secondary/60"
+                className="hidden text-foreground hover:bg-secondary/60 sm:inline-flex"
               >
                 {copy.login}
               </Button>
@@ -279,7 +286,7 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
             <button
               data-control="icon"
               onClick={() => setOpen(!open)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#541249]/10 bg-white/80 text-[#541249] shadow-[0_4px_14px_rgba(56,12,49,.06)] hover:bg-[#F7EAF5] lg:hidden"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#541249]/10 bg-white/80 text-[#541249] shadow-[0_4px_14px_rgba(56,12,49,.06)] hover:bg-[#F7EAF5] xl:hidden"
               aria-label="Menu"
               aria-expanded={open}
               aria-controls="mobile-navigation"
@@ -295,7 +302,7 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
         <nav
           id="mobile-navigation"
           aria-label={copy.mobileNavigation}
-          className="absolute inset-x-0 top-full border-t border-border/70 bg-white px-4 py-4 shadow-[0_24px_50px_rgba(16,16,16,.14)] lg:hidden"
+          className="absolute inset-x-0 top-full border-t border-border/70 bg-white px-4 py-4 shadow-[0_24px_50px_rgba(16,16,16,.14)] xl:hidden"
         >
           <div className="flex flex-col gap-1">
             {copy.nav.map((item) => (
@@ -315,6 +322,16 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
                 {item.label}
               </button>
             ))}
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setView("login");
+                setOpen(false);
+              }}
+              className="mt-2 justify-start sm:hidden"
+            >
+              {copy.login}
+            </Button>
             <Button
               onClick={() => {
                 setView("register");

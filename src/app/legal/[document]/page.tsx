@@ -11,9 +11,9 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ document: string }> }): Promise<Metadata> {
   const { document } = await params;
   const titles: Record<string, string> = {
-    terms: "Conditions d’utilisation · NEXORA Capital",
-    privacy: "Confidentialité · NEXORA Capital",
-    compliance: "Cadre réglementaire · NEXORA Capital",
+    terms: "Conditions · Terms · NEXORA Capital",
+    privacy: "Confidentialité · Privacy · NEXORA Capital",
+    compliance: "Réglementation · Compliance · NEXORA Capital",
   };
   return { title: titles[document] ?? "Informations légales · NEXORA Capital" };
 }

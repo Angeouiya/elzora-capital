@@ -130,9 +130,9 @@ body {
     font-feature-settings: "ss01", "cv01", "tnum";
     min-width: 320px;
     background-image:
-      radial-gradient(circle at 8% -5%, rgba(111, 31, 98, 0.13), transparent 28rem),
-      radial-gradient(circle at 96% 18%, rgba(165, 91, 152, 0.07), transparent 24rem),
-      linear-gradient(180deg, #ffffff 0%, #fbfafb 32rem, #f9faf6 100%);
+      radial-gradient(circle at 8% -5%, rgba(111, 31, 98, 0.11), transparent 27rem),
+      radial-gradient(circle at 96% 18%, rgba(173, 111, 74, 0.055), transparent 24rem),
+      linear-gradient(180deg, #fffefd 0%, #fbf8fa 32rem, #f8f8f4 100%);
     background-attachment: fixed;
   }
   ::selection { background: #541249; color: #FFFFFF; }
@@ -296,9 +296,9 @@ button[data-control="media"]:focus-visible {
 }
 
 .page-shell {
-  width: min(100% - 2rem, 80rem);
+  width: min(100% - 2rem, 82rem);
   margin-inline: auto;
-  padding-block: clamp(1.5rem, 3vw, 2.75rem);
+  padding-block: clamp(1.35rem, 2.6vw, 2.5rem);
 }
 
 .page-kicker {
@@ -328,6 +328,104 @@ button[data-control="media"]:focus-visible {
 [data-slot="card"] {
   border-color: color-mix(in srgb, var(--border) 82%, transparent);
   box-shadow: 0 1px 2px rgba(18, 20, 15, 0.03), 0 14px 38px rgba(18, 20, 15, 0.045);
+}
+
+/* Public experience: an editorial investment house, not a generic dashboard. */
+.public-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: clamp(1.4rem, 3vw, 2.25rem);
+  background: #130410;
+  box-shadow: 0 32px 90px rgba(31, 5, 26, .22);
+}
+
+.public-hero::after {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(120deg, rgba(19,4,16,.98) 7%, rgba(37,8,32,.88) 43%, rgba(19,4,16,.18) 78%);
+  content: "";
+}
+
+.editorial-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: .6rem;
+  color: #e9bedf;
+  font-size: .68rem;
+  font-weight: 760;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+
+.editorial-kicker::before {
+  width: 1.75rem;
+  height: 1px;
+  background: #c5878a;
+  content: "";
+}
+
+.display-title {
+  text-wrap: balance;
+  font-size: clamp(2.35rem, 6vw, 5.65rem);
+  font-weight: 850;
+  letter-spacing: -.065em;
+  line-height: .91;
+}
+
+.public-panel {
+  border: 1px solid rgba(84,18,73,.11);
+  border-radius: 1.35rem;
+  background: rgba(255,255,255,.78);
+  box-shadow: 0 18px 55px rgba(56,12,49,.055);
+  backdrop-filter: blur(14px);
+}
+
+.public-panel-dark {
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 1.35rem;
+  background: rgba(255,255,255,.06);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+  backdrop-filter: blur(14px);
+}
+
+.index-mark {
+  display: inline-flex;
+  width: 2rem;
+  height: 2rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(84,18,73,.14);
+  border-radius: 999px;
+  background: #fff;
+  color: #541249;
+  font-size: .65rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 6px 18px rgba(56,12,49,.08);
+}
+
+.copper-line {
+  height: 1px;
+  background: linear-gradient(90deg, #a66569, rgba(166,101,105,0));
+}
+
+.auth-stage {
+  border-radius: clamp(1.35rem, 3vw, 2rem);
+  background:
+    radial-gradient(circle at 18% 14%, rgba(197,135,138,.2), transparent 28rem),
+    linear-gradient(145deg, #380c31, #130410 70%);
+  box-shadow: 0 28px 80px rgba(56,12,49,.18);
+}
+
+.soft-grid {
+  background-image:
+    linear-gradient(rgba(84,18,73,.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(84,18,73,.045) 1px, transparent 1px);
+  background-size: 3rem 3rem;
 }
 
 [data-slot="button"] {
@@ -367,6 +465,7 @@ textarea {
 }
 
 @media (max-width: 639px) {
-  .page-shell { width: min(100% - 1.25rem, 80rem); }
+  .page-shell { width: min(100% - 1.1rem, 82rem); }
   [data-slot="card"] { box-shadow: 0 1px 2px rgba(18, 20, 15, 0.04); }
+  .public-hero::after { background: linear-gradient(180deg, rgba(19,4,16,.94) 0%, rgba(19,4,16,.8) 64%, rgba(19,4,16,.95) 100%); }
 }
