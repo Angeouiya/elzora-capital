@@ -179,13 +179,13 @@ export function PayoutDialog({
               <div className="rounded-lg border border-[#541249]/20 bg-nexora-pale p-4 text-sm text-positive">
                 <p className="font-semibold">{en ? "A payout is already in progress" : "Un versement est déjà en cours"}</p>
                 <p className="mt-1 text-xs opacity-85">
-                  {en ? "Its status will update automatically after provider confirmation." : "Son statut sera mis à jour automatiquement après confirmation du prestataire."}
+                  {en ? "You will be notified as soon as it is completed." : "Vous serez informé dès qu’il sera terminé."}
                 </p>
               </div>
             ) : (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="payout-amount">{en ? "Amount (XOF)" : "Montant (XOF)"}</Label>
+                  <Label htmlFor="payout-amount">{en ? "Amount in CFA francs" : "Montant en francs CFA"}</Label>
                   <Input
                     id="payout-amount"
                     inputMode="numeric"
@@ -216,8 +216,8 @@ export function PayoutDialog({
             <div className="flex items-start gap-2 rounded-lg bg-nexora-pale p-3 text-[11px] leading-relaxed text-positive">
               <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
               {en
-                ? "The amount is reserved once, then released or paid automatically from the signed provider status."
-                : "Le montant est réservé une seule fois, puis libéré ou versé automatiquement selon le statut signé du prestataire."}
+                ? "Your amount is protected while the transfer is being completed."
+                : "Votre montant reste protégé pendant toute la durée du versement."}
             </div>
           </div>
         ) : null}

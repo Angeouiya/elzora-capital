@@ -59,7 +59,7 @@ export function KycDialog({ open, onOpenChange, locale, status, onSubmitted }: K
     fetch("/api/investor/kyc", { cache: "no-store" })
       .then(async (response) => {
         const json = await response.json() as KycState & { error?: string };
-        if (!response.ok) throw new Error(json.error || "KYC");
+        if (!response.ok) throw new Error(json.error || (en ? "Verification unavailable" : "Vérification indisponible"));
         setRemote(json);
       })
       .catch(() => setError(en ? "Unable to load your verification file." : "Impossible de charger votre dossier de vérification."))

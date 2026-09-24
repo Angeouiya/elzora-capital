@@ -34,7 +34,7 @@ function yieldLabel(offer: OfferDTO, locale: "fr" | "en"): string {
   return `${rateStr} % ${locale === "fr" ? `total sur ${duration} mois` : `total over ${duration} months`}`;
 }
 
-export function OfferCard({ offer, eager = false }: { offer: OfferDTO; eager?: boolean }) {
+export function OfferCard({ offer, eager = false, compactOnMobile = false }: { offer: OfferDTO; eager?: boolean; compactOnMobile?: boolean }) {
   const openOffer = useAppStore((s) => s.openOffer);
   const locale = useAppStore((s) => s.locale);
   const displayCurrency = useAppStore((s) => s.displayCurrency);
@@ -42,24 +42,24 @@ export function OfferCard({ offer, eager = false }: { offer: OfferDTO; eager?: b
   const isEquity = offer.project.instrumentType === "equity";
 
   return (
-    <Card className="group flex flex-col gap-0 overflow-hidden rounded-[1.35rem] border border-[#541249]/10 bg-white/90 p-0 transition-all duration-300 hover:-translate-y-1 hover:border-[#541249]/25 hover:shadow-[0_24px_60px_rgba(56,12,49,.12)]">
+    <Card className={`group gap-0 overflow-hidden rounded-[1.35rem] border border-[#541249]/10 bg-white/90 p-0 transition-all duration-300 hover:-translate-y-1 hover:border-[#541249]/25 hover:shadow-[0_24px_60px_rgba(56,12,49,.12)] ${compactOnMobile ? "flex flex-row sm:flex-col" : "flex flex-col"}`}>
       {/* Image */}
       <button
         data-control="media"
         onClick={() => openOffer(offer.id)}
-        className="relative block h-44 w-full overflow-hidden sm:h-48"
+        className={`relative overflow-hidden ${compactOnMobile ? "block min-h-44 w-[38%] shrink-0 sm:h-48 sm:w-full" : "block h-44 w-full sm:h-48"}`}
         aria-label={`${locale === "fr" ? "Voir l’offre" : "View offer"} ${offer.project.title}`}
       >
         <Image
           src={offer.project.imageUrl}
           alt={offer.project.title}
           fill
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          sizes={compactOnMobile ? "(max-width: 640px) 38vw, (max-width: 1024px) 50vw, 33vw" : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"}
           loading={eager ? "eager" : "lazy"}
           unoptimized
           className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.045]"
         />
-        <div className="absolute left-3 top-3 flex gap-1.5">
+        <div className={`absolute left-3 top-3 gap-1.5 ${compactOnMobile ? "hidden sm:flex" : "flex"}`}>
           <Badge className="bg-background/95 text-foreground shadow-sm">
             {getSectorLabel(offer.project.sector, locale)}
           </Badge>
@@ -81,7 +81,7 @@ export function OfferCard({ offer, eager = false }: { offer: OfferDTO; eager?: b
       </button>
 
       {/* Content */}
-      <div className="flex flex-1 flex-col gap-4 p-4 sm:p-5">
+      <div className={`flex min-w-0 flex-1 flex-col ${compactOnMobile ? "gap-2.5 p-3 sm:gap-4 sm:p-5" : "gap-4 p-4 sm:p-5"}`}>
         <div>
           <p className="text-xs font-medium text-muted-foreground">
             {offer.project.company.tradeName || offer.project.company.legalName}
@@ -92,7 +92,7 @@ export function OfferCard({ offer, eager = false }: { offer: OfferDTO; eager?: b
         </div>
 
         {/* Rémunération */}
-        <div className="rounded-xl border border-[#541249]/8 bg-[#f8f2f7] px-3.5 py-2.5">
+        <div className={`rounded-xl border border-[#541249]/8 bg-[#f8f2f7] px-3.5 py-2.5 ${compactOnMobile ? "hidden sm:block" : ""}`}>
           <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
             {locale === "fr" ? "Rémunération" : "Return"}
           </p>
@@ -116,7 +116,7 @@ export function OfferCard({ offer, eager = false }: { offer: OfferDTO; eager?: b
             </span>
           </div>
           <Progress value={pct} className="h-1.5" />
-          <div className="mt-1 flex items-center justify-between text-[11px] text-muted-foreground">
+          <div className={`mt-1 items-center justify-between text-[11px] text-muted-foreground ${compactOnMobile ? "hidden sm:flex" : "flex"}`}>
             <span className="tnum font-medium text-positive">
               {fmtPct(pct, 0)} {locale === "fr" ? "financé" : "funded"}
             </span>
@@ -141,7 +141,7 @@ export function OfferCard({ offer, eager = false }: { offer: OfferDTO; eager?: b
               onClick={() => openOffer(offer.id)}
               className="btn-nexora"
             >
-              {locale === "fr" ? "Voir l’offre" : "View offer"}
+              <span className={compactOnMobile ? "sr-only sm:not-sr-only" : ""}>{locale === "fr" ? "Voir l’offre" : "View offer"}</span>
               <ArrowUpRight className="h-4 w-4" />
             </Button>
           </div>

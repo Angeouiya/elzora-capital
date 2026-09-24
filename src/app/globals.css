@@ -468,7 +468,6 @@ button[data-control="media"]:focus-visible {
 
 .copper-line {
   height: 1px;
-  background: linear-gradient(90deg, #a66569, rgba(166,101,105,0));
 }
 
 .auth-stage {

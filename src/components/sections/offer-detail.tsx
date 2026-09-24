@@ -40,15 +40,16 @@ export function OfferDetail() {
   const setView = useAppStore((s) => s.setView);
   const locale = useAppStore((s) => s.locale);
   const displayCurrency = useAppStore((s) => s.displayCurrency);
+  const userEmail = useAppStore((s) => s.userEmail);
   const { toast } = useToast();
   const money = (value: bigint | number, compact = false) =>
     formatDisplayMoney(value, displayCurrency, locale, compact);
   const text = locale === "fr" ? {
     missing: "Offre introuvable.", back: "Retour aux offres", low: "Montant insuffisant", login: "Connexion requise", loginText: "Connectez-vous pour enregistrer votre engagement.", failed: "Souscription échouée", saved: "Souscription enregistrée", savedText: "Votre engagement est réservé. Les instructions de paiement seront affichées dans votre espace.", paymentReady: "Ouverture du paiement sécurisé…", error: "Erreur", unknown: "Erreur inconnue",
-    equity: "Prise de participation", debt: "Dette", bullet: "in fine", amortized: "amortissable", conditions: "Conditions financières", goal: "Objectif", raised: "Levé", offered: "Capital offert", return: "Rémunération", duration: "Durée", long: "Long terme", months: "mois", of: "sur", investors: "souscripteurs", from: "Dès", cap: "Plafond", close: "Clôture prévue", project: "Présentation du projet", company: "Entreprise", verified: "Entreprise vérifiée", legalForm: "Forme juridique", country: "Pays", activity: "Activité", founded: "Fondée en", budget: "Budget & remboursement", allocation: "Affectation du budget", source: "Source de remboursement", exit: " / sortie", risks: "Risques identifiés", simulator: "Simulateur d’investissement", amount: "Montant de règlement (XOF)", minimum: "Minimum", maximum: "maximum", share: "Part de", expected: "Remboursement attendu", interest: "Dont intérêts", projected: "Projeté, non garanti. Soumis aux risques du projet.", enter: "Saisissez un montant pour simuler", secure: "Souscription nominative et sécurisée", secureText: "Votre identité vérifiée et votre adresse de contact sont reprises automatiquement depuis votre espace personnel.", consentTitle: "Avant de continuer", acceptAgreement: "Je valide électroniquement le bulletin de souscription et confirme le montant indiqué.", acceptRisk: "J’ai lu les risques et j’accepte la possibilité de perdre tout ou partie du capital investi.", readTerms: "Lire les conditions", readRisk: "Lire le cadre et les risques", consentRequired: "Validez le bulletin et les risques avant de continuer.", submitting: "Validation en cours…", submit: "Valider et continuer", payment: "Le paiement par carte ou Mobile Money sera proposé uniquement via un prestataire autorisé, avec confirmation avant débit.", riskText: "L’investissement présente un risque de perte en capital. Les performances passées ne préjugent pas des performances futures.",
+    equity: "Part de l’entreprise", debt: "Avec remboursement", conditions: "L’essentiel", overview: "Aperçu", details: "Le projet", subscribeNav: "Souscrire", invest: "Investir", goal: "Objectif", raised: "Déjà réuni", offered: "Part proposée", return: "Gain prévu", duration: "Durée", long: "Long terme", months: "mois", of: "sur", investors: "investisseurs", from: "Dès", cap: "Maximum", close: "Clôture prévue", project: "Présentation du projet", company: "Entreprise", verified: "Entreprise vérifiée", legalForm: "Forme juridique", country: "Pays", activity: "Activité", founded: "Fondée en", budget: "Utilisation des fonds", allocation: "Répartition prévue", source: "Origine des futurs paiements", exit: " / de la revente", risks: "Risques à connaître", simulator: "Choisir mon investissement", amount: "Montant à investir", minimum: "Minimum", maximum: "maximum", share: "Votre part de", expected: "Montant prévu à terme", interest: "Gain estimé inclus", projected: "Estimation non garantie, soumise aux risques du projet.", enter: "Saisissez un montant pour voir l’estimation", secure: "Une souscription personnelle et protégée", secureText: "Les informations déjà vérifiées dans votre compte seront utilisées pour préparer votre souscription.", consentTitle: "Avant de continuer", acceptAgreement: "Je confirme le montant et j’accepte le bulletin de souscription.", acceptRisk: "J’ai lu les risques et j’accepte la possibilité de perdre tout ou partie du capital investi.", readTerms: "Lire les conditions", readRisk: "Lire les risques", consentRequired: "Confirmez le bulletin et la lecture des risques avant de continuer.", submitting: "Validation en cours…", submit: "Continuer vers le paiement", payment: "Vous pourrez payer par carte ou Mobile Money. Une confirmation vous sera toujours demandée avant le débit.", riskText: "L’investissement présente un risque de perte en capital. Les performances passées ne préjugent pas des performances futures.",
   } : {
     missing: "Offer not found.", back: "Back to opportunities", low: "Amount too low", login: "Sign-in required", loginText: "Sign in to save your commitment.", failed: "Subscription failed", saved: "Subscription saved", savedText: "Your commitment is reserved. Payment instructions will appear in your account.", paymentReady: "Opening secure payment…", error: "Error", unknown: "Unknown error",
-    equity: "Equity investment", debt: "Debt", bullet: "bullet", amortized: "amortizing", conditions: "Financial terms", goal: "Target", raised: "Raised", offered: "Equity offered", return: "Return", duration: "Duration", long: "Long term", months: "months", of: "of", investors: "investors", from: "From", cap: "Maximum", close: "Expected closing", project: "Project overview", company: "Company", verified: "Verified company", legalForm: "Legal form", country: "Country", activity: "Activity", founded: "Founded", budget: "Budget & repayment", allocation: "Use of funds", source: "Repayment source", exit: " / exit", risks: "Identified risks", simulator: "Investment simulator", amount: "Settlement amount (XOF)", minimum: "Minimum", maximum: "maximum", share: "Share of", expected: "Expected repayment", interest: "Including interest", projected: "Projected, not guaranteed. Subject to project risks.", enter: "Enter an amount to simulate", secure: "Named and secure subscription", secureText: "Your verified identity and contact address are automatically retrieved from your personal account.", consentTitle: "Before continuing", acceptAgreement: "I electronically approve the subscription form and confirm the amount shown.", acceptRisk: "I have read the risks and accept that I may lose some or all of the capital invested.", readTerms: "Read the terms", readRisk: "Read the framework and risks", consentRequired: "Accept the subscription form and the risks before continuing.", submitting: "Approving…", submit: "Approve and continue", payment: "Card or Mobile Money payment will only be offered through an authorized provider, with confirmation before debit.", riskText: "Investing involves a risk of capital loss. Past performance does not predict future performance.",
+    equity: "Company ownership", debt: "With repayment", conditions: "Key information", overview: "Overview", details: "The project", subscribeNav: "Subscribe", invest: "Invest", goal: "Target", raised: "Already raised", offered: "Ownership offered", return: "Expected return", duration: "Duration", long: "Long term", months: "months", of: "of", investors: "investors", from: "From", cap: "Maximum", close: "Expected closing", project: "Project overview", company: "Company", verified: "Verified company", legalForm: "Legal form", country: "Country", activity: "Activity", founded: "Founded", budget: "Use of funds", allocation: "Planned allocation", source: "Source of future payments", exit: " / resale", risks: "Risks to know", simulator: "Choose my investment", amount: "Amount to invest", minimum: "Minimum", maximum: "maximum", share: "Your share of", expected: "Expected amount at term", interest: "Estimated gain included", projected: "Estimate only, not guaranteed and subject to project risks.", enter: "Enter an amount to view the estimate", secure: "A personal, protected subscription", secureText: "Information already verified in your account will be used to prepare your subscription.", consentTitle: "Before continuing", acceptAgreement: "I confirm the amount and accept the subscription form.", acceptRisk: "I have read the risks and accept that I may lose some or all of the capital invested.", readTerms: "Read the terms", readRisk: "Read the risks", consentRequired: "Confirm the form and that you have read the risks before continuing.", submitting: "Approving…", submit: "Continue to payment", payment: "You can pay by card or Mobile Money. You will always be asked to confirm before any debit.", riskText: "Investing involves a risk of capital loss. Past performance does not predict future performance.",
   };
 
   const { data, loading } = useFetch<{ offer: OfferDTO }>(
@@ -182,21 +183,22 @@ export function OfferDetail() {
   };
 
   const company = offer.project.company;
+  const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 
   return (
-    <div className="page-shell reveal-in">
+    <div className="page-shell pb-36 lg:pb-10">
       <Button
         variant="ghost"
         size="sm"
         onClick={() => setView("explore")}
-        className="mb-4"
+        className="mb-3 -ml-2"
       >
         <ArrowLeft className="h-4 w-4" />
         {text.back}
       </Button>
 
       {/* Hero */}
-      <div className="relative mb-6 h-64 overflow-hidden rounded-[1.65rem] shadow-[0_24px_65px_rgba(56,12,49,.16)] sm:h-80">
+      <div className="relative mb-3 h-60 overflow-hidden rounded-[1.55rem] shadow-[0_24px_65px_rgba(56,12,49,.16)] sm:mb-5 sm:h-80">
         <Image
           src={offer.project.imageUrl}
           alt={offer.project.title}
@@ -217,7 +219,7 @@ export function OfferDetail() {
               </Badge>
             ) : (
               <Badge className="bg-nexora-pale text-positive">
-                {text.debt} {offer.repaymentType === "bullet" ? text.bullet : text.amortized}
+                {text.debt}
               </Badge>
             )}
             <Badge className="bg-background/80 text-white backdrop-blur">
@@ -234,11 +236,17 @@ export function OfferDetail() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <nav className="sticky top-[4.05rem] z-30 mb-4 flex gap-1.5 overflow-x-auto rounded-2xl border border-[#541249]/10 bg-[#fffefd]/94 p-1.5 shadow-[0_10px_30px_rgba(56,12,49,.07)] backdrop-blur-xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mb-5 lg:static lg:w-fit" aria-label={locale === "fr" ? "Sections de l’opportunité" : "Opportunity sections"}>
+        <Button type="button" variant="ghost" size="sm" onClick={() => scrollTo("offer-overview")} className="shrink-0 rounded-xl">{text.overview}</Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => scrollTo("offer-project")} className="shrink-0 rounded-xl">{text.details}</Button>
+        <Button type="button" size="sm" onClick={() => scrollTo("subscription-simulator")} className="btn-nexora shrink-0 rounded-xl">{text.subscribeNav}</Button>
+      </nav>
+
+      <div className="grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-3">
         {/* Left col */}
-        <div className="flex flex-col gap-6 lg:col-span-2">
+        <div className="flex flex-col gap-4 sm:gap-5 lg:col-span-2">
           {/* Conditions financières */}
-          <Card>
+          <Card id="offer-overview" className="scroll-mt-32 rounded-[1.35rem] border-[#541249]/10">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <Coins className="h-5 w-5" />
@@ -289,7 +297,7 @@ export function OfferDetail() {
                   </span>
                 </div>
                 <Progress value={pct} className="h-2" />
-                <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
+                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <Users className="h-3.5 w-3.5" />
                     <span className="tnum">{offer.backersCount}</span>{" "}
@@ -348,7 +356,7 @@ export function OfferDetail() {
           )}
 
           {/* Présentation du projet */}
-          <Card>
+          <Card id="offer-project" className="scroll-mt-32 rounded-[1.35rem] border-[#541249]/10">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <FileText className="h-5 w-5" />
@@ -363,7 +371,7 @@ export function OfferDetail() {
           </Card>
 
           {/* Entreprise */}
-          <Card>
+          <Card className="rounded-[1.35rem] border-[#541249]/10">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <BriefcaseBusiness className="h-5 w-5" />
@@ -417,7 +425,7 @@ export function OfferDetail() {
           </Card>
 
           {/* Budget & remboursement */}
-          <Card>
+          <Card className="rounded-[1.35rem] border-[#541249]/10">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <Wallet className="h-5 w-5" />
@@ -461,7 +469,7 @@ export function OfferDetail() {
         </div>
 
         {/* Right col — Simulateur */}
-        <div className="lg:col-span-1">
+        <div id="subscription-simulator" className="scroll-mt-32 lg:col-span-1">
           <div className="lg:sticky lg:top-20">
             <Card className="rounded-[1.35rem] border border-[#541249]/25 bg-white/95 shadow-[0_22px_55px_rgba(56,12,49,.12)]">
               <CardHeader>
@@ -636,6 +644,16 @@ export function OfferDetail() {
               </CardContent>
             </Card>
           </div>
+        </div>
+      </div>
+
+      <div className={`fixed inset-x-3 z-30 lg:hidden ${userEmail ? "bottom-[calc(4.65rem+env(safe-area-inset-bottom))]" : "bottom-[calc(.75rem+env(safe-area-inset-bottom))]"}`}>
+        <div className="mx-auto flex max-w-md items-center justify-between gap-3 rounded-2xl border border-white/15 bg-[#1b0617]/96 p-2 pl-4 text-white shadow-[0_18px_45px_rgba(19,4,16,.32)] backdrop-blur-xl">
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-[.12em] text-white/55">{text.from}</p>
+            <p className="tnum truncate text-sm font-extrabold">{money(minInv, true)}</p>
+          </div>
+          <Button type="button" onClick={() => scrollTo("subscription-simulator")} className="btn-nexora min-h-11 shrink-0 rounded-xl px-5">{text.invest}</Button>
         </div>
       </div>
     </div>

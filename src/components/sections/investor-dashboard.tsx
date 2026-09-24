@@ -197,7 +197,7 @@ function statusBadge(status: string, locale: Locale) {
     case "cancelled":
       return <Badge variant="outline">{en ? "Cancelled" : "Annulé"}</Badge>;
     default:
-      return <Badge variant="outline">{status}</Badge>;
+      return <Badge variant="outline">{en ? "In progress" : "En cours"}</Badge>;
   }
 }
 
@@ -214,14 +214,14 @@ function localizedNotification(notification: DashboardNotification, locale: Loca
     return { title: "Identity verified", message: "Your identity has been verified. You can now invest." };
   }
   if (notification.type === "payout") {
-    return { title: "Payout requested", message: "Your request has been sent securely to the payment provider." };
+    return { title: "Payout requested", message: "Your request is being processed securely. We will notify you when it is complete." };
   }
   if (notification.type === "investment") {
     const match = notification.message.match(/engagement de (.+?) FCFA pour « (.+?) »/i);
     return {
       title: "Subscription saved",
       message: match
-        ? `Your commitment of XOF ${match[1]} for “${match[2]}” is awaiting payment.`
+        ? `Your commitment of ${match[1]} CFA francs for “${match[2]}” is awaiting payment.`
         : "Your commitment has been saved and is awaiting payment.",
     };
   }
@@ -230,7 +230,7 @@ function localizedNotification(notification: DashboardNotification, locale: Loca
     return {
       title: "Investment confirmed",
       message: match
-        ? `Your investment of XOF ${match[1]} in “${match[2]}” is confirmed.`
+        ? `Your investment of ${match[1]} CFA francs in “${match[2]}” is confirmed.`
         : "Your investment has been confirmed.",
     };
   }
@@ -467,7 +467,7 @@ export function InvestorDashboard() {
                   : pendingCount > 1 ? "investissements en attente de confirmation de paiement." : "investissement en attente de confirmation de paiement."}
               </p>
               <p className="mt-0.5 text-xs text-positive/90">
-                {en ? "Confirmation will be applied automatically after validation by the payment provider." : "La confirmation sera appliquée automatiquement après validation du prestataire de paiement."}
+                {en ? "Your payment will appear here as soon as it is confirmed." : "Votre paiement apparaîtra ici dès qu’il sera confirmé."}
               </p>
             </div>
           </div>
@@ -667,7 +667,7 @@ export function InvestorDashboard() {
                         <div className="flex items-start gap-2">
                           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[#8a6d00]" />
                           <p className="text-xs text-[#8a6d00]">
-                            {en ? "Payment pending. Confirmation will appear automatically after provider validation." : "Paiement en attente. Sa confirmation apparaîtra automatiquement après validation par le prestataire."}
+                            {en ? "Payment pending. We will notify you as soon as it is confirmed." : "Paiement en attente. Vous serez informé dès sa confirmation."}
                           </p>
                         </div>
                       </div>

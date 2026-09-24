@@ -6,14 +6,15 @@ import { OfferCard } from "@/components/site/offer-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { ArrowDown, SearchX, SlidersHorizontal } from "lucide-react";
+import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { ArrowDown, RotateCcw, SearchX, SlidersHorizontal } from "lucide-react";
 import { COUNTRIES, SECTORS, getCountryLabel, getSectorLabel } from "@/lib/countries";
 import type { OfferDTO } from "@/lib/types";
 import { useAppStore } from "@/lib/store";
 
 const COPY = {
-  fr: { kicker: "Marché privé", title: "Choisissez avec clarté.", intro: "Filtrez la sélection, comparez les conditions et ouvrez chaque dossier pour comprendre son activité, son financement et ses risques.", loading: "Chargement de la sélection…", count: (n: number) => `${n} opportunité${n > 1 ? "s" : ""}`, filters: "Affiner la sélection", sector: "Secteur", country: "Pays", instrument: "Instrument", allSectors: "Tous les secteurs", allCountries: "Tous les pays", allInstruments: "Tous les instruments", debt: "Dette", equity: "Capital", empty: "Aucune offre dans cette sélection", emptyText: "Modifiez un ou plusieurs filtres pour élargir votre recherche.", reset: "Tout réinitialiser", results: "Résultats" },
-  en: { kicker: "Private market", title: "Choose with clarity.", intro: "Filter the selection, compare terms and open each opportunity to understand its activity, financing and risks.", loading: "Loading the selection…", count: (n: number) => `${n} opportunit${n === 1 ? "y" : "ies"}`, filters: "Refine the selection", sector: "Sector", country: "Country", instrument: "Instrument", allSectors: "All sectors", allCountries: "All countries", allInstruments: "All instruments", debt: "Debt", equity: "Equity", empty: "No opportunity in this selection", emptyText: "Change one or more filters to broaden your search.", reset: "Reset everything", results: "Results" },
+  fr: { kicker: "Marché privé", title: "Investir, sans perdre le fil.", intro: "Une sélection lisible d’entreprises, avec les conditions, l’avancement et les risques à portée de main.", loading: "Chargement…", count: (n: number) => `${n} opportunité${n > 1 ? "s" : ""}`, filters: "Filtres", filterTitle: "Affiner la sélection", filterHint: "Choisissez vos préférences. Les résultats se mettent à jour immédiatement.", sector: "Secteur", country: "Pays", instrument: "Type de financement", allSectors: "Tous les secteurs", allCountries: "Tous les pays", allInstruments: "Tous les financements", debt: "Avec remboursement", equity: "Au capital", empty: "Aucune offre dans cette sélection", emptyText: "Modifiez un ou plusieurs filtres pour élargir votre recherche.", reset: "Réinitialiser", done: "Voir les résultats", results: "Opportunités", active: "actif" },
+  en: { kicker: "Private market", title: "Invest without losing the thread.", intro: "A clear selection of companies, with terms, progress and risks always within reach.", loading: "Loading…", count: (n: number) => `${n} opportunit${n === 1 ? "y" : "ies"}`, filters: "Filters", filterTitle: "Refine the selection", filterHint: "Choose your preferences. Results update immediately.", sector: "Sector", country: "Country", instrument: "Funding type", allSectors: "All sectors", allCountries: "All countries", allInstruments: "All funding types", debt: "With repayment", equity: "Company ownership", empty: "No opportunity in this selection", emptyText: "Change one or more filters to broaden your search.", reset: "Reset", done: "View results", results: "Opportunities", active: "active" },
 };
 
 export function Explore() {
@@ -26,42 +27,81 @@ export function Explore() {
   const { data, loading } = useFetch<{ offers: OfferDTO[] }>(`/api/offers?${qs}`);
   const offers = data?.offers ?? [];
   const copy = COPY[locale];
-  const filtered = sector !== "all" || country !== "all" || instrument !== "all";
+  const activeCount = [sector, country, instrument].filter((value) => value !== "all").length;
+  const filtered = activeCount > 0;
   const reset = () => { setSector("all"); setCountry("all"); setInstrument("all"); };
 
-  return (
-    <div className="page-shell reveal-in">
-      <section className="grid overflow-hidden rounded-[1.75rem] bg-[#1b0617] text-white lg:grid-cols-[.82fr_1.18fr]">
-        <div className="p-6 sm:p-9 lg:p-11">
-          <p className="editorial-kicker">{copy.kicker}</p>
-          <h1 className="mt-5 text-4xl font-black leading-[.95] tracking-[-.055em] sm:text-6xl">{copy.title}</h1>
-          <p className="mt-5 max-w-lg text-sm leading-7 text-white/65">{copy.intro}</p>
-          <div className="mt-8 flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15"><ArrowDown className="h-4 w-4 text-[#d79c9f]" /></span><p className="text-xs font-bold uppercase tracking-[.16em] text-white/55">{loading ? copy.loading : copy.count(offers.length)}</p></div>
-        </div>
+  const filters = (
+    <div className="grid gap-3 md:grid-cols-3">
+      <Filter label={copy.sector}><Select value={sector} onValueChange={setSector}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{copy.allSectors}</SelectItem>{SECTORS.map((item) => <SelectItem key={item} value={item}>{getSectorLabel(item, locale)}</SelectItem>)}</SelectContent></Select></Filter>
+      <Filter label={copy.country}><Select value={country} onValueChange={setCountry}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{copy.allCountries}</SelectItem>{COUNTRIES.map((item) => <SelectItem key={item.code} value={item.code}>{getCountryLabel(item.code, locale)}</SelectItem>)}</SelectContent></Select></Filter>
+      <Filter label={copy.instrument}><Select value={instrument} onValueChange={setInstrument}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{copy.allInstruments}</SelectItem><SelectItem value="debt">{copy.debt}</SelectItem><SelectItem value="equity">{copy.equity}</SelectItem></SelectContent></Select></Filter>
+    </div>
+  );
 
-        <div className="border-t border-white/10 bg-white/[.055] p-5 backdrop-blur lg:border-l lg:border-t-0 sm:p-7 lg:p-9">
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[.15em] text-[#e7bfcf]"><SlidersHorizontal className="h-4 w-4" />{copy.filters}</div>
-          <div className="mt-5 grid gap-4">
-            <Filter label={copy.sector}><Select value={sector} onValueChange={setSector}><SelectTrigger className="border-white/15 bg-white/95"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{copy.allSectors}</SelectItem>{SECTORS.map((item) => <SelectItem key={item} value={item}>{getSectorLabel(item, locale)}</SelectItem>)}</SelectContent></Select></Filter>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Filter label={copy.country}><Select value={country} onValueChange={setCountry}><SelectTrigger className="border-white/15 bg-white/95"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{copy.allCountries}</SelectItem>{COUNTRIES.map((item) => <SelectItem key={item.code} value={item.code}>{getCountryLabel(item.code, locale)}</SelectItem>)}</SelectContent></Select></Filter>
-              <Filter label={copy.instrument}><Select value={instrument} onValueChange={setInstrument}><SelectTrigger className="border-white/15 bg-white/95"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{copy.allInstruments}</SelectItem><SelectItem value="debt">{copy.debt}</SelectItem><SelectItem value="equity">{copy.equity}</SelectItem></SelectContent></Select></Filter>
-            </div>
+  return (
+    <div className="page-shell reveal-in pb-28 lg:pb-10">
+      <section className="relative overflow-hidden rounded-[1.55rem] bg-[linear-gradient(135deg,#541249_0%,#380c31_48%,#1c0618_100%)] p-5 text-white shadow-[0_20px_55px_rgba(56,12,49,.18)] sm:p-8">
+        <div className="absolute -right-16 -top-24 h-64 w-64 rounded-full bg-[#a55b98]/15 blur-3xl" />
+        <div className="relative flex items-end justify-between gap-5">
+          <div className="max-w-2xl">
+            <p className="editorial-kicker">{copy.kicker}</p>
+            <h1 className="mt-3 text-[2rem] font-black leading-[.98] tracking-[-.05em] sm:text-5xl">{copy.title}</h1>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-white/68 sm:mt-4 sm:leading-7">{copy.intro}</p>
           </div>
-          {filtered ? <Button variant="ghost" onClick={reset} className="mt-4 px-0 text-xs text-white/65 hover:bg-transparent hover:text-white">{copy.reset}</Button> : null}
+          <div className="hidden shrink-0 items-center gap-3 sm:flex">
+            <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/15 bg-white/[.06]"><ArrowDown className="h-4 w-4 text-[#e7bfcf]" /></span>
+            <p className="text-xs font-bold uppercase tracking-[.15em] text-white/60">{loading ? copy.loading : copy.count(offers.length)}</p>
+          </div>
         </div>
       </section>
 
-      <section className="pt-8 sm:pt-10">
-        <div className="mb-5 flex items-center justify-between"><div><p className="page-kicker">{copy.results}</p><p className="mt-1 text-sm text-muted-foreground">{loading ? copy.loading : copy.count(offers.length)}</p></div>{filtered ? <Button variant="outline" size="sm" onClick={reset} className="hidden sm:inline-flex">{copy.reset}</Button> : null}</div>
-        {loading ? <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-[27rem] rounded-[1.35rem]" />)}</div>
-          : offers.length === 0 ? <div className="public-panel py-12 text-center"><SearchX className="mx-auto h-8 w-8 text-[#7b286d]" /><h2 className="mt-3 text-base font-extrabold">{copy.empty}</h2><p className="mt-1 text-sm text-muted-foreground">{copy.emptyText}</p><Button variant="outline" onClick={reset} className="mt-5">{copy.reset}</Button></div>
-          : <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{offers.map((offer, index) => <OfferCard key={offer.id} offer={offer} eager={index === 0} />)}</div>}
+      <section className="sticky top-[4.05rem] z-30 -mx-1 mt-3 rounded-2xl border border-[#541249]/10 bg-[#fffefd]/94 p-2 shadow-[0_12px_34px_rgba(56,12,49,.08)] backdrop-blur-xl sm:static sm:mx-0 sm:mt-5 sm:p-4">
+        <div className="flex items-center justify-between gap-3 md:hidden">
+          <div className="min-w-0 px-2">
+            <p className="truncate text-sm font-extrabold">{copy.results}</p>
+            <p className="text-[11px] text-muted-foreground">{loading ? copy.loading : copy.count(offers.length)}</p>
+          </div>
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" className="relative shrink-0 rounded-xl border-[#541249]/15 bg-white">
+                <SlidersHorizontal className="h-4 w-4" />{copy.filters}
+                {filtered ? <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#541249] px-1 text-[10px] font-bold text-white" aria-label={`${activeCount} ${copy.active}`}>{activeCount}</span> : null}
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="max-h-[86dvh] rounded-t-[1.75rem] border-[#541249]/10 bg-[#fffefd] px-5 pb-6" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 1.5rem)" }}>
+              <SheetHeader className="px-0 pb-2 text-left">
+                <SheetTitle>{copy.filterTitle}</SheetTitle>
+                <SheetDescription>{copy.filterHint}</SheetDescription>
+              </SheetHeader>
+              <div className="overflow-y-auto py-2">{filters}</div>
+              <SheetFooter className="grid grid-cols-[auto_1fr] px-0 pt-3">
+                <Button type="button" variant="outline" onClick={reset} disabled={!filtered} aria-label={copy.reset}><RotateCcw className="h-4 w-4" /></Button>
+                <SheetClose asChild><Button type="button" className="btn-nexora">{copy.done}</Button></SheetClose>
+              </SheetFooter>
+            </SheetContent>
+          </Sheet>
+        </div>
+
+        <div className="hidden md:block">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[.14em] text-[#6c195e]"><SlidersHorizontal className="h-4 w-4" />{copy.filterTitle}</div>
+            {filtered ? <Button variant="ghost" size="sm" onClick={reset}><RotateCcw className="h-3.5 w-3.5" />{copy.reset}</Button> : null}
+          </div>
+          {filters}
+        </div>
+      </section>
+
+      <section className="pt-5 sm:pt-7">
+        <div className="mb-4 hidden items-end justify-between md:flex"><div><p className="page-kicker">{copy.results}</p><p className="mt-1 text-sm text-muted-foreground">{loading ? copy.loading : copy.count(offers.length)}</p></div></div>
+        {loading ? <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-44 rounded-[1.35rem] sm:h-[27rem]" />)}</div>
+          : offers.length === 0 ? <div className="public-panel py-10 text-center"><SearchX className="mx-auto h-8 w-8 text-[#7b286d]" /><h2 className="mt-3 text-base font-extrabold">{copy.empty}</h2><p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">{copy.emptyText}</p><Button variant="outline" onClick={reset} className="mt-5">{copy.reset}</Button></div>
+          : <div className="grid gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">{offers.map((offer, index) => <OfferCard key={offer.id} offer={offer} eager={index === 0} compactOnMobile />)}</div>}
       </section>
     </div>
   );
 }
 
 function Filter({ label, children }: { label: string; children: React.ReactNode }) {
-  return <label className="block"><span className="mb-2 block text-[10px] font-bold uppercase tracking-[.15em] text-white/52">{label}</span>{children}</label>;
+  return <label className="block"><span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[.14em] text-muted-foreground">{label}</span>{children}</label>;
 }

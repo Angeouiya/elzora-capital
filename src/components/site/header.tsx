@@ -177,7 +177,7 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
                 aria-label={copy.preferences}
               >
                 <Languages className="h-3.5 w-3.5" />
-                <span>{locale.toUpperCase()} · {displayCurrency}</span>
+                <span>{locale.toUpperCase()} · {displayCurrency === "XOF" ? "F CFA" : "EUR"}</span>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2">
@@ -196,13 +196,13 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
               </DropdownMenuLabel>
               {(["XOF", "EUR"] as DisplayCurrency[]).map((item) => (
                 <DropdownMenuItem key={item} onClick={() => setDisplayCurrency(item)} className="cursor-pointer rounded-xl">
-                  <span className="flex-1">{item === "XOF" ? "Franc CFA · XOF" : "Euro · EUR"}</span>
+                  <span className="flex-1">{item === "XOF" ? "Franc CFA" : "Euro"}</span>
                   {displayCurrency === item ? <Check className="h-4 w-4 text-[#541249]" /> : null}
                 </DropdownMenuItem>
               ))}
               {displayCurrency === "EUR" ? (
                 <p className="px-2 pb-1 pt-2 text-[10px] leading-4 text-muted-foreground">
-                  {locale === "fr" ? "Conversion d’affichage. Les opérations restent réglées en XOF." : "Display conversion. Transactions remain settled in XOF."}
+                  {locale === "fr" ? "Les montants sont affichés en euros à titre indicatif. Les paiements restent effectués en francs CFA." : "Euro amounts are shown for reference. Payments remain in CFA francs."}
                 </p>
               ) : null}
             </DropdownMenuContent>

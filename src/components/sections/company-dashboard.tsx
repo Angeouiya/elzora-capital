@@ -83,12 +83,12 @@ const COPY = {
   fr: {
     workspace: "Espace entreprise", signInIntro: "Connectez-vous pour accéder à l’espace entreprise : vos dossiers, vos financements et le règlement de vos échéances.", signIn: "Se connecter", create: "Créer un compte entreprise", loadError: "Impossible de charger votre espace entreprise", retry: "Réessayer", select: "Sélectionnez une société", personal: "Compte personnel",
     nextDue: "Prochaine échéance", due: "Échéance", noDue: "Aucune échéance", afterFunding: "Sera créée après financement complet", activeFiles: "Dossiers actifs", totalFiles: "dossier(s) au total", fundedCapital: "Capital financé", raised: "Collecté auprès des investisseurs", newFile: "Nouveau dossier", myFiles: "Mes dossiers", noFiles: "Aucun dossier pour cette société", firstFile: "Soumettez un premier dossier de financement.", submitFile: "Soumettre un dossier", debt: "Dette", equity: "Capital", target: "Objectif", submitted: "Soumis le", fundraising: "Collecte", investors: "souscripteurs", investor: "souscripteur", closing: "Clôture",
-    financing: "Mes financements", privacy: "Vous n’avez pas accès aux données personnelles des investisseurs. Les remboursements sont collectés globalement (capital + intérêts + suivi) par carte ou Mobile Money via un prestataire agréé.", noFinancing: "Aucun financement actif. Vos échéances apparaîtront ici une fois votre offre financée.", bullet: "Remboursement in fine", amortized: "Remboursement amortissable", months: "mois", principal: "Capital", interest: "Intérêts", followUp: "Suivi plateforme", totalDue: "Total à régler", bulletNote: "Échéance unique — paiement global à effectuer à la fin de la période de", paid: "Échéance réglée", verifying: "Paiement en cours de vérification", pay: "Régler l’échéance", paying: "Ouverture du paiement…", paymentError: "Paiement indisponible", soon: "Paiement bientôt disponible", provider: "Paiement par carte et Mobile Money en cours d’activation avec un prestataire agréé.", paymentAfterFunding: "L’échéance sera créée après financement complet de l’offre.", noPayment: "Aucune échéance déclarée pour ce dossier.", offerNotFunded: "L’offre n’est pas encore financée. L’échéance sera créée automatiquement une fois le financement complet.", paymentUnavailable: "L’échéance n’est pas encore disponible. Contactez notre équipe.",
+    financing: "Mes financements", privacy: "Les informations personnelles des investisseurs restent confidentielles. Vos remboursements sont regroupés et peuvent être réglés par carte ou Mobile Money.", noFinancing: "Aucun financement actif. Vos prochains paiements apparaîtront ici une fois votre offre financée.", bullet: "Un paiement à la fin", amortized: "Paiements progressifs", months: "mois", principal: "Montant financé", interest: "Intérêts", followUp: "Accompagnement", totalDue: "Total à régler", bulletNote: "Paiement unique à effectuer à la fin de la période de", paid: "Paiement terminé", verifying: "Paiement en cours de confirmation", pay: "Effectuer le paiement", paying: "Ouverture du paiement…", paymentError: "Paiement indisponible", soon: "Paiement bientôt disponible", provider: "Le paiement par carte et Mobile Money sera bientôt disponible.", paymentAfterFunding: "Le paiement apparaîtra lorsque l’offre sera entièrement financée.", noPayment: "Aucun paiement prévu pour ce dossier.", offerNotFunded: "L’offre n’est pas encore entièrement financée. Le paiement apparaîtra ensuite automatiquement.", paymentUnavailable: "Le paiement n’est pas encore disponible. Contactez notre équipe.",
   },
   en: {
     workspace: "Company workspace", signInIntro: "Sign in to manage your applications, financing and repayments.", signIn: "Sign in", create: "Create a company account", loadError: "Unable to load your company workspace", retry: "Try again", select: "Select a company", personal: "Personal account",
     nextDue: "Next payment", due: "Payment", noDue: "No payment due", afterFunding: "Created once funding is complete", activeFiles: "Active applications", totalFiles: "application(s) in total", fundedCapital: "Capital funded", raised: "Raised from investors", newFile: "New application", myFiles: "My applications", noFiles: "No application for this company", firstFile: "Submit your first financing application.", submitFile: "Submit an application", debt: "Debt", equity: "Equity", target: "Target", submitted: "Submitted on", fundraising: "Fundraising", investors: "investors", investor: "investor", closing: "Closes",
-    financing: "My financing", privacy: "You cannot access investors’ personal data. Repayments are collected globally (principal + interest + monitoring fee) by card or Mobile Money through an authorized provider.", noFinancing: "No active financing. Repayments will appear here once your offer is funded.", bullet: "Bullet repayment", amortized: "Amortizing repayment", months: "months", principal: "Principal", interest: "Interest", followUp: "Platform monitoring", totalDue: "Total payable", bulletNote: "Single payment — the full amount is payable at the end of the", paid: "Payment completed", verifying: "Payment verification in progress", pay: "Make payment", paying: "Opening payment…", paymentError: "Payment unavailable", soon: "Payment coming soon", provider: "Card and Mobile Money payments are being activated with an authorized provider.", paymentAfterFunding: "The payment will be created once the offer is fully funded.", noPayment: "No payment has been scheduled for this application.", offerNotFunded: "The offer is not funded yet. The payment will be created automatically once funding is complete.", paymentUnavailable: "The payment is not available yet. Contact our team.",
+    financing: "My financing", privacy: "Investors’ personal information remains private. Your repayments are grouped and can be paid by card or Mobile Money.", noFinancing: "No active financing. Your next payments will appear here once your offer is funded.", bullet: "One payment at the end", amortized: "Progressive payments", months: "months", principal: "Amount funded", interest: "Interest", followUp: "Support", totalDue: "Total payable", bulletNote: "One payment due at the end of the", paid: "Payment completed", verifying: "Payment confirmation in progress", pay: "Make payment", paying: "Opening payment…", paymentError: "Payment unavailable", soon: "Payment coming soon", provider: "Card and Mobile Money payment will be available soon.", paymentAfterFunding: "The payment will appear once the offer is fully funded.", noPayment: "No payment is planned for this application.", offerNotFunded: "The offer is not fully funded yet. The payment will appear automatically afterwards.", paymentUnavailable: "The payment is not available yet. Contact our team.",
   },
 } as const;
 
@@ -121,15 +121,15 @@ const DIVIDEND_COPY = {
     declaredText: "La décision a été enregistrée et sera contrôlée par deux responsables distincts.",
     declarationError: "Déclaration indisponible",
     paymentError: "Paiement indisponible",
-    provider: "Le règlement est effectué par carte ou Mobile Money via un prestataire autorisé.",
+    provider: "Le règlement s’effectue simplement par carte ou Mobile Money.",
     legalNotice: "Le montant dû aux investisseurs est calculé automatiquement selon les participations inscrites à la date de référence. La retenue renseignée doit provenir du traitement fiscal validé par votre conseil.",
   },
   en: {
     title: "Distribute a dividend",
     intro: "Submit a corporate resolution. NEXORA reviews the evidence and amounts before any shareholder payment.",
     empty: "No issued equity position is currently available for a distribution.",
-    total: "Total dividend resolved for the company (XOF)",
-    withholding: "Total withholding on the NEXORA investors’ share (XOF)",
+    total: "Total dividend approved for the company in CFA francs",
+    withholding: "Total deduction on NEXORA investors’ share in CFA francs",
     resolution: "Corporate resolution reference",
     resolutionDate: "Resolution date",
     recordDate: "Shareholder record date",
@@ -152,7 +152,7 @@ const DIVIDEND_COPY = {
     declaredText: "The resolution has been recorded and will be reviewed by two separate officers.",
     declarationError: "Declaration unavailable",
     paymentError: "Payment unavailable",
-    provider: "Payment is completed by card or Mobile Money through an authorized provider.",
+    provider: "Payment is completed simply by card or Mobile Money.",
     legalNotice: "The investors’ entitlement is calculated automatically from the issued holdings on the record date. Any withholding entered must follow tax treatment validated by your adviser.",
   },
 } as const;
@@ -784,7 +784,7 @@ export function CompanyDashboard() {
           <div className="space-y-3">
             {companyProjects.map((p) => {
               const sm = STATUS_META[p.status] || {
-                label: [p.status, p.status] as [string, string],
+                label: ["En cours", "In progress"] as [string, string],
                 className: "bg-secondary text-muted-foreground",
               };
               const hasOffer = !!p.offer;
@@ -909,7 +909,7 @@ export function CompanyDashboard() {
                   p.status
                 );
                 const statusMeta = STATUS_META[p.status] || {
-                  label: [p.status, p.status] as [string, string],
+                  label: ["En cours", "In progress"] as [string, string],
                   className: "bg-secondary text-muted-foreground",
                 };
                 return (
@@ -1115,7 +1115,7 @@ export function CompanyDashboard() {
                             : "border-[#D9BFD4] bg-[#FCF8FB] text-[#541249]"
                       }
                     >
-                      {statusLabel || dividend.status}
+                      {statusLabel || (locale === "fr" ? "En cours" : "In progress")}
                     </Badge>
                   </div>
                   <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
