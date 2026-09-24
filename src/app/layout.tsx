@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
@@ -28,6 +28,16 @@ export const metadata: Metadata = {
     "crowdfunding",
   ],
   authors: [{ name: "NEXORA Capital" }],
+  applicationName: "NEXORA Capital",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "NEXORA",
+    statusBarStyle: "black-translucent",
+  },
+  formatDetection: {
+    telephone: false,
+  },
   icons: {
     icon: "/logo.svg",
     shortcut: "/logo.svg",
@@ -39,6 +49,15 @@ export const metadata: Metadata = {
     siteName: "NEXORA Capital",
     type: "website",
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  interactiveWidget: "resizes-content",
+  colorScheme: "light",
+  themeColor: "#380C31",
 };
 
 export default function RootLayout({

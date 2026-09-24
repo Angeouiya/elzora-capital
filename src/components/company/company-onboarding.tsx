@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Building2, CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircle2, FileSignature, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -92,7 +92,7 @@ export function CompanyOnboarding({ onCreated, compact = false }: CompanyOnboard
     <Card className={compact ? "border-border/70" : "mx-auto max-w-2xl border-border/70"}>
       <CardHeader className="pb-4">
         <div className="mb-2 flex h-11 w-11 items-center justify-center rounded-xl bg-[#F7ECF5] text-[#541249]">
-          <Building2 className="h-5 w-5" />
+          <FileSignature className="h-5 w-5" />
         </div>
         <CardTitle className="text-xl">{copy.title}</CardTitle>
         <p className="text-sm leading-relaxed text-muted-foreground">

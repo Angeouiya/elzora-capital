@@ -32,7 +32,7 @@ import { CompanyOnboarding } from "@/components/company/company-onboarding";
 import { getCountryLabel, getSectorLabel } from "@/lib/countries";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Building2,
+  PanelsTopLeft,
   Wallet,
   CalendarClock,
   Briefcase,
@@ -45,6 +45,7 @@ import {
   RefreshCw,
   Lock,
   BadgeDollarSign,
+  LogIn,
 } from "lucide-react";
 
 // 15 statuts du modèle Project (prisma/schema.prisma)
@@ -163,7 +164,7 @@ function NotLoggedIn({ locale }: { locale: "fr" | "en" }) {
     <section className="mx-auto max-w-md px-4 py-16 sm:px-6 lg:px-8">
       <div className="rounded-xl border border-border/60 bg-card p-8 text-center">
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-nexora-pale">
-          <Building2 className="h-7 w-7 text-positive" />
+          <LogIn className="h-7 w-7 text-positive" />
         </div>
         <h1 className="text-xl font-bold text-foreground">{copy.workspace}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
@@ -646,7 +647,7 @@ export function CompanyDashboard() {
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-md bg-nexora-black text-nexora-lime">
-            <Building2 className="h-6 w-6" />
+            <PanelsTopLeft className="h-6 w-6" />
           </div>
           <div>
             <h1 className="text-lg font-bold tracking-tight text-foreground sm:text-xl">

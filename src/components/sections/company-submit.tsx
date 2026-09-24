@@ -29,7 +29,7 @@ import { SECTORS, COUNTRIES, getCountryLabel, getSectorLabel } from "@/lib/count
 import { toast } from "@/hooks/use-toast";
 import { CompanyOnboarding } from "@/components/company/company-onboarding";
 import {
-  Building2,
+  BadgeCheck,
   ArrowRight,
   ArrowLeft,
   Save,
@@ -41,6 +41,8 @@ import {
   Landmark,
   Wallet,
   Briefcase,
+  LogIn,
+  IdCard,
 } from "lucide-react";
 
 interface Membership {
@@ -68,7 +70,7 @@ interface MeResponse {
 }
 
 const STEPS = [
-  { id: 1, label: ["Entreprise", "Company"], icon: Building2 },
+  { id: 1, label: ["Entreprise", "Company"], icon: BadgeCheck },
   { id: 2, label: ["Projet", "Project"], icon: Briefcase },
   { id: 3, label: ["Conditions", "Terms"], icon: Landmark },
   { id: 4, label: ["Budget", "Budget"], icon: Wallet },
@@ -238,7 +240,7 @@ export function CompanySubmit() {
     return (
       <section className="mx-auto max-w-md px-4 py-16 text-center">
         <Card className="p-8">
-          <Building2 className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
+          <LogIn className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
           <h1 className="text-lg font-bold text-foreground">
             {copy.signInTitle}
           </h1>
@@ -531,7 +533,7 @@ export function CompanySubmit() {
                         : "border-[#541249]/10 bg-white/90 hover:border-[#541249]/30"
                     }`}
                   >
-                    <Building2
+                    <IdCard
                       className={`mt-0.5 h-5 w-5 shrink-0 ${
                         isSelected ? "text-positive" : "text-muted-foreground"
                       }`}

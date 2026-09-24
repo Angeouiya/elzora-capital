@@ -134,6 +134,8 @@ body {
       radial-gradient(circle at 96% 18%, rgba(173, 111, 74, 0.055), transparent 24rem),
       linear-gradient(180deg, #fffefd 0%, #fbf8fa 32rem, #f8f8f4 100%);
     background-attachment: fixed;
+    min-height: 100dvh;
+    overscroll-behavior-y: none;
   }
   ::selection { background: #541249; color: #FFFFFF; }
   button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
@@ -293,6 +295,32 @@ button[data-control="media"]:focus-visible {
 /* Système visuel partagé par toutes les sections publiques et privées. */
 .app-shell {
   isolation: isolate;
+  min-height: 100dvh;
+}
+
+.member-overview-card {
+  background:
+    radial-gradient(circle at 88% 8%, rgba(197,135,196,.34), transparent 16rem),
+    radial-gradient(circle at 12% 110%, rgba(111,31,98,.6), transparent 22rem),
+    linear-gradient(138deg, #541249 0%, #380c31 46%, #1c0618 100%);
+  box-shadow: 0 24px 65px rgba(56,12,49,.2);
+}
+
+.member-overview-card::after {
+  display: none;
+}
+
+.member-overview-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.mobile-card-rail {
+  scrollbar-width: none;
+}
+
+.mobile-card-rail::-webkit-scrollbar {
+  display: none;
 }
 
 .page-shell {
@@ -500,4 +528,19 @@ textarea {
   .public-hero::after { background: linear-gradient(180deg, rgba(19,4,16,.94) 0%, rgba(19,4,16,.8) 64%, rgba(19,4,16,.95) 100%); }
   .home-hero-gradient::after { background: linear-gradient(180deg, rgba(56,12,49,.44) 0%, rgba(19,4,16,.32) 46%, rgba(19,4,16,.72) 100%); }
   .home-hero-gradient::before { right: -24rem; }
+  .member-home { padding-top: 1rem; }
+}
+
+@media (display-mode: standalone) {
+  body {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  input,
+  textarea,
+  [contenteditable="true"] {
+    -webkit-user-select: text;
+    user-select: text;
+  }
 }

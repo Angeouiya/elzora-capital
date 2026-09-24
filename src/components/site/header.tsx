@@ -3,6 +3,14 @@ import Image from "next/image";
 import { useAppStore, type DisplayCurrency, type Locale } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -21,6 +29,12 @@ const COPY = {
       { label: "Explorer", view: "explore" as const },
       { label: "Financer mon entreprise", view: "register" as const },
       { label: "Fonctionnement", view: "how" as const },
+    ],
+    appNav: [
+      { label: "Vue d’ensemble", view: "home" as const },
+      { label: "Opportunités", view: "explore" as const },
+      { label: "Portefeuille", view: "investor_dashboard" as const },
+      { label: "Entreprise", view: "company_dashboard" as const },
     ],
     login: "Connexion",
     register: "Créer un compte",
@@ -42,6 +56,12 @@ const COPY = {
       { label: "Explore", view: "explore" as const },
       { label: "Finance my business", view: "register" as const },
       { label: "How it works", view: "how" as const },
+    ],
+    appNav: [
+      { label: "Overview", view: "home" as const },
+      { label: "Opportunities", view: "explore" as const },
+      { label: "Portfolio", view: "investor_dashboard" as const },
+      { label: "Company", view: "company_dashboard" as const },
     ],
     login: "Sign in",
     register: "Create account",
@@ -82,20 +102,6 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
       : "NEXORA Capital — Private capital in West Africa";
   }, [locale]);
 
-  useEffect(() => {
-    if (!open) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-    window.addEventListener("keydown", closeOnEscape);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", closeOnEscape);
-    };
-  }, [open]);
-
   const initials = userEmail
     ? userEmail
         .split("@")[0]
@@ -123,28 +129,19 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
   };
 
   return (
-    <>
-      {open && !userEmail && !sessionPending && (
-        <button
-          data-control="overlay"
-          type="button"
-          aria-label={copy.closeMenu}
-          onClick={() => setOpen(false)}
-          className="fixed inset-0 z-40 cursor-default bg-black/35 backdrop-blur-[2px] xl:hidden"
-        />
-      )}
+    <Sheet open={open} onOpenChange={setOpen}>
     <header
       className="sticky top-0 z-50 w-full border-b border-[#541249]/[.07] bg-[#fffefd]/88 backdrop-blur-2xl"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
-      <div className="mx-auto flex h-[4.5rem] max-w-[82rem] items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className={`mx-auto flex max-w-[82rem] items-center justify-between px-4 sm:px-6 lg:px-8 ${userEmail ? "h-16 lg:h-[4.5rem]" : "h-[4.5rem]"}`}>
         {/* Logo */}
         <button
           data-control="brand"
           onClick={() => setView("home")}
           className="group flex items-center gap-2.5 rounded-xl outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <Image src="/logo.svg" alt="" width={38} height={38} priority className="h-9.5 w-9.5 drop-shadow-[0_8px_18px_rgba(56,12,49,.22)]" />
+          <Image src="/logo.svg" alt="" width={38} height={38} loading="eager" className="h-9.5 w-9.5 drop-shadow-[0_8px_18px_rgba(56,12,49,.22)]" />
           <span className="leading-none">
             <span className="block text-[1.05rem] font-black tracking-[-.035em] text-foreground">NEXORA</span>
             <span className="mt-1 block text-[.56rem] font-bold uppercase tracking-[.19em] text-[#6C195E]">{copy.subtitle}</span>
@@ -152,8 +149,8 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
         </button>
 
         {/* Desktop nav */}
-        <nav className="hidden items-center gap-1 xl:flex">
-          {copy.nav.map((item) => (
+        <nav className="hidden items-center gap-1 lg:flex">
+          {(userEmail ? copy.appNav : copy.nav).map((item) => (
             <button
               data-control="nav"
               key={item.view}
@@ -219,7 +216,7 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
           ) : userEmail ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button data-control="account" className="flex h-10 items-center gap-2 rounded-xl border border-[#541249]/12 bg-white/88 pl-1.5 pr-3 text-sm font-semibold shadow-[0_4px_14px_rgba(56,12,49,.06)] hover:-translate-y-0.5 hover:border-[#541249]/25 hover:bg-[#FAF4F9]">
+                <button data-control="account" className="hidden h-10 items-center gap-2 rounded-xl border border-[#541249]/12 bg-white/88 pl-1.5 pr-3 text-sm font-semibold shadow-[0_4px_14px_rgba(56,12,49,.06)] hover:-translate-y-0.5 hover:border-[#541249]/25 hover:bg-[#FAF4F9] lg:flex">
                   <Avatar className="h-7 w-7">
                     <AvatarFallback className="bg-nexora-black text-xs font-bold text-nexora-lime">
                       {initials}
@@ -283,27 +280,35 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
 
           {/* Mobile hamburger (only when not logged in — otherwise bottom-nav takes over) */}
           {!userEmail && !sessionPending && (
-            <button
-              data-control="icon"
-              onClick={() => setOpen(!open)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#541249]/10 bg-white/80 text-[#541249] shadow-[0_4px_14px_rgba(56,12,49,.06)] hover:bg-[#F7EAF5] xl:hidden"
-              aria-label="Menu"
-              aria-expanded={open}
-              aria-controls="mobile-navigation"
-            >
-              {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </button>
+            <SheetTrigger asChild>
+              <button
+                data-control="icon"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#541249]/10 bg-white/80 text-[#541249] shadow-[0_4px_14px_rgba(56,12,49,.06)] hover:bg-[#F7EAF5] lg:hidden"
+                aria-label="Menu"
+                aria-expanded={open}
+              >
+                {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </button>
+            </SheetTrigger>
           )}
         </div>
       </div>
 
-      {/* Mobile nav (guest only) */}
-      {open && !userEmail && !sessionPending && (
-        <nav
-          id="mobile-navigation"
-          aria-label={copy.mobileNavigation}
-          className="absolute inset-x-0 top-full border-t border-border/70 bg-white px-4 py-4 shadow-[0_24px_50px_rgba(16,16,16,.14)] xl:hidden"
+    </header>
+
+      {!userEmail && !sessionPending ? (
+        <SheetContent
+          side="bottom"
+          className="rounded-t-[1.6rem] border-[#541249]/10 bg-[#fffefd] px-4 pb-5 pt-4 lg:hidden"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 1.25rem)" }}
         >
+          <SheetHeader className="px-0 pb-2 text-left">
+            <SheetTitle className="text-lg font-black tracking-[-.025em]">{copy.mobileNavigation}</SheetTitle>
+            <SheetDescription>
+              {locale === "fr" ? "Choisissez votre prochaine étape." : "Choose your next step."}
+            </SheetDescription>
+          </SheetHeader>
+          <nav aria-label={copy.mobileNavigation}>
           <div className="flex flex-col gap-1">
             {copy.nav.map((item) => (
               <button
@@ -342,9 +347,9 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
               {copy.register}
             </Button>
           </div>
-        </nav>
-      )}
-    </header>
-    </>
+          </nav>
+        </SheetContent>
+      ) : null}
+    </Sheet>
   );
 }

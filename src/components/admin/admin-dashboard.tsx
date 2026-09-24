@@ -16,7 +16,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { fmtCompact, fmtFCFA } from "@/lib/finance";
 import {
   TrendingUp,
-  Building2,
+  BriefcaseBusiness,
   FileSearch,
   ShieldCheck,
   Users,
@@ -342,7 +342,7 @@ export function AdminDashboard() {
         <MetricCard
           label="Offres ouvertes"
           value={String(stats.openOffers)}
-          icon={Building2}
+          icon={BriefcaseBusiness}
           hint={`${stats.totalProjects} projets au total`}
         />
         <MetricCard

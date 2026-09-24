@@ -34,7 +34,7 @@ function yieldLabel(offer: OfferDTO, locale: "fr" | "en"): string {
   return `${rateStr} % ${locale === "fr" ? `total sur ${duration} mois` : `total over ${duration} months`}`;
 }
 
-export function OfferCard({ offer }: { offer: OfferDTO }) {
+export function OfferCard({ offer, eager = false }: { offer: OfferDTO; eager?: boolean }) {
   const openOffer = useAppStore((s) => s.openOffer);
   const locale = useAppStore((s) => s.locale);
   const displayCurrency = useAppStore((s) => s.displayCurrency);
@@ -55,6 +55,7 @@ export function OfferCard({ offer }: { offer: OfferDTO }) {
           alt={offer.project.title}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          loading={eager ? "eager" : "lazy"}
           unoptimized
           className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.045]"
         />

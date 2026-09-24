@@ -35,7 +35,7 @@ import {
   XCircle,
   FileQuestion,
   Send,
-  Building2,
+  BriefcaseBusiness,
   Calendar,
   AlertCircle,
   Eye,
@@ -494,7 +494,7 @@ export function AdminAnalysis() {
                       )}
                     </div>
                     <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                      <Building2 className="h-3 w-3" />
+                      <BriefcaseBusiness className="h-3 w-3" />
                       {company}
                       <span className="text-border">·</span>
                       <span>{p.sector}</span>

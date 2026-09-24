@@ -23,7 +23,7 @@ import {
   Users,
   Clock,
   Briefcase,
-  Building2,
+  Handshake,
   CheckCircle2,
   Calculator,
   Share2,
@@ -262,7 +262,7 @@ export function ProjectDetail() {
           {/* Promoter */}
           <div className="rounded-xl border border-border/60 bg-card p-5">
             <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-foreground">
-              <Building2 className="h-5 w-5 text-primary" />
+              <Handshake className="h-5 w-5 text-primary" />
               Le porteur de projet
             </h2>
             <div className="flex items-start gap-4">

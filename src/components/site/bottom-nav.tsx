@@ -13,11 +13,12 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   LayoutGrid,
   Search,
-  Wallet,
-  UserRound,
+  WalletCards,
+  CircleUserRound,
   LogOut,
-  Building2,
   BriefcaseBusiness,
+  Handshake,
+  PanelsTopLeft,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
@@ -38,9 +39,9 @@ export function BottomNav() {
   const items: NavItem[] = [
     { icon: LayoutGrid, label: labels.home, view: "home" },
     { icon: Search, label: labels.explore, view: "explore" },
-    { icon: Wallet, label: labels.wallet, view: "investor_dashboard" },
+    { icon: WalletCards, label: labels.wallet, view: "investor_dashboard" },
     { icon: BriefcaseBusiness, label: labels.company, view: "company_dashboard" },
-    { icon: UserRound, label: labels.account, view: "company_dashboard" },
+    { icon: CircleUserRound, label: labels.account, view: "company_dashboard" },
   ];
 
   const initials = userEmail
@@ -53,7 +54,7 @@ export function BottomNav() {
     : "??";
 
   const handleItemClick = (item: NavItem) => {
-    if (item.view === "company_dashboard" && item.icon === UserRound) {
+    if (item.view === "company_dashboard" && item.icon === CircleUserRound) {
       setAccountOpen(true);
       return;
     }
@@ -81,20 +82,20 @@ export function BottomNav() {
   return (
     <>
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-[#541249]/10 bg-white/92 shadow-[0_-10px_35px_rgba(56,12,49,.08)] backdrop-blur-2xl lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-[#541249]/10 bg-white/94 shadow-[0_-12px_36px_rgba(56,12,49,.10)] backdrop-blur-2xl lg:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         aria-label={labels.navigation}
       >
         <ul className="mx-auto flex max-w-md items-stretch justify-between px-2">
           {items.map((item) => {
             const Icon = item.icon;
-            const isActive = view === item.view && item.icon !== UserRound;
+            const isActive = view === item.view && item.icon !== CircleUserRound;
             return (
               <li key={item.label} className="flex-1">
                 <button
                   data-control="bottom-nav"
                   onClick={() => handleItemClick(item)}
-                  className={`flex h-[3.85rem] w-full flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition-colors ${
+                  className={`flex h-[4.15rem] w-full flex-col items-center justify-center gap-0.5 text-[11px] font-semibold transition-colors ${
                     isActive
                       ? "text-foreground"
                       : "text-muted-foreground hover:text-foreground"
@@ -103,7 +104,7 @@ export function BottomNav() {
                   aria-label={item.label}
                 >
                   <span
-                    className={`flex h-7 w-7 items-center justify-center rounded-full transition-colors ${
+                    className={`flex h-8 min-w-9 items-center justify-center rounded-xl px-2 transition-colors ${
                       isActive
                         ? "bg-[linear-gradient(135deg,#6f1f62,#250820)] text-white shadow-[0_7px_16px_rgba(56,12,49,.22)]"
                         : "bg-transparent"
@@ -152,7 +153,7 @@ export function BottomNav() {
               }}
               className="w-full justify-start"
             >
-              <Wallet className="h-4 w-4" />
+              <WalletCards className="h-4 w-4" />
               {labels.myWallet}
             </Button>
             <Button
@@ -164,7 +165,7 @@ export function BottomNav() {
               }}
               className="w-full justify-start"
             >
-              <Building2 className="h-4 w-4" />
+              <Handshake className="h-4 w-4" />
               {labels.myCompany}
             </Button>
             <Button
@@ -176,7 +177,7 @@ export function BottomNav() {
               }}
               className="w-full justify-start"
             >
-              <LayoutGrid className="h-4 w-4" />
+              <PanelsTopLeft className="h-4 w-4" />
               {labels.home}
             </Button>
           </div>

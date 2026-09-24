@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/tooltip";
 import { fmtCompact, fmtFCFA, fmtPct } from "@/lib/finance";
 import {
-  Building2,
+  BriefcaseBusiness,
   ChevronDown,
   ChevronRight,
   ShieldAlert,
@@ -223,7 +223,7 @@ export function AdminOffers() {
                             {o.project?.title}
                           </p>
                           <p className="line-clamp-1 flex items-center gap-1 text-[11px] text-muted-foreground">
-                            <Building2 className="h-3 w-3" />
+                            <BriefcaseBusiness className="h-3 w-3" />
                             {o.project?.company?.tradeName || o.project?.company?.legalName}
                           </p>
                         </TableCell>

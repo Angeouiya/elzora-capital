@@ -56,7 +56,7 @@ export function Explore() {
         <div className="mb-5 flex items-center justify-between"><div><p className="page-kicker">{copy.results}</p><p className="mt-1 text-sm text-muted-foreground">{loading ? copy.loading : copy.count(offers.length)}</p></div>{filtered ? <Button variant="outline" size="sm" onClick={reset} className="hidden sm:inline-flex">{copy.reset}</Button> : null}</div>
         {loading ? <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-[27rem] rounded-[1.35rem]" />)}</div>
           : offers.length === 0 ? <div className="public-panel py-12 text-center"><SearchX className="mx-auto h-8 w-8 text-[#7b286d]" /><h2 className="mt-3 text-base font-extrabold">{copy.empty}</h2><p className="mt-1 text-sm text-muted-foreground">{copy.emptyText}</p><Button variant="outline" onClick={reset} className="mt-5">{copy.reset}</Button></div>
-          : <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{offers.map((offer) => <OfferCard key={offer.id} offer={offer} />)}</div>}
+          : <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{offers.map((offer, index) => <OfferCard key={offer.id} offer={offer} eager={index === 0} />)}</div>}
       </section>
     </div>
   );

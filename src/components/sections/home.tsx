@@ -52,9 +52,9 @@ export function Home() {
 
   return (
     <div className="page-shell reveal-in">
-      <section className="public-hero home-hero-gradient min-h-[38rem] text-white sm:min-h-[40rem] lg:min-h-[43rem]">
-        <div className="relative flex min-h-[38rem] flex-col justify-between p-5 sm:min-h-[40rem] sm:p-9 lg:min-h-[43rem] lg:p-12">
-          <div className="max-w-[48rem] pt-5 sm:pt-8 lg:pt-10">
+      <section className="public-hero home-hero-gradient min-h-[33rem] text-white sm:min-h-[40rem] lg:min-h-[43rem]">
+        <div className="relative flex min-h-[33rem] flex-col justify-between p-5 sm:min-h-[40rem] sm:p-9 lg:min-h-[43rem] lg:p-12">
+          <div className="max-w-[48rem] pt-3 sm:pt-8 lg:pt-10">
             <p className="editorial-kicker">{copy.kicker}</p>
             <h1 className="display-title mt-6 max-w-[47rem]">{copy.title}</h1>
             <p className="mt-6 max-w-[38rem] text-sm leading-6 text-white/72 sm:text-base sm:leading-7">{copy.intro}</p>
@@ -64,9 +64,9 @@ export function Home() {
               <Button onClick={() => setView("register")} variant="outline" className="h-12 w-full border-white/20 bg-white/7 px-5 text-white hover:bg-white/13 hover:text-white sm:w-auto"><Handshake className="h-4 w-4" />{copy.raise}</Button>
             </div>
           </div>
-          <div className="mt-10 grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 sm:grid-cols-3">
+          <div className="-mx-1 mt-8 flex snap-x snap-mandatory gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:grid sm:grid-cols-3 sm:gap-px sm:overflow-hidden sm:rounded-2xl sm:border sm:border-white/10 sm:bg-white/10 sm:px-0 sm:pb-0">
             {proofItems.map(([label, value], index) => { const Icon = PROOF_ICONS[index]; return (
-              <div key={label} className="flex items-center gap-3 bg-[#160513]/72 px-4 py-4 backdrop-blur-xl sm:px-5"><Icon className="h-5 w-5 shrink-0 text-[#d79c9f]" /><div><p className="text-[10px] font-bold uppercase tracking-[.15em] text-white/48">{label}</p><p className="mt-1 text-sm font-semibold text-white">{value}</p></div></div>
+              <div key={label} className="flex min-w-[10.75rem] snap-start items-center gap-3 rounded-2xl border border-white/10 bg-[#160513]/72 px-4 py-3.5 backdrop-blur-xl sm:min-w-0 sm:rounded-none sm:border-0 sm:px-5 sm:py-4"><Icon className="h-5 w-5 shrink-0 text-[#d79c9f]" /><div><p className="text-[10px] font-bold uppercase tracking-[.15em] text-white/48">{label}</p><p className="mt-1 text-sm font-semibold text-white">{value}</p></div></div>
             ); })}
           </div>
         </div>
@@ -84,7 +84,7 @@ export function Home() {
         </div>
         {loading ? <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[25rem] rounded-2xl" />)}</div>
           : offers.length === 0 ? <div className="public-panel px-5 py-9 text-center sm:py-11"><CircleCheck className="mx-auto h-8 w-8 text-[#541249]" /><p className="mt-3 text-sm font-bold">{copy.next}</p><p className="mx-auto mt-1 max-w-md text-xs leading-5 text-muted-foreground">{copy.nextText}</p><Button variant="outline" className="mt-4" onClick={() => setView("register")}>{copy.notify}<ArrowRight className="h-4 w-4" /></Button></div>
-          : <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{offers.slice(0, 6).map((offer) => <OfferCard key={offer.id} offer={offer} />)}</div>}
+          : <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{offers.slice(0, 6).map((offer, index) => <OfferCard key={offer.id} offer={offer} eager={index === 0} />)}</div>}
         <Button variant="outline" onClick={() => setView("explore")} className="mt-5 w-full sm:hidden">{copy.all}<ArrowRight className="h-4 w-4" /></Button>
       </section>
 

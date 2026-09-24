@@ -22,6 +22,7 @@ const CompanySubmit = dynamicView(() => import("@/components/sections/company-su
 const Fees = dynamicView(() => import("@/components/sections/fees"), "Fees");
 const Risks = dynamicView(() => import("@/components/sections/risks"), "Risks");
 const BottomNav = dynamicView(() => import("@/components/site/bottom-nav"), "BottomNav");
+const MemberHome = dynamicView(() => import("@/components/sections/member-home"), "MemberHome");
 
 function ViewLoading() {
   return (
@@ -76,7 +77,7 @@ export default function Page() {
     <div className="app-shell flex min-h-screen flex-col bg-transparent">
       <Header sessionPending={sessionPending} />
       <main className={`flex-1 ${showBottomNav ? "pb-20 lg:pb-0" : ""}`}>
-        {publicView === "home" && <Home />}
+        {publicView === "home" && (userEmail ? <MemberHome /> : <Home />)}
         {publicView === "explore" && <Explore />}
         {publicView === "offer" && <OfferDetail />}
         {publicView === "how" && <HowItWorks />}
@@ -88,7 +89,7 @@ export default function Page() {
         {publicView === "fees" && <Fees />}
         {publicView === "risks" && <Risks />}
       </main>
-      <Footer />
+      {!showBottomNav && <Footer />}
       {showBottomNav && <BottomNav />}
     </div>
   );

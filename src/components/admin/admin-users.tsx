@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/table";
 import {
   Users,
-  Building2,
+  BriefcaseBusiness,
   Search,
   ShieldCheck,
   ShieldAlert,
@@ -179,7 +179,7 @@ export function AdminUsers() {
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          <Building2 className="h-4 w-4" />
+          <BriefcaseBusiness className="h-4 w-4" />
           Entreprises
           <span className="tnum text-xs text-muted-foreground">
             ({data?.companies.length || 0})
