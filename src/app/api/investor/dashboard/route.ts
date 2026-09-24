@@ -44,6 +44,13 @@ interface InvestmentDashboardRow extends Record<string, unknown> {
   upfrontCommissionPct: number;
   annualFollowUpPct: number;
   receivedToDate: number;
+  offerStatus: string;
+  equityAllocationStatus: string | null;
+  ownershipMicroPct: number | null;
+  certificateNo: string | null;
+  equityIssuedAt: string | null;
+  equityIssuanceStatus: string | null;
+  equityShareClass: string | null;
 }
 
 interface NotificationRow extends Record<string, unknown> {
@@ -87,12 +94,18 @@ export async function GET(req: Request) {
            c.legalForm AS companyLegalForm,
            o.fundingGoal, o.annualRate, o.ratePeriod, o.durationMonths,
            o.repaymentType, o.upfrontCommissionPct, o.annualFollowUpPct,
+           o.status AS offerStatus,
+           ea.status AS equityAllocationStatus,
+           ea.ownershipMicroPct, ea.certificateNo, ea.issuedAt AS equityIssuedAt,
+           ei.status AS equityIssuanceStatus, ei.shareClass AS equityShareClass,
            COALESCE(SUM(d.amount), 0) AS receivedToDate
          FROM Investment i
          JOIN Project p ON p.id = i.projectId
          JOIN Company c ON c.id = p.companyId
          JOIN Offer o ON o.id = i.offerId
          LEFT JOIN Distribution d ON d.investmentId = i.id
+         LEFT JOIN EquityAllocation ea ON ea.investmentId = i.id
+         LEFT JOIN EquityIssuance ei ON ei.id = ea.issuanceId
          WHERE i.investorId = ?
          GROUP BY i.id
          ORDER BY i.createdAt DESC`
@@ -177,6 +190,22 @@ export async function GET(req: Request) {
       remainingDue,
       availableBalance,
       projectionLabel,
+      equityPosition:
+        row.instrumentType === "equity"
+          ? {
+              status:
+                row.equityAllocationStatus ||
+                (row.offerStatus === "funded" ? "pending_allocation" : "funding"),
+              ownershipPct:
+                row.ownershipMicroPct === null
+                  ? Number(row.sharePct)
+                  : Number(row.ownershipMicroPct) / 1_000_000,
+              certificateNo: row.certificateNo,
+              issuedAt: row.equityIssuedAt,
+              issuanceStatus: row.equityIssuanceStatus,
+              shareClass: row.equityShareClass,
+            }
+          : null,
       project: {
         id: row.projectId,
         title: row.projectTitle,

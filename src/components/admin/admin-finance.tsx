@@ -1,9 +1,13 @@
 "use client";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useFetch } from "@/hooks/use-fetch";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -15,11 +19,13 @@ import {
 import { fmtCompact, fmtFCFA } from "@/lib/finance";
 import {
   ShieldCheck,
-  Building2,
+  BriefcaseBusiness,
   Coins,
   HandCoins,
   CalendarClock,
   Inbox,
+  FileCheck2,
+  Scale,
 } from "lucide-react";
 
 interface OfferRow {
@@ -63,6 +69,40 @@ interface DisbursementsResponse {
   disbursements: DisbursementRow[];
   executionEnabled: boolean;
   executionMessage: string;
+}
+
+interface EquityIssuanceRow {
+  id: string;
+  offerId: string;
+  shareClass: string;
+  totalOwnershipPct: number;
+  status: string;
+  resolutionRef: string | null;
+  resolutionDate: string | null;
+  declarationRef: string | null;
+  shareRegisterRef: string | null;
+  preparedBy: string | null;
+  approvedBy: string | null;
+  allocationCount: number;
+  allocatedOwnershipPct: number;
+  issuedCount: number;
+  issuedAt: string | null;
+  project: {
+    title: string;
+    company: { legalName: string; tradeName?: string | null };
+  };
+}
+
+interface EquityIssuancesResponse {
+  issuances: EquityIssuanceRow[];
+}
+
+interface EquityFormState {
+  shareClass?: string;
+  resolutionRef?: string;
+  resolutionDate?: string;
+  declarationRef?: string;
+  shareRegisterRef?: string;
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -127,9 +167,15 @@ function EmptyState({
 }
 
 export function AdminFinance() {
+  const { toast } = useToast();
+  const [equityReload, setEquityReload] = useState(0);
+  const [equityForms, setEquityForms] = useState<Record<string, EquityFormState>>({});
+  const [equityAction, setEquityAction] = useState<string | null>(null);
   const { data, loading } = useFetch<AdminStatsResponse>("/api/admin/stats");
   const { data: disbursementData, loading: disbursementsLoading } =
     useFetch<DisbursementsResponse>("/api/admin/disbursements");
+  const { data: equityData, loading: equityLoading, error: equityError } =
+    useFetch<EquityIssuancesResponse>(`/api/admin/equity-issuances?refresh=${equityReload}`);
 
   // Calculs live depuis les offres remontées par /api/admin/stats
   const { totalCollected, collections } = useMemo(() => {
@@ -141,7 +187,7 @@ export function AdminFinance() {
     return { totalCollected: sum, collections: list };
   }, [data]);
 
-  if (loading || disbursementsLoading || !data) {
+  if (loading || disbursementsLoading || equityLoading || !data) {
     return (
       <div className="p-4 sm:p-6 lg:p-8">
         <Skeleton className="mb-6 h-9 w-72" />
@@ -160,6 +206,64 @@ export function AdminFinance() {
     .filter((item) => item.status === "executed")
     .reduce((sum, item) => sum + Number(item.netAmount || 0), 0);
   const totalRepaid = Number(data.stats.totalRepaid || 0);
+  const equityIssuances = equityData?.issuances ?? [];
+
+  const updateEquityForm = (id: string, key: keyof EquityFormState, value: string) => {
+    setEquityForms((current) => ({
+      ...current,
+      [id]: { ...current[id], [key]: value },
+    }));
+  };
+
+  const runEquityAction = async (
+    issuance: EquityIssuanceRow,
+    action: "prepare" | "approve" | "issue"
+  ) => {
+    const form = equityForms[issuance.id] ?? {};
+    setEquityAction(`${issuance.id}:${action}`);
+    try {
+      const response = await fetch("/api/admin/equity-issuances", {
+        method: action === "prepare" ? "POST" : "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          action === "prepare"
+            ? {
+                offerId: issuance.offerId,
+                shareClass: form.shareClass ?? issuance.shareClass,
+                resolutionRef: form.resolutionRef ?? "",
+                resolutionDate: form.resolutionDate ?? "",
+              }
+            : action === "approve"
+              ? { issuanceId: issuance.id, action }
+              : {
+                  issuanceId: issuance.id,
+                  action,
+                  declarationRef: form.declarationRef ?? "",
+                  shareRegisterRef: form.shareRegisterRef ?? "",
+                }
+        ),
+      });
+      const result = (await response.json()) as { error?: string };
+      if (!response.ok) throw new Error(result.error || "Action indisponible");
+      toast({
+        title:
+          action === "prepare"
+            ? "Émission préparée"
+            : action === "approve"
+              ? "Émission approuvée"
+              : "Participations enregistrées",
+      });
+      setEquityReload((value) => value + 1);
+    } catch (error) {
+      toast({
+        title: "Action non enregistrée",
+        description: error instanceof Error ? error.message : "Erreur inconnue",
+        variant: "destructive",
+      });
+    } finally {
+      setEquityAction(null);
+    }
+  };
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -241,7 +345,7 @@ export function AdminFinance() {
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
                       <span className="inline-flex items-center gap-1">
-                        <Building2 className="h-3 w-3" />
+                        <BriefcaseBusiness className="h-3 w-3" />
                         {c.project?.company?.tradeName || c.project?.company?.legalName}
                       </span>
                     </TableCell>
@@ -315,7 +419,196 @@ export function AdminFinance() {
         </CardContent>
       </Card>
 
-      {/* 3. Remboursements (empty state) */}
+      {/* 3. Registre des participations */}
+      <Card className="mt-6 overflow-hidden p-0">
+        <CardHeader className="bg-secondary/40 pb-3 pt-4">
+          <CardTitle className="flex items-center gap-2 text-base font-semibold">
+            <Scale className="h-4 w-4" />
+            Émissions et registre des participations
+            <span className="tnum text-xs font-normal text-muted-foreground">
+              ({equityIssuances.length})
+            </span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {equityError ? (
+            <EmptyState
+              title="Accès au registre non disponible"
+              desc="Votre rôle ne permet pas de consulter ou traiter les émissions en capital."
+              icon={Scale}
+            />
+          ) : equityIssuances.length === 0 ? (
+            <EmptyState
+              title="Aucune émission à traiter"
+              desc="Les allocations apparaîtront ici lorsqu’une collecte en capital atteindra son objectif."
+              icon={FileCheck2}
+            />
+          ) : (
+            <div className="divide-y divide-border">
+              {equityIssuances.map((issuance) => {
+                const form = equityForms[issuance.id] ?? {};
+                const busy = equityAction?.startsWith(`${issuance.id}:`) ?? false;
+                const label =
+                  issuance.status === "pending_documents"
+                    ? "Documents à préparer"
+                    : issuance.status === "prepared"
+                      ? "À approuver"
+                      : issuance.status === "approved"
+                        ? "Prête à enregistrer"
+                        : issuance.status === "issued"
+                          ? "Enregistrée"
+                          : issuance.status;
+                return (
+                  <div key={issuance.id} className="p-4 sm:p-5">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">
+                          {issuance.project.title}
+                        </p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {issuance.project.company.tradeName || issuance.project.company.legalName}
+                        </p>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className={
+                          issuance.status === "issued"
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                            : "border-[#D9BFD4] bg-[#FCF8FB] text-[#541249]"
+                        }
+                      >
+                        {label}
+                      </Badge>
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
+                      <div>
+                        <p className="text-muted-foreground">Capital alloué</p>
+                        <p className="tnum font-semibold">{issuance.allocatedOwnershipPct.toLocaleString("fr-FR", { maximumFractionDigits: 6 })} %</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Capital prévu</p>
+                        <p className="tnum font-semibold">{issuance.totalOwnershipPct.toLocaleString("fr-FR", { maximumFractionDigits: 6 })} %</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Investisseurs</p>
+                        <p className="tnum font-semibold">{issuance.allocationCount}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Titres enregistrés</p>
+                        <p className="tnum font-semibold">{issuance.issuedCount} / {issuance.allocationCount}</p>
+                      </div>
+                    </div>
+
+                    {issuance.status === "pending_documents" && (
+                      <div className="mt-4 grid gap-3 rounded-xl border border-border bg-secondary/20 p-3 sm:grid-cols-3">
+                        <div>
+                          <Label htmlFor={`share-class-${issuance.id}`} className="text-[11px]">Catégorie de titres</Label>
+                          <Input
+                            id={`share-class-${issuance.id}`}
+                            value={form.shareClass ?? issuance.shareClass}
+                            onChange={(event) => updateEquityForm(issuance.id, "shareClass", event.target.value)}
+                            className="mt-1 h-9"
+                            placeholder="Actions ordinaires"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`resolution-ref-${issuance.id}`} className="text-[11px]">Référence de la décision sociale</Label>
+                          <Input
+                            id={`resolution-ref-${issuance.id}`}
+                            value={form.resolutionRef ?? ""}
+                            onChange={(event) => updateEquityForm(issuance.id, "resolutionRef", event.target.value)}
+                            className="mt-1 h-9"
+                            placeholder="PV-AGE-2026-001"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`resolution-date-${issuance.id}`} className="text-[11px]">Date de la décision</Label>
+                          <Input
+                            id={`resolution-date-${issuance.id}`}
+                            type="date"
+                            value={form.resolutionDate ?? ""}
+                            onChange={(event) => updateEquityForm(issuance.id, "resolutionDate", event.target.value)}
+                            className="mt-1 h-9"
+                          />
+                        </div>
+                        <div className="sm:col-span-3">
+                          <Button
+                            size="sm"
+                            disabled={busy}
+                            onClick={() => void runEquityAction(issuance, "prepare")}
+                          >
+                            Préparer l’émission
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {issuance.status === "prepared" && (
+                      <div className="mt-4 flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-xs font-semibold text-amber-950">Double validation requise</p>
+                          <p className="mt-0.5 text-[11px] text-amber-900">Un second responsable doit contrôler la décision sociale avant la suite.</p>
+                        </div>
+                        <Button
+                          size="sm"
+                          disabled={busy}
+                          onClick={() => void runEquityAction(issuance, "approve")}
+                        >
+                          Approuver
+                        </Button>
+                      </div>
+                    )}
+
+                    {issuance.status === "approved" && (
+                      <div className="mt-4 grid gap-3 rounded-xl border border-[#D9BFD4] bg-[#FCF8FB] p-3 sm:grid-cols-2">
+                        <div>
+                          <Label htmlFor={`declaration-ref-${issuance.id}`} className="text-[11px]">Déclaration de souscription et de versement</Label>
+                          <Input
+                            id={`declaration-ref-${issuance.id}`}
+                            value={form.declarationRef ?? ""}
+                            onChange={(event) => updateEquityForm(issuance.id, "declarationRef", event.target.value)}
+                            className="mt-1 h-9"
+                            placeholder="DSV-2026-001"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`register-ref-${issuance.id}`} className="text-[11px]">Référence du registre des titres</Label>
+                          <Input
+                            id={`register-ref-${issuance.id}`}
+                            value={form.shareRegisterRef ?? ""}
+                            onChange={(event) => updateEquityForm(issuance.id, "shareRegisterRef", event.target.value)}
+                            className="mt-1 h-9"
+                            placeholder="REG-TITRES-2026-001"
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <Button
+                            size="sm"
+                            disabled={busy}
+                            onClick={() => void runEquityAction(issuance, "issue")}
+                          >
+                            Confirmer l’enregistrement des titres
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {issuance.status === "issued" && (
+                      <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900">
+                        <p className="font-semibold">Registre finalisé</p>
+                        <p className="mt-1">Décision : {issuance.resolutionRef} · Déclaration : {issuance.declarationRef} · Registre : {issuance.shareRegisterRef}</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* 4. Remboursements (empty state) */}
       <Card className="mt-6 overflow-hidden p-0">
         <CardHeader className="bg-secondary/40 pb-3 pt-4">
           <CardTitle className="flex items-center gap-2 text-base font-semibold">

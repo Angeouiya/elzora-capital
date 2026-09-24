@@ -30,12 +30,13 @@ import {
   ArrowRight,
   ShieldCheck,
   PieChart as PieIcon,
-  Building2,
+  BriefcaseBusiness,
   Calendar,
   AlertTriangle,
   RefreshCw,
   Clock,
   UserRoundCheck,
+  FileCheck2,
 } from "lucide-react";
 
 const CHART_COLORS = ["#541249", "#7A246C", "#250820", "#A55B98", "#C62828"];
@@ -68,6 +69,14 @@ interface DashboardInvestment {
   remainingDue: number | null;
   availableBalance: number;
   projectionLabel: string | null;
+  equityPosition: {
+    status: string;
+    ownershipPct: number;
+    certificateNo: string | null;
+    issuedAt: string | null;
+    issuanceStatus: string | null;
+    shareClass: string | null;
+  } | null;
   project?: {
     id: string;
     title: string;
@@ -516,7 +525,7 @@ export function InvestorDashboard() {
                           {p?.title || (en ? "Project" : "Projet")}
                         </p>
                         <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
-                          <Building2 className="h-3 w-3" />
+                          <BriefcaseBusiness className="h-3 w-3" />
                           {companyLabel}
                           {p?.city && (
                             <>
@@ -601,12 +610,38 @@ export function InvestorDashboard() {
                       </div>
                     )}
                     {isEquity && (
-                      <div className="mt-3 rounded-md border border-border/60 bg-secondary/40 p-3">
-                        <p className="text-xs text-muted-foreground">
-                          <span className="font-semibold text-foreground">
-                            {en ? "Future exit, not guaranteed." : "Sortie à terme, non garantie."}
-                          </span>{" "}
-                          {en ? "No repayment schedule applies to this equity investment." : "Aucun échéancier de remboursement pour cette prise de participation."}
+                      <div className="mt-3 rounded-md border border-[#D9BFD4] bg-[#FCF8FB] p-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <FileCheck2 className="h-4 w-4 text-[#541249]" />
+                            <span className="text-xs font-semibold text-foreground">
+                              {inv.equityPosition?.status === "issued"
+                                ? en ? "Participation recorded" : "Participation enregistrée"
+                                : inv.equityPosition?.status === "pending_issuance"
+                                  ? en ? "Allocation recorded" : "Allocation enregistrée"
+                                  : en ? "Funding in progress" : "Collecte en cours"}
+                            </span>
+                          </div>
+                          <Badge variant="outline" className="border-[#D9BFD4] bg-white text-[10px] text-[#541249]">
+                            {(inv.equityPosition?.ownershipPct ?? inv.sharePct)
+                              .toFixed(6)
+                              .replace(/0+$/, "")
+                              .replace(/\.$/, "")
+                              .replace(".", en ? "." : ",")} %
+                          </Badge>
+                        </div>
+                        <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+                          {inv.equityPosition?.status === "issued"
+                            ? en
+                              ? `The participation is recorded in the equity register${inv.equityPosition.certificateNo ? ` under reference ${inv.equityPosition.certificateNo}` : ""}. Liquidity and exit value remain unguaranteed.`
+                              : `La participation est enregistrée dans le registre des titres${inv.equityPosition.certificateNo ? ` sous la référence ${inv.equityPosition.certificateNo}` : ""}. La liquidité et la valeur de sortie restent non garanties.`
+                            : inv.equityPosition?.status === "pending_issuance"
+                              ? en
+                                ? "Your economic allocation is fixed. Legal issuance remains subject to the company's corporate documents and validation."
+                                : "Votre allocation économique est figée. L’émission juridique reste soumise aux actes sociaux de l’entreprise et à leur validation."
+                              : en
+                                ? "The displayed ownership is indicative until the funding closes and the legal issuance is completed."
+                                : "La participation affichée reste indicative jusqu’à la clôture de la collecte et à la réalisation de l’émission juridique."}
                         </p>
                       </div>
                     )}

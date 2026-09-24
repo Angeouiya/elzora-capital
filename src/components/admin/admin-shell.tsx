@@ -13,7 +13,7 @@ import {
   LayoutGrid,
   Users,
   FileSearch,
-  Building2,
+  BriefcaseBusiness,
   Wallet,
   Coins,
   LogOut,
@@ -36,6 +36,7 @@ import {
 //   compliance → { Pilotage, Analyse, Utilisateurs }
 //   finance    → { Pilotage, Finances, Commissions }
 //   validator  → { Pilotage, Offres, Finances }
+//   legal      → { Pilotage, Offres, Finances }
 //   support    → { Pilotage, Utilisateurs }
 //   auditor    → { Pilotage, Utilisateurs, Commissions } (lecture seule)
 //   superadmin → tous
@@ -45,6 +46,7 @@ const ROLE_MODULES: Record<string, PortalView[] | "all"> = {
   compliance: ["admin_dashboard", "admin_analysis", "admin_users"],
   finance: ["admin_dashboard", "admin_finance", "admin_commissions"],
   validator: ["admin_dashboard", "admin_offers", "admin_finance"],
+  legal: ["admin_dashboard", "admin_offers", "admin_finance"],
   support: ["admin_dashboard", "admin_users"],
   auditor: ["admin_dashboard", "admin_users", "admin_commissions"],
   superadmin: "all",
@@ -75,7 +77,7 @@ const NAV: NavItem[] = [
   { label: "Pilotage", view: "admin_dashboard", icon: LayoutGrid },
   { label: "Utilisateurs", view: "admin_users", icon: Users },
   { label: "Analyse", view: "admin_analysis", icon: FileSearch },
-  { label: "Offres", view: "admin_offers", icon: Building2 },
+  { label: "Offres", view: "admin_offers", icon: BriefcaseBusiness },
   { label: "Finances", view: "admin_finance", icon: Wallet },
   { label: "Commissions", view: "admin_commissions", icon: Coins },
 ];
