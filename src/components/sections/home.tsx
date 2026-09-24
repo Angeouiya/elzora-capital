@@ -74,13 +74,13 @@ export function Home() {
       </section>
 
       <div className="page-shell home-content-shell">
-      <section className="home-section-reveal grid gap-6 py-10 sm:py-14 lg:grid-cols-[.72fr_1.28fr] lg:items-end">
+      <section className="home-section-reveal grid gap-4 py-8 sm:py-10 lg:grid-cols-[.58fr_1.42fr] lg:items-start">
         <div><p className="page-kicker">{copy.signature}</p><div className="copper-line mt-4 max-w-32" /></div>
         <div><h2 className="max-w-3xl text-2xl font-black leading-tight tracking-[-.04em] text-foreground sm:text-4xl">{copy.signatureTitle}</h2><p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">{copy.signatureText}</p></div>
       </section>
 
       <section className="home-section-reveal border-t border-[#541249]/10 pt-8 sm:pt-10">
-        <div className="mb-6 flex items-end justify-between gap-4">
+        <div className="mb-4 flex items-end justify-between gap-4">
           <div><p className="page-kicker">{copy.market}</p><h2 className="mt-2 text-2xl font-black tracking-[-.035em] sm:text-3xl">{copy.open}</h2><p className="mt-1.5 text-sm text-muted-foreground">{loading ? copy.loading : copy.offerCount(offers.length)}</p></div>
           <Button variant="ghost" onClick={() => setView("explore")} className="hidden text-[#541249] sm:inline-flex">{copy.all}<ArrowRight className="h-4 w-4" /></Button>
         </div>
@@ -90,8 +90,8 @@ export function Home() {
         <Button variant="outline" onClick={() => setView("explore")} className="mt-5 w-full sm:hidden">{copy.all}<ArrowRight className="h-4 w-4" /></Button>
       </section>
 
-      <section className="home-section-reveal mt-12 overflow-hidden rounded-[1.75rem] bg-[#f1e9ef] p-5 sm:p-8 lg:p-10">
-        <div className="grid gap-8 lg:grid-cols-[.7fr_1.3fr]">
+      <section className="home-section-reveal mt-9 overflow-hidden rounded-[1.75rem] bg-[#f1e9ef] p-5 sm:p-6 lg:p-7">
+        <div className="grid gap-6 lg:grid-cols-[.65fr_1.35fr]">
           <div><p className="page-kicker">{copy.journey}</p><h2 className="mt-3 text-2xl font-black tracking-[-.04em] sm:text-4xl">{copy.journeyTitle}</h2><Button variant="link" onClick={() => setView("how")} className="mt-4 h-auto p-0 text-[#541249]">{copy.more}<ArrowRight className="h-4 w-4" /></Button></div>
           <div className="grid gap-3">{journeySteps.map(([title, description], index) => { const Icon = STEP_ICONS[index]; return (
             <article key={title} className="grid grid-cols-[auto_1fr] gap-4 rounded-2xl border border-white/70 bg-white/70 p-4 sm:grid-cols-[auto_10rem_1fr] sm:items-center"><span className="index-mark">{copy.step}{index + 1}</span><h3 className="text-sm font-extrabold"><Icon className="mr-2 inline h-4 w-4 text-[#7b286d]" />{title}</h3><p className="col-start-2 text-sm leading-6 text-muted-foreground sm:col-start-3">{description}</p></article>
@@ -99,7 +99,7 @@ export function Home() {
         </div>
       </section>
 
-      <section className="home-section-reveal py-11 sm:py-14">
+      <section className="home-section-reveal py-9 sm:py-10">
         <p className="page-kicker">{copy.economy}</p><h2 className="mt-2 text-2xl font-black tracking-[-.035em] sm:text-3xl">{copy.sectors}</h2>
         <div className="-mx-1 mt-5 flex gap-2 overflow-x-auto px-1 pb-2 scroll-area-fancy sm:flex-wrap sm:overflow-visible">{SECTORS.map((sector) => <Button key={sector} variant="outline" onClick={() => openExploreSector(sector)} className="shrink-0 rounded-full border-[#541249]/14 bg-white/75 hover:border-[#541249]/30 hover:bg-[#f7eaf5]">{getSectorLabel(sector, locale)}</Button>)}</div>
       </section>

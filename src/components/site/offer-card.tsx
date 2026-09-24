@@ -48,7 +48,7 @@ export function OfferCard({ offer, eager = false, compactOnMobile = false }: { o
       <button
         data-control="media"
         onClick={() => openOffer(offer.id)}
-        className={`relative overflow-hidden ${compactOnMobile ? "block min-h-44 w-[38%] shrink-0 sm:h-48 sm:w-full" : "block h-44 w-full sm:h-48"}`}
+        className={`relative overflow-hidden ${compactOnMobile ? "block min-h-40 w-[38%] shrink-0 sm:h-44 sm:w-full" : "block h-40 w-full sm:h-44"}`}
         aria-label={`${locale === "fr" ? "Voir l’offre" : "View offer"} ${offer.project.title}`}
       >
         <Image
@@ -87,7 +87,7 @@ export function OfferCard({ offer, eager = false, compactOnMobile = false }: { o
       </button>
 
       {/* Content */}
-      <div className={`flex min-w-0 flex-1 flex-col ${compactOnMobile ? "gap-2.5 p-3 sm:gap-4 sm:p-5" : "gap-4 p-4 sm:p-5"}`}>
+      <div className={`flex min-w-0 flex-1 flex-col ${compactOnMobile ? "gap-2.5 p-3 sm:gap-3 sm:p-4" : "gap-3 p-4"}`}>
         <div>
           <p className="text-xs font-medium text-muted-foreground">
             {offer.project.company.tradeName || offer.project.company.legalName}
@@ -98,7 +98,7 @@ export function OfferCard({ offer, eager = false, compactOnMobile = false }: { o
         </div>
 
         {/* Rémunération */}
-        <div className={`rounded-xl border border-[#541249]/8 bg-[#f8f2f7] px-3.5 py-2.5 ${compactOnMobile ? "hidden sm:block" : ""}`}>
+        <div className={`rounded-xl border border-[#541249]/8 bg-[#f8f2f7] px-3.5 py-2 ${compactOnMobile ? "hidden sm:block" : ""}`}>
           <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
             {locale === "fr" ? "Rémunération" : "Return"}
           </p>
@@ -134,7 +134,7 @@ export function OfferCard({ offer, eager = false, compactOnMobile = false }: { o
         </div>
 
         {/* Min investment + actions */}
-        <div className="mt-auto flex items-center justify-between gap-2 border-t border-border/60 pt-3">
+        <div className="mt-1 flex items-center justify-between gap-2 border-t border-border/60 pt-3">
           <div className="text-xs">
             <span className="text-muted-foreground">{locale === "fr" ? "Dès" : "From"} </span>
             <span className="tnum font-semibold text-foreground">

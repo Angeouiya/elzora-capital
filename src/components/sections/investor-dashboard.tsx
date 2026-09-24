@@ -457,7 +457,7 @@ export function InvestorDashboard() {
         </div>
       )}
 
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="mt-5 grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
         {/* Investments list */}
         <div className="lg:col-span-2">
           <h2 className="private-section-heading">
@@ -469,17 +469,21 @@ export function InvestorDashboard() {
           </h2>
 
           {investments.length === 0 ? (
-            <Card className="private-list-card p-8 text-center">
-              <Wallet className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-              <p className="text-sm font-medium text-foreground">
-                {en ? "You do not have any investments yet" : "Vous n’avez encore aucun investissement"}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {en ? `Explore available opportunities and invest from ${money(10_000)}.` : `Explorez les offres disponibles et souscrivez à partir de ${money(10_000)}.`}
-              </p>
+            <Card className="private-list-card gap-3 p-4 text-center sm:flex-row sm:items-center sm:p-5 sm:text-left">
+              <span className="mx-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f4ebf2] text-[#541249] sm:mx-0">
+                <Wallet className="h-5 w-5" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-foreground">
+                  {en ? "You do not have any investments yet" : "Vous n’avez encore aucun investissement"}
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {en ? `Explore available opportunities and invest from ${money(10_000)}.` : `Explorez les offres disponibles et souscrivez à partir de ${money(10_000)}.`}
+                </p>
+              </div>
               <Button
                 onClick={() => setView("explore")}
-                className="btn-nexora mt-4"
+                className="btn-nexora w-full shrink-0 sm:w-auto"
                 size="sm"
               >
                 {en ? "Explore opportunities" : "Explorer les offres"}
@@ -663,7 +667,7 @@ export function InvestorDashboard() {
         </div>
 
         {/* Right column — allocation + notifications */}
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4">
           {/* Allocation par secteur */}
           <div>
             <h2 className="private-section-heading">
@@ -724,7 +728,7 @@ export function InvestorDashboard() {
                 </div>
               </Card>
             ) : (
-              <Card className="private-list-card p-8 text-center text-sm text-muted-foreground">
+              <Card className="private-list-card gap-0 p-5 text-center text-sm text-muted-foreground">
                 {en ? "No allocation yet" : "Pas encore de répartition"}
               </Card>
             )}
@@ -737,7 +741,7 @@ export function InvestorDashboard() {
               {en ? "Notifications" : "Notifications"}
             </h2>
             {notifications.length === 0 ? (
-              <Card className="private-list-card p-8 text-center text-sm text-muted-foreground">
+              <Card className="private-list-card gap-0 p-5 text-center text-sm text-muted-foreground">
                 {en ? "No notifications" : "Aucune notification"}
               </Card>
             ) : (

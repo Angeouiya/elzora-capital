@@ -426,6 +426,7 @@ button[data-control="media"]:focus-visible {
 
 .private-list-card {
   overflow: hidden;
+  gap: .75rem;
   transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
 }
 
@@ -676,6 +677,7 @@ button[data-control="media"]:focus-visible {
 }
 
 .public-info-card {
+  gap: 1rem;
   transition: border-color 240ms ease, box-shadow 240ms ease, transform 240ms cubic-bezier(.2,.8,.2,1);
 }
 

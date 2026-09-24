@@ -162,7 +162,7 @@ export function MemberHome() {
         </Badge>
       </header>
 
-      <div className="member-overview-card relative overflow-hidden rounded-[1.6rem] p-5 text-white sm:p-7 lg:grid lg:grid-cols-[1.2fr_.8fr] lg:gap-10 lg:p-9">
+      <div className="member-overview-card relative overflow-hidden rounded-[1.6rem] p-5 text-white sm:p-6 lg:grid lg:grid-cols-[1.15fr_.85fr] lg:items-center lg:gap-6 lg:p-7">
         <div className="relative z-10">
           <p className="text-xs font-bold uppercase tracking-[.15em] text-white/58">{copy.overview}</p>
           <p className="tnum mt-4 text-[1.7rem] font-semibold leading-none tracking-[-.03em] sm:text-[2.1rem]">
@@ -170,7 +170,7 @@ export function MemberHome() {
           </p>
           <p className="mt-2 text-sm text-white/64">{copy.invested}</p>
 
-          <div className="mt-6 grid grid-cols-2 gap-2.5">
+          <div className="mt-5 grid grid-cols-2 gap-2.5">
             <div className="rounded-2xl border border-white/10 bg-white/[.07] p-3.5 backdrop-blur-xl">
               <WalletCards className="h-4 w-4 text-[#e4b4d9]" />
               <p className="mt-3 text-xs text-white/58">{copy.wallet}</p>
@@ -184,7 +184,7 @@ export function MemberHome() {
           </div>
         </div>
 
-        <div className="relative z-10 mt-5 flex flex-col justify-between rounded-2xl border border-white/10 bg-black/10 p-4 backdrop-blur-xl lg:mt-0">
+        <div className="relative z-10 mt-4 flex flex-col gap-5 rounded-2xl border border-white/10 bg-black/10 p-4 backdrop-blur-xl lg:mt-0">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="tnum text-xl font-semibold">{portfolio.activeDeals}</p>
@@ -197,7 +197,7 @@ export function MemberHome() {
           </div>
           <Button
             onClick={() => setView("investor_dashboard")}
-            className="mt-6 h-11 w-full border border-white/12 !bg-none !bg-white !text-[#380c31] hover:!bg-[#f8edf5]"
+            className="h-11 w-full border border-white/12 !bg-none !bg-white !text-[#380c31] hover:!bg-[#f8edf5]"
           >
             {copy.portfolio}<ArrowRight className="h-4 w-4" />
           </Button>
@@ -231,7 +231,7 @@ export function MemberHome() {
               data-control="choice"
               key={action.view}
               onClick={() => setView(action.view)}
-              className="group flex min-h-20 flex-col items-center justify-center rounded-2xl border border-[#541249]/10 bg-white p-3 text-center shadow-[0_8px_24px_rgba(56,12,49,.045)] hover:border-[#541249]/22 hover:bg-[#fcf8fb] sm:min-h-24 sm:p-4"
+              className="group flex min-h-[4.75rem] flex-col items-center justify-center rounded-2xl border border-[#541249]/10 bg-white p-3 text-center shadow-[0_8px_24px_rgba(56,12,49,.045)] hover:border-[#541249]/22 hover:bg-[#fcf8fb] sm:min-h-[5.25rem] sm:p-3.5"
             >
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f4ebf2] text-[#541249] transition-colors group-hover:bg-[#541249] group-hover:text-white">
                 <Icon className="h-4.5 w-4.5" />
@@ -242,7 +242,7 @@ export function MemberHome() {
         })}
       </nav>
 
-      <section className="mt-8 sm:mt-10">
+      <section className="mt-6 sm:mt-8">
         <div className="flex items-end justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold tracking-[-.02em] sm:text-xl">{copy.market}</h2>
@@ -272,7 +272,7 @@ export function MemberHome() {
         )}
       </section>
 
-      <section className="private-notice mt-7 p-4 sm:mt-9 sm:p-5">
+      <section className="private-notice mt-6 p-4 sm:mt-7">
         <div className="flex items-center gap-2">
           <BellRing className="h-4.5 w-4.5 text-[#541249]" />
           <h2 className="text-sm font-semibold">{copy.activity}</h2>

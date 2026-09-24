@@ -731,16 +731,20 @@ export function CompanyDashboard() {
           {copy.myFiles}
         </h2>
         {companyProjects.length === 0 ? (
-          <Card className="private-list-card p-8 text-center">
-            <Briefcase className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-            <p className="text-sm font-medium text-foreground">
-              {copy.noFiles}
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {copy.firstFile}
-            </p>
+          <Card className="private-list-card gap-3 p-4 text-center sm:flex-row sm:items-center sm:p-5 sm:text-left">
+            <span className="mx-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f4ebf2] text-[#541249] sm:mx-0">
+              <Briefcase className="h-5 w-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-foreground">
+                {copy.noFiles}
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {copy.firstFile}
+              </p>
+            </div>
             <Button
-              className="btn-nexora mt-4"
+              className="btn-nexora w-full shrink-0 sm:w-auto"
               size="sm"
               onClick={() => setView("company_submit")}
             >
@@ -832,7 +836,7 @@ export function CompanyDashboard() {
       </div>
 
       {/* Mes financements — repayment schedule for funded/repaying projects */}
-      <div className="mt-8">
+      <div className="mt-6">
         <h2 className="private-section-heading">
           <HandCoins className="h-4 w-4" />
           {copy.financing}
@@ -849,7 +853,7 @@ export function CompanyDashboard() {
         {companyProjects.filter(
           (p) => p.offer && p.instrumentType === "debt"
         ).length === 0 ? (
-          <Card className="private-list-card p-8 text-center text-sm text-muted-foreground">
+          <Card className="private-list-card gap-0 p-5 text-center text-sm text-muted-foreground">
             {copy.noFinancing}
           </Card>
         ) : (
@@ -1039,7 +1043,7 @@ export function CompanyDashboard() {
       </div>
 
       {/* Dividendes — equity only */}
-      <div className="mt-8">
+      <div className="mt-6">
         <h2 className="private-section-heading">
           <BadgeDollarSign className="h-4 w-4" />
           {dividendCopy.title}
@@ -1140,7 +1144,7 @@ export function CompanyDashboard() {
         )}
 
         {companyDividendIssuances.length === 0 ? (
-          <Card className="private-list-card p-8 text-center text-sm text-muted-foreground">
+          <Card className="private-list-card gap-0 p-5 text-center text-sm text-muted-foreground">
             {dividendCopy.empty}
           </Card>
         ) : (
