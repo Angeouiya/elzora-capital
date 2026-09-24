@@ -36,7 +36,7 @@ export type PortalView =
 
 export type AuthContext = "guest" | "individual" | "company" | "admin";
 export type Locale = "fr" | "en";
-export type DisplayCurrency = "XOF" | "EUR";
+export type DisplayCurrency = "XOF" | "USD" | "EUR";
 
 interface AppState {
   view: PortalView;
@@ -137,7 +137,8 @@ export const useAppStore = create<AppState>((set) => ({
     const savedLocale = window.localStorage.getItem("nexora-locale");
     const savedCurrency = window.localStorage.getItem("nexora-currency");
     const locale: Locale = savedLocale === "en" ? "en" : "fr";
-    const displayCurrency: DisplayCurrency = savedCurrency === "EUR" ? "EUR" : "XOF";
+    const displayCurrency: DisplayCurrency =
+      savedCurrency === "EUR" || savedCurrency === "USD" ? savedCurrency : "XOF";
     document.documentElement.lang = locale;
     set({ locale, displayCurrency });
   },

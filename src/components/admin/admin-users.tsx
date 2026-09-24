@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { KycReviewDialog } from "@/components/admin/kyc-review-dialog";
 import {
   Select,
@@ -146,46 +147,43 @@ export function AdminUsers() {
       </div>
 
       {/* Tabs */}
-      <div className="mb-4 flex gap-1 rounded-md bg-secondary/60 p-1">
-        <button
-          data-control="tab"
-          onClick={() => {
-            setTab("users");
-            setSearch("");
-            setKycFilter("all");
-          }}
-          className={`flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-            tab === "users"
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Users className="h-4 w-4" />
-          Particuliers
-          <span className="tnum text-xs text-muted-foreground">
-            ({data?.users.length || 0})
-          </span>
-        </button>
-        <button
-          data-control="tab"
-          onClick={() => {
-            setTab("companies");
-            setSearch("");
-            setVerifFilter("all");
-          }}
-          className={`flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-            tab === "companies"
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <BriefcaseBusiness className="h-4 w-4" />
-          Entreprises
-          <span className="tnum text-xs text-muted-foreground">
-            ({data?.companies.length || 0})
-          </span>
-        </button>
-      </div>
+      <SegmentedControl
+        value={tab}
+        onValueChange={(next) => {
+          setTab(next);
+          setSearch("");
+          if (next === "users") setKycFilter("all");
+          else setVerifFilter("all");
+        }}
+        ariaLabel="Type de compte"
+        className="mb-4 sm:w-fit"
+        options={[
+          {
+            value: "users",
+            label: (
+              <>
+                <Users className="h-4 w-4" />
+                Particuliers
+                <span className="tnum text-xs text-muted-foreground">
+                  ({data?.users.length || 0})
+                </span>
+              </>
+            ),
+          },
+          {
+            value: "companies",
+            label: (
+              <>
+                <BriefcaseBusiness className="h-4 w-4" />
+                Entreprises
+                <span className="tnum text-xs text-muted-foreground">
+                  ({data?.companies.length || 0})
+                </span>
+              </>
+            ),
+          },
+        ]}
+      />
 
       {/* Search + filter */}
       <div className="mb-4 flex flex-col gap-2 sm:flex-row">

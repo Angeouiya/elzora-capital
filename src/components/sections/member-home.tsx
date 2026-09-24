@@ -162,6 +162,7 @@ export function MemberHome() {
         </Badge>
       </header>
 
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.55fr)_minmax(17rem,.65fr)] lg:items-stretch lg:gap-5">
       <div className="member-overview-card relative overflow-hidden rounded-[1.6rem] p-5 text-white sm:p-6 lg:grid lg:grid-cols-[1.15fr_.85fr] lg:items-center lg:gap-6 lg:p-7">
         <div className="relative z-10">
           <p className="text-xs font-bold uppercase tracking-[.15em] text-white/58">{copy.overview}</p>
@@ -204,12 +205,13 @@ export function MemberHome() {
         </div>
       </div>
 
+      <div className="flex min-w-0 flex-col gap-3">
       {!kycApproved ? (
         <button
           type="button"
           data-control="choice"
           onClick={() => setView("investor_dashboard")}
-          className="mt-3 flex w-full items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-3.5 text-left"
+          className="flex w-full items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-3.5 text-left"
         >
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-amber-800 shadow-sm">
             <ShieldCheck className="h-5 w-5" />
@@ -222,7 +224,7 @@ export function MemberHome() {
         </button>
       ) : null}
 
-      <nav aria-label={locale === "fr" ? "Accès rapides" : "Quick access"} className="mt-4 grid grid-cols-3 gap-2.5 sm:gap-3">
+      <nav aria-label={locale === "fr" ? "Accès rapides" : "Quick access"} className="grid flex-1 grid-cols-3 gap-2.5 sm:gap-3 lg:grid-cols-1 lg:grid-rows-3">
         {quickActions.map((action) => {
           const Icon = action.icon;
           return (
@@ -231,18 +233,21 @@ export function MemberHome() {
               data-control="choice"
               key={action.view}
               onClick={() => setView(action.view)}
-              className="group flex min-h-[4.75rem] flex-col items-center justify-center rounded-2xl border border-[#541249]/10 bg-white p-3 text-center shadow-[0_8px_24px_rgba(56,12,49,.045)] hover:border-[#541249]/22 hover:bg-[#fcf8fb] sm:min-h-[5.25rem] sm:p-3.5"
+              className="group flex min-h-[4.75rem] flex-col items-center justify-center rounded-2xl border border-[#541249]/10 bg-white p-3 text-center shadow-[0_8px_24px_rgba(56,12,49,.045)] hover:border-[#541249]/22 hover:bg-[#fcf8fb] sm:min-h-[5.25rem] sm:p-3.5 lg:min-h-0 lg:flex-row lg:justify-start lg:gap-3 lg:px-4 lg:text-left"
             >
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f4ebf2] text-[#541249] transition-colors group-hover:bg-[#541249] group-hover:text-white">
                 <Icon className="h-4.5 w-4.5" />
               </span>
-              <span className="mt-2.5 text-xs font-semibold leading-4 text-foreground sm:text-sm">{action.label}</span>
+              <span className="mt-2.5 text-xs font-semibold leading-4 text-foreground sm:text-sm lg:mt-0">{action.label}</span>
             </button>
           );
         })}
       </nav>
+      </div>
+      </div>
 
-      <section className="mt-6 sm:mt-8">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(17rem,.65fr)] lg:items-start">
+      <section className="mt-6 min-w-0 sm:mt-8">
         <div className="flex items-end justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold tracking-[-.02em] sm:text-xl">{copy.market}</h2>
@@ -272,7 +277,7 @@ export function MemberHome() {
         )}
       </section>
 
-      <section className="private-notice mt-6 p-4 sm:mt-7">
+      <section className="private-notice mt-6 p-4 sm:mt-8">
         <div className="flex items-center gap-2">
           <BellRing className="h-4.5 w-4.5 text-[#541249]" />
           <h2 className="text-sm font-semibold">{copy.activity}</h2>
@@ -286,6 +291,7 @@ export function MemberHome() {
           <p className="mt-3 text-sm text-muted-foreground">{copy.noActivity}</p>
         )}
       </section>
+      </div>
     </section>
   );
 }

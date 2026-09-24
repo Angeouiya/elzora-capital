@@ -19,7 +19,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Menu, X, Wallet, BriefcaseBusiness, LogOut, ChevronDown, Languages, Check } from "lucide-react";
+import { SegmentedControl } from "@/components/ui/segmented-control";
+import { Menu, X, Wallet, BriefcaseBusiness, LogOut, ChevronDown, Languages } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "@/hooks/use-toast";
 
@@ -94,6 +95,7 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const copy = COPY[locale];
+  const currencyLabel = displayCurrency === "XOF" ? "F CFA" : displayCurrency;
 
   useEffect(() => {
     document.documentElement.lang = locale;
@@ -177,32 +179,38 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
                 aria-label={copy.preferences}
               >
                 <Languages className="h-3.5 w-3.5" />
-                <span>{locale.toUpperCase()} · {displayCurrency === "XOF" ? "F CFA" : "EUR"}</span>
+                <span>{locale.toUpperCase()} · {currencyLabel}</span>
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2">
+            <DropdownMenuContent align="end" className="w-72 rounded-[1.5rem] p-3">
               <DropdownMenuLabel className="text-[10px] uppercase tracking-[.14em] text-muted-foreground">
                 {copy.language}
               </DropdownMenuLabel>
-              {(["fr", "en"] as Locale[]).map((item) => (
-                <DropdownMenuItem key={item} onClick={() => setLocale(item)} className="cursor-pointer rounded-xl">
-                  <span className="flex-1">{item === "fr" ? "Français" : "English"}</span>
-                  {locale === item ? <Check className="h-4 w-4 text-[#541249]" /> : null}
-                </DropdownMenuItem>
-              ))}
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel className="text-[10px] uppercase tracking-[.14em] text-muted-foreground">
+              <SegmentedControl
+                value={locale}
+                onValueChange={setLocale}
+                ariaLabel={copy.language}
+                options={[
+                  { value: "fr" as Locale, label: "Français" },
+                  { value: "en" as Locale, label: "English" },
+                ]}
+              />
+              <DropdownMenuLabel className="mt-2 text-[10px] uppercase tracking-[.14em] text-muted-foreground">
                 {copy.currency}
               </DropdownMenuLabel>
-              {(["XOF", "EUR"] as DisplayCurrency[]).map((item) => (
-                <DropdownMenuItem key={item} onClick={() => setDisplayCurrency(item)} className="cursor-pointer rounded-xl">
-                  <span className="flex-1">{item === "XOF" ? "Franc CFA" : "Euro"}</span>
-                  {displayCurrency === item ? <Check className="h-4 w-4 text-[#541249]" /> : null}
-                </DropdownMenuItem>
-              ))}
-              {displayCurrency === "EUR" ? (
+              <SegmentedControl
+                value={displayCurrency}
+                onValueChange={setDisplayCurrency}
+                ariaLabel={copy.currency}
+                options={[
+                  { value: "XOF" as DisplayCurrency, label: "F CFA" },
+                  { value: "USD" as DisplayCurrency, label: "USD" },
+                  { value: "EUR" as DisplayCurrency, label: "Euro" },
+                ]}
+              />
+              {displayCurrency !== "XOF" ? (
                 <p className="px-2 pb-1 pt-2 text-[10px] leading-4 text-muted-foreground">
-                  {locale === "fr" ? "Les montants sont affichés en euros à titre indicatif. Les paiements restent effectués en francs CFA." : "Euro amounts are shown for reference. Payments remain in CFA francs."}
+                  {locale === "fr" ? "Conversion indicative. Les paiements restent effectués en francs CFA." : "Indicative conversion. Payments remain in CFA francs."}
                 </p>
               ) : null}
             </DropdownMenuContent>

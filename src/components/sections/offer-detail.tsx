@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { fmtPct } from "@/lib/finance";
 import { formatDisplayMoney } from "@/lib/display-money";
 import { getCountryLabel, getSectorLabel } from "@/lib/countries";
@@ -501,20 +502,17 @@ export function OfferDetail() {
                     }
                     className="tnum mt-1"
                   />
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {quickAmounts.map((q, i) => (
-                      <Button
-                        key={i}
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setAmount(q)}
-                        className="h-8 rounded-lg px-2.5 text-xs text-muted-foreground"
-                      >
-                        <span className="tnum">{money(q, true)}</span>
-                      </Button>
-                    ))}
-                  </div>
+                  <SegmentedControl
+                    value={String(amount)}
+                    onValueChange={(next) => setAmount(Number(next))}
+                    ariaLabel={locale === "fr" ? "Montants rapides" : "Quick amounts"}
+                    className="mt-2"
+                    buttonClassName="px-2.5 text-xs"
+                    options={quickAmounts.map((quickAmount) => ({
+                      value: String(quickAmount),
+                      label: <span className="tnum">{money(quickAmount, true)}</span>,
+                    }))}
+                  />
                   <p className="mt-2 text-[11px] text-muted-foreground">
                     {text.minimum} {money(minInv, true)}
                     {maxInv ? ` · ${text.maximum} ${money(maxInv, true)}` : ""}

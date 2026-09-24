@@ -2,10 +2,14 @@ import type { DisplayCurrency, Locale } from "@/lib/store";
 
 // Le franc CFA BCEAO est arrimé à l'euro à la parité fixe de 655,957 XOF pour 1 EUR.
 const XOF_PER_EUR = 655.957;
+// Taux d'affichage indicatif. Les opérations restent comptabilisées en XOF.
+const USD_PER_EUR = 1.149;
 
 export function convertFromXOF(amount: bigint | number, currency: DisplayCurrency): number {
   const value = typeof amount === "bigint" ? Number(amount) : amount;
-  return currency === "EUR" ? value / XOF_PER_EUR : value;
+  if (currency === "EUR") return value / XOF_PER_EUR;
+  if (currency === "USD") return (value / XOF_PER_EUR) * USD_PER_EUR;
+  return value;
 }
 
 export function formatDisplayMoney(

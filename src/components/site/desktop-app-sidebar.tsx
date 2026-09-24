@@ -4,7 +4,6 @@ import Image from "next/image";
 import { useState } from "react";
 import {
   BriefcaseBusiness,
-  Check,
   Compass,
   FilePlus2,
   Languages,
@@ -14,12 +13,11 @@ import {
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAppStore, type DisplayCurrency, type Locale, type PortalView } from "@/lib/store";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -35,7 +33,7 @@ const COPY = {
     preferences: "Langue et devise",
     language: "Langue",
     currency: "Devise d’affichage",
-    euroNote: "Les paiements restent effectués en francs CFA.",
+    currencyNote: "Conversion indicative. Les paiements restent effectués en francs CFA.",
     signOut: "Déconnexion",
     signingOut: "Déconnexion…",
     signedOut: "Déconnecté",
@@ -52,7 +50,7 @@ const COPY = {
     preferences: "Language and currency",
     language: "Language",
     currency: "Display currency",
-    euroNote: "Payments remain in CFA francs.",
+    currencyNote: "Indicative conversion. Payments remain in CFA francs.",
     signOut: "Sign out",
     signingOut: "Signing out…",
     signedOut: "Signed out",
@@ -80,6 +78,7 @@ export function DesktopAppSidebar() {
   } = useAppStore();
   const [signingOut, setSigningOut] = useState(false);
   const copy = COPY[locale];
+  const currencyLabel = displayCurrency === "XOF" ? "F CFA" : displayCurrency;
 
   if (!userEmail) return null;
 
@@ -179,26 +178,32 @@ export function DesktopAppSidebar() {
               aria-label={copy.preferences}
             >
               <Languages className="h-4 w-4 text-[#e4b4d9]" />
-              <span className="flex-1">{locale.toUpperCase()} · {displayCurrency === "XOF" ? "F CFA" : "EUR"}</span>
+              <span className="flex-1">{locale.toUpperCase()} · {currencyLabel}</span>
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent side="right" align="end" className="w-60 rounded-2xl p-2">
+          <DropdownMenuContent side="right" align="end" className="w-72 rounded-[1.5rem] p-3">
             <DropdownMenuLabel className="text-[10px] uppercase tracking-[.14em] text-muted-foreground">{copy.language}</DropdownMenuLabel>
-            {(["fr", "en"] as Locale[]).map((item) => (
-              <DropdownMenuItem key={item} onClick={() => setLocale(item)} className="cursor-pointer rounded-xl">
-                <span className="flex-1">{item === "fr" ? "Français" : "English"}</span>
-                {locale === item ? <Check className="h-4 w-4 text-[#541249]" /> : null}
-              </DropdownMenuItem>
-            ))}
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel className="text-[10px] uppercase tracking-[.14em] text-muted-foreground">{copy.currency}</DropdownMenuLabel>
-            {(["XOF", "EUR"] as DisplayCurrency[]).map((item) => (
-              <DropdownMenuItem key={item} onClick={() => setDisplayCurrency(item)} className="cursor-pointer rounded-xl">
-                <span className="flex-1">{item === "XOF" ? "Franc CFA" : "Euro"}</span>
-                {displayCurrency === item ? <Check className="h-4 w-4 text-[#541249]" /> : null}
-              </DropdownMenuItem>
-            ))}
-            {displayCurrency === "EUR" ? <p className="px-2 pb-1 pt-2 text-[10px] leading-4 text-muted-foreground">{copy.euroNote}</p> : null}
+            <SegmentedControl
+              value={locale}
+              onValueChange={setLocale}
+              ariaLabel={copy.language}
+              options={[
+                { value: "fr" as Locale, label: "Français" },
+                { value: "en" as Locale, label: "English" },
+              ]}
+            />
+            <DropdownMenuLabel className="mt-2 text-[10px] uppercase tracking-[.14em] text-muted-foreground">{copy.currency}</DropdownMenuLabel>
+            <SegmentedControl
+              value={displayCurrency}
+              onValueChange={setDisplayCurrency}
+              ariaLabel={copy.currency}
+              options={[
+                { value: "XOF" as DisplayCurrency, label: "F CFA" },
+                { value: "USD" as DisplayCurrency, label: "USD" },
+                { value: "EUR" as DisplayCurrency, label: "Euro" },
+              ]}
+            />
+            {displayCurrency !== "XOF" ? <p className="px-2 pb-1 pt-2 text-[10px] leading-4 text-muted-foreground">{copy.currencyNote}</p> : null}
           </DropdownMenuContent>
         </DropdownMenu>
 

@@ -8,16 +8,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SECTORS, getSectorLabel } from "@/lib/countries";
 import { ArrowRight, BadgeCheck, CircleCheck, Compass, FileSearch, Handshake, Network, Send, ShieldCheck, Smartphone } from "lucide-react";
 import type { OfferDTO } from "@/lib/types";
-import { formatDisplayMoney } from "@/lib/display-money";
 
 const COPY = {
   fr: {
     kicker: "Capital privé · Afrique de l’Ouest",
     title: "Investir dans ce qui transforme la région.",
     intro: "Une expérience claire pour découvrir des entreprises sélectionnées, comprendre chaque dossier et engager son capital avec discernement.",
-    from: "Accessible dès", opportunities: "Découvrir les opportunités", raise: "Présenter mon projet",
+    opportunities: "Découvrir les opportunités", raise: "Présenter mon projet",
     proof: [["Sélection", "Dossiers analysés"], ["Territoire", "8 pays UEMOA"], ["Règlement", "Carte & Mobile Money"], ["Clarté", "Risques présentés"]],
-    signature: "Notre conviction", signatureTitle: "Le capital mérite mieux qu’une simple liste d’offres.", signatureText: "NEXORA organise l’information, met les risques au premier plan et rend chaque décision plus lisible — sans promettre ce qui ne peut pas l’être.",
+    signature: "Notre conviction", signatureTitle: "Le capital mérite mieux qu’une simple liste d’offres.", signatureText: "NEXORA organise l’information, met les risques au premier plan et rend chaque décision plus lisible. Nous privilégions la clarté à toute promesse irréaliste.",
     market: "Sélection actuelle", open: "Opportunités ouvertes", loading: "Chargement…",
     offerCount: (count: number) => `${count} offre${count > 1 ? "s" : ""} ouverte${count > 1 ? "s" : ""} aux souscriptions`, all: "Explorer tout le marché",
     next: "La prochaine sélection est en préparation", nextText: "Chaque dossier passe par une analyse avant publication. Créez votre compte pour suivre les prochaines ouvertures.", notify: "Créer mon accès",
@@ -26,9 +25,9 @@ const COPY = {
   },
   en: {
     kicker: "Private capital · West Africa", title: "Invest in what is transforming the region.", intro: "A clear experience to discover selected businesses, understand each opportunity and commit capital with discernment.",
-    from: "Accessible from", opportunities: "Discover opportunities", raise: "Present my project",
+    opportunities: "Discover opportunities", raise: "Present my project",
     proof: [["Selection", "Reviewed applications"], ["Coverage", "8 WAEMU countries"], ["Settlement", "Card & Mobile Money"], ["Clarity", "Risks presented"]],
-    signature: "Our conviction", signatureTitle: "Capital deserves more than a simple list of deals.", signatureText: "NEXORA organizes information, puts risk in full view and makes each decision clearer — without promising what cannot be guaranteed.",
+    signature: "Our conviction", signatureTitle: "Capital deserves more than a simple list of deals.", signatureText: "NEXORA organizes information, puts risk in full view and makes each decision clearer. We favor clarity over unrealistic promises.",
     market: "Current selection", open: "Open opportunities", loading: "Loading…", offerCount: (count: number) => `${count} opportunit${count === 1 ? "y" : "ies"} open for investment`, all: "Explore the full market",
     next: "The next selection is being prepared", nextText: "Every application is reviewed before publication. Create your account to follow upcoming openings.", notify: "Create my access",
     journey: "The NEXORA method", journeyTitle: "Simple to navigate. Serious underneath.", step: "0", more: "Understand the full journey", economy: "Real economy", sectors: "Sectors shaping everyday life",
@@ -43,7 +42,6 @@ export function Home() {
   const setView = useAppStore((s) => s.setView);
   const openExploreSector = useAppStore((s) => s.openExploreSector);
   const locale = useAppStore((s) => s.locale);
-  const displayCurrency = useAppStore((s) => s.displayCurrency);
   const { data, loading } = useFetch<{ offers: OfferDTO[] }>("/api/offers");
   const offers = data?.offers ?? [];
   const copy = COPY[locale];
@@ -59,7 +57,6 @@ export function Home() {
             <p className="editorial-kicker">{copy.kicker}</p>
             <h1 className="display-title mt-6 max-w-[47rem]">{copy.title}</h1>
             <p className="mt-6 max-w-[38rem] text-sm leading-6 text-white/72 sm:text-base sm:leading-7">{copy.intro}</p>
-            <p className="mt-3 text-xs font-semibold uppercase tracking-[.14em] text-[#e8bdbe]">{copy.from} {formatDisplayMoney(10_000, displayCurrency, locale)}</p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               <Button onClick={() => setView("explore")} className="btn-nexora h-12 w-full px-5 sm:w-auto">{copy.opportunities}<ArrowRight className="h-4 w-4" /></Button>
               <Button onClick={() => setView("register")} variant="outline" className="h-12 w-full border-white/20 bg-white/7 px-5 text-white hover:bg-white/13 hover:text-white sm:w-auto"><Handshake className="h-4 w-4" />{copy.raise}</Button>
