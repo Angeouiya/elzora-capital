@@ -16,11 +16,6 @@ const file = path.join(
   "copyTracedFiles.js",
 );
 
-if (!existsSync(file)) {
-  console.log("patch-opennext-windows: @opennextjs/aws absent, rien à faire.");
-  process.exit(0);
-}
-
 const original = `        if (symlink) {
             try {
                 symlinkSync(symlink, to);
@@ -57,16 +52,43 @@ const patched = `        if (symlink) {
             }
         }`;
 
-let content = readFileSync(file, "utf8");
-if (content.includes("PATCH (Windows)")) {
-  console.log("patch-opennext-windows: déjà appliqué.");
-  process.exit(0);
-}
-if (!content.includes(original)) {
-  console.warn("patch-opennext-windows: version non reconnue, patch ignoré.");
-  process.exit(0);
+if (!existsSync(file)) {
+  console.log("patch-opennext-windows: @opennextjs/aws absent, repli ignoré.");
+} else {
+  let content = readFileSync(file, "utf8");
+  if (content.includes("PATCH (Windows)")) {
+    console.log("patch-opennext-windows: repli par copie déjà appliqué.");
+  } else if (!content.includes(original)) {
+    console.warn("patch-opennext-windows: version non reconnue, repli ignoré.");
+  } else {
+    content = content.replace(original, patched);
+    writeFileSync(file, content, "utf8");
+    console.log("patch-opennext-windows: repli par copie installé.");
+  }
 }
 
-content = content.replace(original, patched);
-writeFileSync(file, content, "utf8");
-console.log("patch-opennext-windows: repli par copie installé.");
+const cloudflareBundleFile = path.join(
+  process.cwd(),
+  "node_modules",
+  "@opennextjs",
+  "cloudflare",
+  "dist",
+  "cli",
+  "build",
+  "bundle-server.js",
+);
+
+if (existsSync(cloudflareBundleFile)) {
+  const sharpAnchor = `            "@next/env": path.join(buildOpts.outputDir, "cloudflare-templates/shims/env.js"),`;
+  const sharpAlias = `            // PATCH (Windows): image optimization is disabled by the app.\n            "sharp": path.join(buildOpts.outputDir, "cloudflare-templates/shims/throw.js"),`;
+  let cloudflareBundle = readFileSync(cloudflareBundleFile, "utf8");
+  if (!cloudflareBundle.includes("PATCH (Windows): image optimization")) {
+    if (cloudflareBundle.includes(sharpAnchor)) {
+      cloudflareBundle = cloudflareBundle.replace(sharpAnchor, `${sharpAnchor}\n${sharpAlias}`);
+      writeFileSync(cloudflareBundleFile, cloudflareBundle, "utf8");
+      console.log("patch-opennext-windows: traitement d’images natif neutralisé.");
+    } else {
+      console.warn("patch-opennext-windows: point d’insertion Sharp non reconnu.");
+    }
+  }
+}
