@@ -32,6 +32,7 @@ import {
 } from "recharts";
 import { formatDisplayMoney } from "@/lib/display-money";
 import { getCountryLabel, getSectorLabel } from "@/lib/countries";
+import { notificationActionView } from "@/lib/notification-action";
 import type { Locale } from "@/lib/store";
 import {
   Wallet,
@@ -51,6 +52,7 @@ import {
   Loader2,
   Undo2,
   FileDown,
+  CheckCheck,
 } from "lucide-react";
 
 const CHART_COLORS = ["#541249", "#7A246C", "#250820", "#A55B98", "#C62828"];
@@ -298,6 +300,8 @@ export function InvestorDashboard() {
   const [cancelTarget, setCancelTarget] = useState<DashboardInvestment | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
+  const [notificationAction, setNotificationAction] = useState<string | null>(null);
+  const [notificationError, setNotificationError] = useState<string | null>(null);
 
   const reload = useCallback(() => {
     fetch("/api/investor/dashboard")
@@ -352,6 +356,45 @@ export function InvestorDashboard() {
     } finally {
       setCancelling(false);
     }
+  };
+
+  const markNotificationsRead = async (notificationId?: string) => {
+    const actionKey = notificationId || "all";
+    setNotificationAction(actionKey);
+    setNotificationError(null);
+    try {
+      const response = await fetch("/api/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(notificationId ? { notificationId } : { all: true }),
+      });
+      if (!response.ok) throw new Error();
+      setData((current) => current
+        ? {
+            ...current,
+            notifications: current.notifications.map((item) =>
+              !notificationId || item.id === notificationId ? { ...item, read: true } : item
+            ),
+          }
+        : current
+      );
+      return true;
+    } catch {
+      setNotificationError(
+        en
+          ? "Unable to update notifications. Please try again."
+          : "Impossible de mettre les notifications à jour. Réessayez."
+      );
+      return false;
+    } finally {
+      setNotificationAction(null);
+    }
+  };
+
+  const openNotification = async (notification: DashboardNotification) => {
+    if (!notification.read) await markNotificationsRead(notification.id);
+    const destination = notificationActionView(notification.actionUrl);
+    if (destination) setView(destination);
   };
 
   useEffect(() => {
@@ -917,10 +960,34 @@ export function InvestorDashboard() {
 
           {/* Notifications */}
           <div>
-            <h2 className="private-section-heading">
-              <Bell className="h-4 w-4" />
-              {en ? "Notifications" : "Notifications"}
-            </h2>
+            <div className="mb-2 flex min-h-9 items-center justify-between gap-3">
+              <h2 className="private-section-heading !mb-0">
+                <Bell className="h-4 w-4" />
+                {en ? "Notifications" : "Notifications"}
+              </h2>
+              {notifications.some((item) => !item.read) ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 shrink-0 rounded-full px-3 text-[11px] text-[#541249] hover:bg-[#f5eaf3]"
+                  disabled={notificationAction !== null}
+                  onClick={() => void markNotificationsRead()}
+                >
+                  {notificationAction === "all" ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <CheckCheck className="h-3.5 w-3.5" />
+                  )}
+                  {en ? "Mark all read" : "Tout marquer comme lu"}
+                </Button>
+              ) : null}
+            </div>
+            {notificationError ? (
+              <p className="mb-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800" role="alert">
+                {notificationError}
+              </p>
+            ) : null}
             {notifications.length === 0 ? (
               <Card className="private-list-card gap-0 p-5 text-center text-sm text-muted-foreground">
                 {en ? "No notifications" : "Aucune notification"}
@@ -930,44 +997,59 @@ export function InvestorDashboard() {
                 <ul className="divide-y divide-border">
                   {notifications.map((n) => {
                     const localized = localizedNotification(n, locale);
+                    const destination = notificationActionView(n.actionUrl);
                     return (
                     <li
                       key={n.id}
-                      className={`flex items-start gap-3 p-4 ${
-                        !n.read ? "bg-nexora-pale/60" : ""
-                      }`}
                     >
-                      <div
-                        className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
-                          !n.read
-                            ? "bg-nexora-lime text-nexora-black"
-                            : "bg-secondary text-muted-foreground"
+                      <button
+                        type="button"
+                        className={`flex w-full items-start gap-3 p-4 text-left transition-colors hover:bg-[#faf6f9] disabled:cursor-wait ${
+                          !n.read ? "bg-nexora-pale/60" : ""
                         }`}
+                        disabled={notificationAction !== null}
+                        onClick={() => void openNotification(n)}
+                        aria-label={`${n.read ? "" : en ? "New: " : "Nouveau : "}${localized.title}`}
                       >
-                        <Bell className="h-3.5 w-3.5" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="text-sm font-semibold text-foreground">
-                            {localized.title}
-                          </p>
-                          {!n.read && (
-                            <span className="shrink-0 text-[10px] font-bold uppercase text-positive">
-                              {en ? "New" : "Nouveau"}
-                            </span>
+                        <div
+                          className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
+                            !n.read
+                              ? "bg-nexora-lime text-nexora-black"
+                              : "bg-secondary text-muted-foreground"
+                          }`}
+                        >
+                          {notificationAction === n.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Bell className="h-3.5 w-3.5" />
                           )}
                         </div>
-                        <p className="mt-0.5 text-xs text-muted-foreground">
-                          {localized.message}
-                        </p>
-                        <p className="mt-1 text-[10px] text-muted-foreground">
-                          {new Date(n.createdAt).toLocaleDateString(dateLocale, {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                          })}
-                        </p>
-                      </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-sm font-semibold text-foreground">
+                              {localized.title}
+                            </p>
+                            <span className="flex shrink-0 items-center gap-2">
+                              {!n.read ? (
+                                <span className="text-[10px] font-bold uppercase text-positive">
+                                  {en ? "New" : "Nouveau"}
+                                </span>
+                              ) : null}
+                              {destination ? <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" /> : null}
+                            </span>
+                          </div>
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            {localized.message}
+                          </p>
+                          <p className="mt-1 text-[10px] text-muted-foreground">
+                            {new Date(n.createdAt).toLocaleDateString(dateLocale, {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </p>
+                        </div>
+                      </button>
                     </li>
                     );
                   })}
