@@ -27,7 +27,7 @@ const COPY = {
     optional: "Optionnel", addressPlaceholder: "Ville, quartier, adresse", activityPlaceholder: "Décrivez clairement l’activité, les produits ou services de l’entreprise.",
     notice: "Les informations seront contrôlées avant publication ou collecte. L’enregistrement ne vaut pas validation du dossier.",
     submit: "Enregistrer l’entreprise", submitting: "Enregistrement…",
-    failed: "Entreprise non enregistrée", check: "Vérifiez les informations saisies.", success: "Entreprise enregistrée", successText: "Le profil est maintenant en cours de vérification.", network: "Connexion interrompue", retry: "Réessayez dans quelques instants.", cooperative: "Coopérative",
+    failed: "Entreprise non enregistrée", check: "Vérifiez les informations saisies.", success: "Entreprise enregistrée", successText: "Vous pouvez maintenant compléter l’identité et les personnes qui contrôlent l’entreprise.", network: "Connexion interrompue", retry: "Réessayez dans quelques instants.", cooperative: "Coopérative",
   },
   en: {
     title: "Register my company",
@@ -36,7 +36,7 @@ const COPY = {
     optional: "Optional", addressPlaceholder: "City, district and address", activityPlaceholder: "Clearly describe the company’s activity, products or services.",
     notice: "The information will be reviewed before publication or fundraising. Registration does not constitute approval of an application.",
     submit: "Register the company", submitting: "Registering…",
-    failed: "Company not registered", check: "Check the information provided.", success: "Company registered", successText: "The profile is now being verified.", network: "Connection interrupted", retry: "Try again in a few moments.", cooperative: "Cooperative",
+    failed: "Company not registered", check: "Check the information provided.", success: "Company registered", successText: "You can now complete the company identity and controlling persons.", network: "Connection interrupted", retry: "Try again in a few moments.", cooperative: "Cooperative",
   },
 } as const;
 

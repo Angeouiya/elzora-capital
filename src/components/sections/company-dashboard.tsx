@@ -29,6 +29,7 @@ import {
 import { simulateDebtFinancing } from "@/lib/finance";
 import { formatDisplayMoney } from "@/lib/display-money";
 import { CompanyOnboarding } from "@/components/company/company-onboarding";
+import { CompanyVerificationPanel } from "@/components/company/company-verification-panel";
 import { getCountryLabel, getSectorLabel } from "@/lib/countries";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -723,6 +724,15 @@ export function CompanyDashboard() {
           </div>
         </div>
       </div>
+
+      {selectedCompanyId && selectedCompany ? (
+        <CompanyVerificationPanel
+          key={selectedCompanyId}
+          companyId={selectedCompanyId}
+          locale={locale}
+          onChanged={() => setReloadKey((key) => key + 1)}
+        />
+      ) : null}
 
       {/* Mes dossiers */}
       <div className="mt-6">

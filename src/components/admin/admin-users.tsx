@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { KycReviewDialog } from "@/components/admin/kyc-review-dialog";
+import { CompanyVerificationDialog } from "@/components/admin/company-verification-dialog";
 import {
   Select,
   SelectContent,
@@ -73,8 +74,10 @@ const KYC_LABEL: Record<string, { label: string; cls: string }> = {
 const COMPANY_VERIF: Record<string, { label: string; cls: string }> = {
   incomplete: { label: "Incomplet", cls: "bg-secondary text-muted-foreground" },
   pending: { label: "En attente", cls: "bg-amber-100 text-amber-900" },
+  review: { label: "En examen", cls: "bg-blue-100 text-blue-900" },
   verified: { label: "Vérifiée", cls: "bg-nexora-pale text-positive" },
   rejected: { label: "Rejetée", cls: "bg-[#FFF5F5] text-nexora-danger" },
+  refresh: { label: "Mise à jour requise", cls: "bg-amber-100 text-amber-900" },
 };
 
 function EmptyState({ label }: { label: string }) {
@@ -97,6 +100,7 @@ export function AdminUsers() {
   const [kycFilter, setKycFilter] = useState<string>("all");
   const [verifFilter, setVerifFilter] = useState<string>("all");
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
 
   const filteredUsers = useMemo(() => {
     if (!data?.users) return [];
@@ -224,8 +228,10 @@ export function AdminUsers() {
               <SelectItem value="all">Toutes</SelectItem>
               <SelectItem value="incomplete">Incomplet</SelectItem>
               <SelectItem value="pending">En attente</SelectItem>
+              <SelectItem value="review">En examen</SelectItem>
               <SelectItem value="verified">Vérifiée</SelectItem>
               <SelectItem value="rejected">Rejetée</SelectItem>
+              <SelectItem value="refresh">Mise à jour requise</SelectItem>
             </SelectContent>
           </Select>
         )}
@@ -298,6 +304,7 @@ export function AdminUsers() {
                   <TableHead>Pays</TableHead>
                   <TableHead>Activité</TableHead>
                   <TableHead>Vérification</TableHead>
+                  <TableHead className="text-right">Dossier</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -328,6 +335,14 @@ export function AdminUsers() {
                         <Badge className={`border-0 text-xs ${verif.cls}`}>
                           {verif.label}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {c.verificationStatus !== "incomplete" ? (
+                          <Button variant="outline" size="sm" onClick={() => setSelectedCompany(c.id)}>
+                            <Eye className="h-3.5 w-3.5" />
+                            Examiner
+                          </Button>
+                        ) : <span className="text-xs text-muted-foreground">—</span>}
                       </TableCell>
                     </TableRow>
                   );
@@ -361,6 +376,12 @@ export function AdminUsers() {
         userId={selectedUser}
         open={Boolean(selectedUser)}
         onOpenChange={(next) => { if (!next) setSelectedUser(null); }}
+        onChanged={() => setRefreshKey((key) => key + 1)}
+      />
+      <CompanyVerificationDialog
+        companyId={selectedCompany}
+        open={Boolean(selectedCompany)}
+        onOpenChange={(next) => { if (!next) setSelectedCompany(null); }}
         onChanged={() => setRefreshKey((key) => key + 1)}
       />
     </div>

@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
           `INSERT INTO Company
              (id, legalName, tradeName, legalForm, country, address, registrationNo,
               taxId, activity, foundedYear, verificationStatus, createdAt, updatedAt)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)`
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'incomplete', ?, ?)`
         )
         .bind(
           companyId,
@@ -147,7 +147,7 @@ export async function POST(req: NextRequest) {
         .bind(
           crypto.randomUUID(),
           session.userId,
-          `Le profil de « ${tradeName || legalName} » est enregistré et attend sa vérification.`,
+          `Le profil de « ${tradeName || legalName} » est enregistré. Complétez maintenant la déclaration des personnes qui possèdent ou contrôlent l’entreprise.`,
           now
         ),
     ]);
@@ -171,7 +171,7 @@ export async function POST(req: NextRequest) {
     {
       company,
       membership: { id: membershipId, role: "legal_representative", mandate: "manage" },
-      message: "Entreprise enregistrée. La vérification doit être finalisée avant toute soumission.",
+      message: "Entreprise enregistrée. Complétez son identité avant de transmettre un dossier.",
     },
     { status: 201, headers: { "Cache-Control": "no-store" } }
   );
