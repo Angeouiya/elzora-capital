@@ -52,6 +52,7 @@ import {
   Loader2,
   Undo2,
   FileDown,
+  BookOpenCheck,
   CheckCheck,
   ReceiptText,
 } from "lucide-react";
@@ -503,23 +504,34 @@ export function InvestorDashboard() {
               <p className="truncate text-xs text-white/58">{user.email}</p>
             </div>
           </div>
-          {user.kycStatus === "verified" ? (
-            <div className="flex w-fit items-center gap-2 rounded-full border border-white/12 bg-white/10 px-3 py-2 text-xs font-semibold text-white backdrop-blur-xl">
-              <ShieldCheck className="h-3.5 w-3.5 text-[#e4b4d9]" />
-              {en ? "Identity verified" : "Identité vérifiée"}
-            </div>
-          ) : (
-            <Button
-              variant="outline"
-              className="w-full border-white/15 bg-white text-[#541249] hover:border-white/20 hover:bg-[#f8edf5] sm:w-auto"
-              onClick={() => setKycOpen(true)}
-            >
-              <UserRoundCheck className="h-4 w-4" />
-              {user.kycStatus === "pending" || user.kycStatus === "review"
-                ? en ? "Verification in progress" : "Vérification en cours"
-                : en ? "Verify my identity" : "Vérifier mon identité"}
-            </Button>
-          )}
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
+            {user.kycStatus === "verified" ? (
+              <div className="flex w-fit items-center gap-2 rounded-full border border-white/12 bg-white/10 px-3 py-2 text-xs font-semibold text-white backdrop-blur-xl">
+                <ShieldCheck className="h-3.5 w-3.5 text-[#e4b4d9]" />
+                {en ? "Identity verified" : "Identité vérifiée"}
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                className="w-full border-white/15 bg-white text-[#541249] hover:border-white/20 hover:bg-[#f8edf5] sm:w-auto"
+                onClick={() => setKycOpen(true)}
+              >
+                <UserRoundCheck className="h-4 w-4" />
+                {user.kycStatus === "pending" || user.kycStatus === "review"
+                  ? en ? "Verification in progress" : "Vérification en cours"
+                  : en ? "Verify my identity" : "Vérifier mon identité"}
+              </Button>
+            )}
+            {(portfolio?.activeDeals ?? 0) > 0 ? (
+              <a
+                href={`/api/investor/portfolio/statement?locale=${locale}`}
+                className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-white px-4 text-xs font-semibold text-[#541249] shadow-sm transition hover:bg-[#f8edf5] sm:w-auto"
+              >
+                <BookOpenCheck className="h-3.5 w-3.5" />
+                {en ? "Download my statement" : "Télécharger mon relevé"}
+              </a>
+            ) : null}
+          </div>
         </div>
 
         <div className="private-metric-grid">

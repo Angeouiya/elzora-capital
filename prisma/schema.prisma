@@ -53,6 +53,27 @@ model User {
   kycDocuments         KycDocument[]
   legalAcceptances     LegalAcceptance[]
   subscriptionEvidence SubscriptionEvidence[]
+  portfolioStatements  PortfolioStatement[]
+}
+
+model PortfolioStatement {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  statementNumber  String   @unique
+  documentVersion  String   @default("1.0")
+  locale           String
+  snapshot         String
+  contentHash      String
+  periodEnd        String
+  issuedAt         DateTime
+  lastDownloadedAt DateTime?
+  downloadCount    Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([userId, contentHash])
+  @@index([userId, issuedAt])
 }
 
 model LegalAcceptance {
