@@ -28,6 +28,7 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   view: PortalView;
+  activeViews?: PortalView[];
 }
 
 export function BottomNav() {
@@ -40,7 +41,7 @@ export function BottomNav() {
   const items: NavItem[] = [
     { icon: LayoutGrid, label: labels.home, view: "home" },
     { icon: Search, label: labels.explore, view: "explore" },
-    { icon: WalletCards, label: labels.wallet, view: "investor_dashboard" },
+    { icon: WalletCards, label: labels.wallet, view: "investor_dashboard", activeViews: ["investor_dashboard", "investor_payments"] },
     { icon: BriefcaseBusiness, label: labels.company, view: "company_dashboard" },
     { icon: CircleUserRound, label: labels.account, view: "company_dashboard" },
   ];
@@ -90,7 +91,7 @@ export function BottomNav() {
         <ul className="mx-auto flex max-w-md items-stretch justify-between px-2">
           {items.map((item) => {
             const Icon = item.icon;
-            const isActive = view === item.view && item.icon !== CircleUserRound;
+            const isActive = (item.activeViews?.includes(view) ?? view === item.view) && item.icon !== CircleUserRound;
             return (
               <li key={item.label} className="flex-1">
                 <button

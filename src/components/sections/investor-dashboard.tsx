@@ -53,6 +53,7 @@ import {
   Undo2,
   FileDown,
   CheckCheck,
+  ReceiptText,
 } from "lucide-react";
 
 const CHART_COLORS = ["#541249", "#7A246C", "#250820", "#A55B98", "#C62828"];
@@ -566,6 +567,14 @@ export function InvestorDashboard() {
                   : (en ? "Your distributions will appear here" : "Vos distributions apparaîtront ici")}
               </p>
             )}
+            <button
+              type="button"
+              className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-white/76 transition-colors hover:text-white"
+              onClick={() => setView("investor_payments")}
+            >
+              <ReceiptText className="h-3.5 w-3.5" />
+              {en ? "View movements" : "Voir les mouvements"}
+            </button>
           </div>
         </div>
       </div>

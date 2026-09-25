@@ -88,7 +88,7 @@ export function DesktopAppSidebar() {
   const items: SidebarItem[] = [
     { label: copy.overview, view: "home", icon: LayoutDashboard },
     { label: copy.opportunities, view: "explore", icon: Compass, activeViews: ["explore", "offer"] },
-    { label: copy.portfolio, view: "investor_dashboard", icon: WalletCards },
+    { label: copy.portfolio, view: "investor_dashboard", icon: WalletCards, activeViews: ["investor_dashboard", "investor_payments"] },
     { label: copy.company, view: "company_dashboard", icon: BriefcaseBusiness, activeViews: ["company_dashboard", "company_submit"] },
     { label: copy.account, view: "account", icon: CircleUserRound },
   ];

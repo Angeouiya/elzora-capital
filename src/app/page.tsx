@@ -26,6 +26,7 @@ const Risks = dynamicView(() => import("@/components/sections/risks"), "Risks");
 const BottomNav = dynamicView(() => import("@/components/site/bottom-nav"), "BottomNav");
 const MemberHome = dynamicView(() => import("@/components/sections/member-home"), "MemberHome");
 const Account = dynamicView(() => import("@/components/sections/account"), "Account");
+const WalletHistory = dynamicView(() => import("@/components/sections/wallet-history"), "WalletHistory");
 
 function ViewLoading() {
   return (
@@ -89,6 +90,7 @@ export default function Page() {
         {publicView === "login" && <Login />}
         {publicView === "register" && <Register />}
         {publicView === "investor_dashboard" && <InvestorDashboard />}
+        {publicView === "investor_payments" && <WalletHistory />}
         {publicView === "company_dashboard" && <CompanyDashboard />}
         {publicView === "company_submit" && <CompanySubmit />}
         {publicView === "fees" && <Fees />}
