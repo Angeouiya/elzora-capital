@@ -4,8 +4,9 @@ import { getD1, isoNow, requestIp } from "@/lib/d1";
 import { getKycBucket } from "@/lib/kyc";
 import {
   canManageProjectDocuments,
+  canVisitorAccessProjectDocument,
   isEditableProjectStatus,
-  isInvestorProjectDocumentKind,
+  isPublicProjectDocumentKind,
 } from "@/lib/project-documents";
 
 interface DocumentAccessRow extends Record<string, unknown> {
@@ -23,16 +24,6 @@ interface DocumentAccessRow extends Record<string, unknown> {
   offerId: string | null;
   offerVisibility: string | null;
 }
-
-const publicProjectStatuses = new Set([
-  "published",
-  "funding",
-  "funded",
-  "repaying",
-  "completed",
-  "defaulted",
-  "closed",
-]);
 
 async function getDocument(database: D1Database, documentId: string) {
   return database
@@ -60,9 +51,13 @@ export async function GET(req: Request, context: { params: Promise<{ documentId:
 
   const distributionFile =
     Boolean(document.isPublic) &&
-    (["cover", "gallery"].includes(document.type) || isInvestorProjectDocumentKind(document.type)) &&
-    publicProjectStatuses.has(document.projectStatus);
-  const publicDistribution = distributionFile && document.offerVisibility === "public";
+    (["cover", "gallery"].includes(document.type) || isPublicProjectDocumentKind(document.type));
+  const publicDistribution = canVisitorAccessProjectDocument({
+    kind: document.type,
+    isPublic: document.isPublic,
+    projectStatus: document.projectStatus,
+    offerVisibility: document.offerVisibility,
+  });
   const downloadRequested = new URL(req.url).searchParams.get("download") === "1";
   let actorType = "public";
   let actorId = "anonymous";

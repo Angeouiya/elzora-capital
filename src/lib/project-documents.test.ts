@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   canManageProjectDocuments,
+  canVisitorAccessProjectDocument,
   hasValidProjectFileMagic,
   isEditableProjectStatus,
   validateProjectFile,
@@ -36,7 +37,7 @@ test("project gallery accepts images but never documents", () => {
   assert.match(validateProjectFile(pdf, "gallery") ?? "", /image JPG/);
 });
 
-test("investor documents accept authentic DOCX and XLSX containers", () => {
+test("visitor documents accept authentic DOCX and XLSX containers", () => {
   const zipHeader = new Uint8Array([0x50, 0x4b, 0x03, 0x04]);
   assert.equal(
     hasValidProjectFileMagic(
@@ -51,5 +52,35 @@ test("investor documents accept authentic DOCX and XLSX containers", () => {
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     ),
     true
+  );
+});
+
+test("published offer documents are available to visitors without exposing internal files", () => {
+  assert.equal(
+    canVisitorAccessProjectDocument({
+      kind: "pitch_deck",
+      isPublic: true,
+      projectStatus: "funding",
+      offerVisibility: "public",
+    }),
+    true
+  );
+  assert.equal(
+    canVisitorAccessProjectDocument({
+      kind: "financial_statements",
+      isPublic: true,
+      projectStatus: "funding",
+      offerVisibility: "public",
+    }),
+    false
+  );
+  assert.equal(
+    canVisitorAccessProjectDocument({
+      kind: "pitch_deck",
+      isPublic: true,
+      projectStatus: "funding",
+      offerVisibility: "restricted",
+    }),
+    false
   );
 });

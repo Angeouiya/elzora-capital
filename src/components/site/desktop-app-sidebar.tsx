@@ -9,6 +9,7 @@ import {
   Languages,
   LayoutDashboard,
   LogOut,
+  CircleUserRound,
   WalletCards,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -30,6 +31,7 @@ const COPY = {
     portfolio: "Portefeuille",
     company: "Entreprise",
     submit: "Présenter un projet",
+    account: "Mon compte",
     preferences: "Langue et devise",
     language: "Langue",
     currency: "Devise d’affichage",
@@ -47,6 +49,7 @@ const COPY = {
     portfolio: "Portfolio",
     company: "Company",
     submit: "Present a project",
+    account: "My account",
     preferences: "Language and currency",
     language: "Language",
     currency: "Display currency",
@@ -87,6 +90,7 @@ export function DesktopAppSidebar() {
     { label: copy.opportunities, view: "explore", icon: Compass, activeViews: ["explore", "offer"] },
     { label: copy.portfolio, view: "investor_dashboard", icon: WalletCards },
     { label: copy.company, view: "company_dashboard", icon: BriefcaseBusiness, activeViews: ["company_dashboard", "company_submit"] },
+    { label: copy.account, view: "account", icon: CircleUserRound },
   ];
 
   const initials = userEmail

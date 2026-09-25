@@ -54,6 +54,7 @@ import {
   FolderUp,
   Images,
   Files,
+  Globe2,
 } from "lucide-react";
 
 interface Membership {
@@ -295,6 +296,8 @@ const COPY = {
     risksPlaceholder: "Présentez les risques commerciaux, financiers ou opérationnels, puis les mesures prévues.",
     documents: "Pièces prêtes pour l’analyse",
     documentsIntro: "Déposez les pièces qui permettront à l’équipe d’analyser et de vérifier le projet. PDF, DOCX, XLSX, JPG, PNG ou WebP, 10 Mo maximum par fichier.",
+    publicDocuments: "Documents visibles par les visiteurs",
+    publicDocumentsHelp: "Après validation, la présentation du projet, les prévisions financières, les agréments et les preuves d’impact pourront être consultés et téléchargés sans compte. Les pièces juridiques, bancaires et fiscales restent privées.",
     registrationDocument: "Document d’immatriculation à jour",
     financialStatements: "États financiers du dernier exercice",
     bankStatements: "Relevés bancaires récents",
@@ -461,6 +464,8 @@ const COPY = {
     risksPlaceholder: "Present commercial, financial or operating risks and the planned measures.",
     documents: "Documents ready for review",
     documentsIntro: "Upload the documents the team needs to review and verify the project. PDF, DOCX, XLSX, JPG, PNG or WebP, up to 10 MB per file.",
+    publicDocuments: "Documents visible to visitors",
+    publicDocumentsHelp: "Once approved, the project presentation, financial forecasts, permits and impact evidence can be viewed and downloaded without an account. Legal, banking and tax documents remain private.",
     registrationDocument: "Current registration document",
     financialStatements: "Latest financial statements",
     bankStatements: "Recent bank statements",
@@ -1801,6 +1806,15 @@ export function CompanySubmit() {
                 <div className="rounded-2xl border border-[#541249]/10 p-5">
                   <h3 className="text-base font-semibold text-foreground">{copy.documents}</h3>
                   <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{copy.documentsIntro}</p>
+                  <div className="mt-4 flex items-start gap-3 rounded-2xl border border-[#541249]/12 bg-[#faf6f9] p-4">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-[#541249] shadow-sm">
+                      <Globe2 className="h-4 w-4" />
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">{copy.publicDocuments}</p>
+                      <p className="mt-1 text-sm leading-6 text-muted-foreground">{copy.publicDocumentsHelp}</p>
+                    </div>
+                  </div>
                   <div className="mt-5 rounded-2xl bg-[linear-gradient(145deg,#2f0a29,#541249)] p-4 text-white sm:p-5">
                     <div className="flex items-start gap-3">
                       <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white/10 text-[#efc9e8]">

@@ -19,6 +19,7 @@ import {
   BriefcaseBusiness,
   Handshake,
   PanelsTopLeft,
+  Settings2,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
@@ -34,8 +35,8 @@ export function BottomNav() {
   const [accountOpen, setAccountOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const labels = locale === "fr"
-    ? { home: "Accueil", explore: "Explorer", wallet: "Portefeuille", company: "Entreprise", account: "Compte", signOut: "Déconnexion", signingOut: "Déconnexion…", myWallet: "Mon portefeuille", myCompany: "Ma société", signedOut: "Déconnecté", signedOutText: "Vous avez été déconnecté de votre espace.", navigation: "Navigation principale mobile" }
-    : { home: "Home", explore: "Explore", wallet: "Portfolio", company: "Company", account: "Account", signOut: "Sign out", signingOut: "Signing out…", myWallet: "My portfolio", myCompany: "My company", signedOut: "Signed out", signedOutText: "You have been signed out of your workspace.", navigation: "Main mobile navigation" };
+    ? { home: "Accueil", explore: "Explorer", wallet: "Portefeuille", company: "Entreprise", account: "Compte", signOut: "Déconnexion", signingOut: "Déconnexion…", myWallet: "Mon portefeuille", myCompany: "Ma société", manageAccount: "Profil et sécurité", signedOut: "Déconnecté", signedOutText: "Vous avez été déconnecté de votre espace.", navigation: "Navigation principale mobile" }
+    : { home: "Home", explore: "Explore", wallet: "Portfolio", company: "Company", account: "Account", signOut: "Sign out", signingOut: "Signing out…", myWallet: "My portfolio", myCompany: "My company", manageAccount: "Profile and security", signedOut: "Signed out", signedOutText: "You have been signed out of your workspace.", navigation: "Main mobile navigation" };
   const items: NavItem[] = [
     { icon: LayoutGrid, label: labels.home, view: "home" },
     { icon: Search, label: labels.explore, view: "explore" },
@@ -144,6 +145,18 @@ export function BottomNav() {
           </SheetHeader>
 
           <div className="mt-4 flex flex-col gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setView("account");
+                setAccountOpen(false);
+              }}
+              className="w-full justify-start"
+            >
+              <Settings2 className="h-4 w-4" />
+              {labels.manageAccount}
+            </Button>
             <Button
               type="button"
               variant="outline"

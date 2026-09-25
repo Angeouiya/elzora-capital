@@ -9,7 +9,7 @@ import {
   PROJECT_MULTI_FILE_KINDS,
   canManageProjectDocuments,
   hasValidProjectFileMagic,
-  isInvestorProjectDocumentKind,
+  isPublicProjectDocumentKind,
   isEditableProjectStatus,
   validateProjectFile,
   type ProjectDocumentKind,
@@ -199,7 +199,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
           fileValue.type,
           fileValue.size,
           checksum,
-          kind === "cover" || kind === "gallery" || isInvestorProjectDocumentKind(kind) ? 1 : 0,
+          kind === "cover" || kind === "gallery" || isPublicProjectDocumentKind(kind) ? 1 : 0,
           now
         ),
       database
@@ -245,7 +245,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
         fileUrl,
         contentType: fileValue.type,
         size: fileValue.size,
-        isPublic: kind === "cover" || kind === "gallery" || isInvestorProjectDocumentKind(kind),
+        isPublic: kind === "cover" || kind === "gallery" || isPublicProjectDocumentKind(kind),
         uploadedAt: now,
       },
       coverUrl: kind === "cover" ? fileUrl : null,

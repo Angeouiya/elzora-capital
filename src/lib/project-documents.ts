@@ -21,11 +21,21 @@ export const PROJECT_DOCUMENT_KINDS = [
 ] as const;
 
 export const PROJECT_MULTI_FILE_KINDS = ["gallery", "other"] as const;
-export const PROJECT_INVESTOR_DOCUMENT_KINDS = [
+export const PROJECT_PUBLIC_DOCUMENT_KINDS = [
   "pitch_deck",
   "financial_forecast",
   "permit_license",
   "impact_evidence",
+] as const;
+
+export const PUBLIC_PROJECT_STATUSES = [
+  "published",
+  "funding",
+  "funded",
+  "repaying",
+  "completed",
+  "defaulted",
+  "closed",
 ] as const;
 
 export const PROJECT_OFFICE_CONTENT_TYPES = [
@@ -88,8 +98,26 @@ export function hasValidProjectFileMagic(bytes: Uint8Array, contentType: string)
   return false;
 }
 
-export function isInvestorProjectDocumentKind(kind: string) {
-  return PROJECT_INVESTOR_DOCUMENT_KINDS.includes(
-    kind as (typeof PROJECT_INVESTOR_DOCUMENT_KINDS)[number]
+export function isPublicProjectDocumentKind(kind: string) {
+  return PROJECT_PUBLIC_DOCUMENT_KINDS.includes(
+    kind as (typeof PROJECT_PUBLIC_DOCUMENT_KINDS)[number]
+  );
+}
+
+export function canVisitorAccessProjectDocument(input: {
+  kind: string;
+  isPublic: boolean | number;
+  projectStatus: string;
+  offerVisibility: string | null;
+}) {
+  const publishableKind =
+    input.kind === "cover" || input.kind === "gallery" || isPublicProjectDocumentKind(input.kind);
+  return (
+    Boolean(input.isPublic) &&
+    publishableKind &&
+    PUBLIC_PROJECT_STATUSES.includes(
+      input.projectStatus as (typeof PUBLIC_PROJECT_STATUSES)[number]
+    ) &&
+    input.offerVisibility === "public"
   );
 }

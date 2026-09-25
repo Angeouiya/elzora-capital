@@ -14,6 +14,7 @@ export type PortalView =
   | "register"
   | "login"
   | "dashboard"
+  | "account"
   // Espace investisseur
   | "investor_dashboard"
   | "investor_investments"

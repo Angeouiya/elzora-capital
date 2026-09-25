@@ -25,6 +25,7 @@ const Fees = dynamicView(() => import("@/components/sections/fees"), "Fees");
 const Risks = dynamicView(() => import("@/components/sections/risks"), "Risks");
 const BottomNav = dynamicView(() => import("@/components/site/bottom-nav"), "BottomNav");
 const MemberHome = dynamicView(() => import("@/components/sections/member-home"), "MemberHome");
+const Account = dynamicView(() => import("@/components/sections/account"), "Account");
 
 function ViewLoading() {
   return (
@@ -92,6 +93,7 @@ export default function Page() {
         {publicView === "company_submit" && <CompanySubmit />}
         {publicView === "fees" && <Fees />}
         {publicView === "risks" && <Risks />}
+        {publicView === "account" && <Account />}
       </main>
       {!showBottomNav && <Footer />}
       {showBottomNav && <BottomNav />}
