@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { getD1, isoNow, requestIp } from "@/lib/d1";
-import { parseProjectInput } from "@/lib/project-input";
+import { parseProjectInput, PROJECT_INPUT_COLUMNS, projectInputValues } from "@/lib/project-input";
 
 type Row = Record<string, string | number | null>;
 
@@ -55,37 +55,21 @@ export async function POST(req: NextRequest) {
     ? database
         .prepare(
           `INSERT INTO Project
-            (id, companyId, submittedBy, title, description, longDescription, sector, country, city,
-             imageUrl, instrumentType, fundingGoal, companyContribution, annualRate, ratePeriod,
-             durationMonths, repaymentType, equityOfferedPct, valuationPre, minInvestment, maxInvestment,
-             budgetDetail, repaymentSource, risksIdentified, status, createdAt, updatedAt)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            (id, companyId, submittedBy, ${PROJECT_INPUT_COLUMNS.join(", ")}, status, createdAt, updatedAt)
+           VALUES (${Array.from({ length: PROJECT_INPUT_COLUMNS.length + 6 }, () => "?").join(", ")})`
         )
         .bind(
-          projectId, input.companyId, session.userId, input.title, input.description,
-          input.longDescription, input.sector, input.country, input.city, input.imageUrl,
-          input.instrumentType, input.fundingGoal, input.companyContribution, input.annualRate,
-          input.ratePeriod, input.durationMonths, input.repaymentType, input.equityOfferedPct,
-          input.valuationPre, input.minInvestment, input.maxInvestment, input.budgetDetail,
-          input.repaymentSource, input.risksIdentified, status, now, now
+          projectId, input.companyId, session.userId, ...projectInputValues(input), status, now, now
         )
     : database
         .prepare(
           `UPDATE Project SET
-             title = ?, description = ?, longDescription = ?, sector = ?, country = ?, city = ?,
-             imageUrl = ?, instrumentType = ?, fundingGoal = ?, companyContribution = ?, annualRate = ?,
-             ratePeriod = ?, durationMonths = ?, repaymentType = ?, equityOfferedPct = ?, valuationPre = ?,
-             minInvestment = ?, maxInvestment = ?, budgetDetail = ?, repaymentSource = ?, risksIdentified = ?,
+             ${PROJECT_INPUT_COLUMNS.map((column) => `${column} = ?`).join(", ")},
              updatedAt = ?
            WHERE id = ?`
         )
         .bind(
-          input.title, input.description, input.longDescription, input.sector, input.country,
-          input.city, input.imageUrl, input.instrumentType, input.fundingGoal,
-          input.companyContribution, input.annualRate, input.ratePeriod, input.durationMonths,
-          input.repaymentType, input.equityOfferedPct, input.valuationPre, input.minInvestment,
-          input.maxInvestment, input.budgetDetail, input.repaymentSource, input.risksIdentified,
-          now, projectId
+          ...projectInputValues(input), now, projectId
         );
 
   try {
@@ -136,6 +120,19 @@ function normalize(row: Row) {
     valuationPre: nullableNumber(row.valuationPre),
     minInvestment: Number(row.minInvestment),
     maxInvestment: nullableNumber(row.maxInvestment),
+    employeeCount: nullableNumber(row.employeeCount),
+    financialYear: nullableNumber(row.financialYear),
+    annualRevenue: nullableNumber(row.annualRevenue),
+    previousRevenue: nullableNumber(row.previousRevenue),
+    netIncome: nullableNumber(row.netIncome),
+    cashBalance: nullableNumber(row.cashBalance),
+    existingDebt: nullableNumber(row.existingDebt),
+    annualOperatingExpenses: nullableNumber(row.annualOperatingExpenses),
+    managementTeam: jsonValue(row.managementTeam, []),
+    useOfFunds: jsonValue(row.useOfFunds, []),
+    milestones: jsonValue(row.milestones, []),
+    documentChecklist: jsonValue(row.documentChecklist, {}),
+    declarationAccepted: row.declarationAccepted === 1 || row.declarationAccepted === "1",
     company: {
       id: row.companyId,
       legalName: row.companyLegalName,
@@ -150,4 +147,13 @@ function normalize(row: Row) {
 
 function nullableNumber(value: string | number | null | undefined) {
   return value === null || value === undefined ? null : Number(value);
+}
+
+function jsonValue<T>(value: string | number | null | undefined, fallback: T): T {
+  if (typeof value !== "string" || !value) return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
 }

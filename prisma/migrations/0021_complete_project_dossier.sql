@@ -1,0 +1,27 @@
+ALTER TABLE "Project" ADD COLUMN "fundingPurpose" TEXT;
+ALTER TABLE "Project" ADD COLUMN "businessModel" TEXT;
+ALTER TABLE "Project" ADD COLUMN "marketOverview" TEXT;
+ALTER TABLE "Project" ADD COLUMN "competitiveAdvantage" TEXT;
+ALTER TABLE "Project" ADD COLUMN "traction" TEXT;
+ALTER TABLE "Project" ADD COLUMN "managementTeam" TEXT;
+ALTER TABLE "Project" ADD COLUMN "employeeCount" INTEGER;
+ALTER TABLE "Project" ADD COLUMN "financialYear" INTEGER;
+ALTER TABLE "Project" ADD COLUMN "annualRevenue" BIGINT;
+ALTER TABLE "Project" ADD COLUMN "previousRevenue" BIGINT;
+ALTER TABLE "Project" ADD COLUMN "netIncome" BIGINT;
+ALTER TABLE "Project" ADD COLUMN "cashBalance" BIGINT;
+ALTER TABLE "Project" ADD COLUMN "existingDebt" BIGINT;
+ALTER TABLE "Project" ADD COLUMN "annualOperatingExpenses" BIGINT;
+ALTER TABLE "Project" ADD COLUMN "useOfFunds" TEXT;
+ALTER TABLE "Project" ADD COLUMN "milestones" TEXT;
+ALTER TABLE "Project" ADD COLUMN "guaranteeDescription" TEXT;
+ALTER TABLE "Project" ADD COLUMN "shareholderStructure" TEXT;
+ALTER TABLE "Project" ADD COLUMN "impactObjectives" TEXT;
+ALTER TABLE "Project" ADD COLUMN "documentChecklist" TEXT;
+ALTER TABLE "Project" ADD COLUMN "declarationAccepted" INTEGER NOT NULL DEFAULT 0;
+
+ALTER TABLE "ProjectDocument" ADD COLUMN "storageKey" TEXT;
+ALTER TABLE "ProjectDocument" ADD COLUMN "contentType" TEXT;
+ALTER TABLE "ProjectDocument" ADD COLUMN "size" INTEGER;
+ALTER TABLE "ProjectDocument" ADD COLUMN "checksum" TEXT;
+ALTER TABLE "ProjectDocument" ADD COLUMN "isPublic" INTEGER NOT NULL DEFAULT 0;

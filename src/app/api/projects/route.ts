@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { getD1, isoNow, requestIp } from "@/lib/d1";
-import { parseProjectInput, ProjectInput } from "@/lib/project-input";
+import {
+  parseProjectInput,
+  PROJECT_INPUT_COLUMNS,
+  projectInputValues,
+  type ProjectInput,
+} from "@/lib/project-input";
 
 type ProjectRow = Record<string, string | number | null>;
 
@@ -97,6 +102,30 @@ export async function POST(req: NextRequest) {
       { status: 403 }
     );
   }
+  if (!input.projectId) {
+    return NextResponse.json(
+      { error: "Enregistrez le brouillon et ajoutez les pièces du dossier avant la transmission." },
+      { status: 400 }
+    );
+  }
+  const documentResult = await database
+    .prepare(`SELECT type FROM ProjectDocument WHERE projectId = ?`)
+    .bind(input.projectId)
+    .all<{ type: string }>();
+  const documentKinds = new Set(documentResult.results.map((document) => document.type));
+  const requiredDocuments = [
+    "cover",
+    "registration_document",
+    "financial_statements",
+    "bank_statements",
+    "business_plan",
+  ];
+  if (requiredDocuments.some((kind) => !documentKinds.has(kind))) {
+    return NextResponse.json(
+      { error: "Ajoutez la photo de couverture et les quatre pièces essentielles avant la transmission." },
+      { status: 400 }
+    );
+  }
 
   const projectId = input.projectId || crypto.randomUUID();
   const now = isoNow();
@@ -181,54 +210,31 @@ function insertProject(
   status: string,
   now: string
 ) {
+  const columns = [
+    "id", "companyId", "submittedBy", ...PROJECT_INPUT_COLUMNS,
+    "status", "submittedAt", "createdAt", "updatedAt",
+  ];
+  const values = [
+    id, input.companyId, submittedBy, ...projectInputValues(input),
+    status, now, now, now,
+  ];
   return database
     .prepare(
-      `INSERT INTO Project
-        (id, companyId, submittedBy, title, description, longDescription, sector, country, city,
-         imageUrl, instrumentType, fundingGoal, companyContribution, annualRate, ratePeriod,
-         durationMonths, repaymentType, equityOfferedPct, valuationPre, minInvestment, maxInvestment,
-         budgetDetail, repaymentSource, risksIdentified, status, submittedAt, createdAt, updatedAt)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO Project (${columns.join(", ")})
+       VALUES (${columns.map(() => "?").join(", ")})`
     )
-    .bind(...projectBindings(id, submittedBy, input, status, now, now));
+    .bind(...values);
 }
 
 function updateProject(database: D1Database, id: string, input: ProjectInput, status: string, now: string) {
   return database
     .prepare(
       `UPDATE Project SET
-         title = ?, description = ?, longDescription = ?, sector = ?, country = ?, city = ?,
-         imageUrl = ?, instrumentType = ?, fundingGoal = ?, companyContribution = ?, annualRate = ?,
-         ratePeriod = ?, durationMonths = ?, repaymentType = ?, equityOfferedPct = ?, valuationPre = ?,
-         minInvestment = ?, maxInvestment = ?, budgetDetail = ?, repaymentSource = ?, risksIdentified = ?,
+         ${PROJECT_INPUT_COLUMNS.map((column) => `${column} = ?`).join(", ")},
          status = ?, submittedAt = ?, updatedAt = ?
        WHERE id = ?`
     )
-    .bind(
-      input.title, input.description, input.longDescription, input.sector, input.country, input.city,
-      input.imageUrl, input.instrumentType, input.fundingGoal, input.companyContribution, input.annualRate,
-      input.ratePeriod, input.durationMonths, input.repaymentType, input.equityOfferedPct, input.valuationPre,
-      input.minInvestment, input.maxInvestment, input.budgetDetail, input.repaymentSource,
-      input.risksIdentified, status, now, now, id
-    );
-}
-
-function projectBindings(
-  id: string,
-  submittedBy: string,
-  input: ProjectInput,
-  status: string,
-  submittedAt: string | null,
-  now: string
-) {
-  return [
-    id, input.companyId, submittedBy, input.title, input.description, input.longDescription,
-    input.sector, input.country, input.city, input.imageUrl, input.instrumentType, input.fundingGoal,
-    input.companyContribution, input.annualRate, input.ratePeriod, input.durationMonths,
-    input.repaymentType, input.equityOfferedPct, input.valuationPre, input.minInvestment,
-    input.maxInvestment, input.budgetDetail, input.repaymentSource, input.risksIdentified,
-    status, submittedAt, now, now,
-  ];
+    .bind(...projectInputValues(input), status, now, now, id);
 }
 
 async function getProject(database: D1Database, id: string) {
@@ -272,6 +278,19 @@ function mapProject(row: ProjectRow) {
     valuationPre: nullableNumber(row.valuationPre),
     minInvestment: Number(row.minInvestment),
     maxInvestment: nullableNumber(row.maxInvestment),
+    employeeCount: nullableNumber(row.employeeCount),
+    financialYear: nullableNumber(row.financialYear),
+    annualRevenue: nullableNumber(row.annualRevenue),
+    previousRevenue: nullableNumber(row.previousRevenue),
+    netIncome: nullableNumber(row.netIncome),
+    cashBalance: nullableNumber(row.cashBalance),
+    existingDebt: nullableNumber(row.existingDebt),
+    annualOperatingExpenses: nullableNumber(row.annualOperatingExpenses),
+    managementTeam: jsonValue(row.managementTeam, []),
+    useOfFunds: jsonValue(row.useOfFunds, []),
+    milestones: jsonValue(row.milestones, []),
+    documentChecklist: jsonValue(row.documentChecklist, {}),
+    declarationAccepted: row.declarationAccepted === 1 || row.declarationAccepted === "1",
     company: {
       id: row.companyId,
       legalName: row.companyLegalName,
@@ -287,4 +306,13 @@ function mapProject(row: ProjectRow) {
 
 function nullableNumber(value: string | number | null | undefined) {
   return value === null || value === undefined ? null : Number(value);
+}
+
+function jsonValue<T>(value: string | number | null | undefined, fallback: T): T {
+  if (typeof value !== "string" || !value) return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
 }

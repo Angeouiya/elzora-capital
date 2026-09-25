@@ -160,6 +160,8 @@ model Company {
   foundedYear           Int?
   // Vérification
   verificationStatus    String    @default("incomplete") // incomplete, pending, verified, rejected
+  verificationSubmittedAt DateTime?
+  verificationReason    String?
   verifiedAt            DateTime?
   // Compte de paiement vérifié (compte professionnel)
   verifiedBankAccount   String?
@@ -171,6 +173,41 @@ model Company {
   projects        Project[]
   equityIssuances EquityIssuance[]
   equityDividends EquityDividend[]
+  verificationProfile CompanyVerificationProfile?
+  beneficialOwners    CompanyBeneficialOwner[]
+}
+
+model CompanyVerificationProfile {
+  id                    String    @id @default(cuid())
+  companyId             String    @unique
+  company               Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  registrationConfirmed Boolean   @default(false)
+  ownershipConfirmed    Boolean   @default(false)
+  actingForCompany      Boolean   @default(false)
+  submittedAt           DateTime
+  reviewedAt            DateTime?
+  reviewedBy            String?
+  decidedBy             String?
+  decisionReason        String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+model CompanyBeneficialOwner {
+  id                    String   @id @default(cuid())
+  companyId             String
+  company               Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  fullName              String
+  birthDate             String
+  nationality           String
+  residenceCountry      String
+  ownershipPct          Float
+  controlsByOtherMeans  Boolean  @default(false)
+  politicallyExposed    Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([companyId])
 }
 
 model RegulatoryReview {
@@ -246,6 +283,27 @@ model Project {
   budgetDetail        String?
   repaymentSource     String?
   risksIdentified     String?
+  fundingPurpose      String?
+  businessModel       String?
+  marketOverview      String?
+  competitiveAdvantage String?
+  traction            String?
+  managementTeam      String? // JSON: dirigeants et responsables clés
+  employeeCount       Int?
+  financialYear       Int?
+  annualRevenue       BigInt?
+  previousRevenue     BigInt?
+  netIncome           BigInt?
+  cashBalance         BigInt?
+  existingDebt        BigInt?
+  annualOperatingExpenses BigInt?
+  useOfFunds          String? // JSON: postes chiffrés
+  milestones          String? // JSON: étapes et dates cibles
+  guaranteeDescription String?
+  shareholderStructure String?
+  impactObjectives    String?
+  documentChecklist   String? // JSON: pièces disponibles pour l'analyse
+  declarationAccepted Boolean @default(false)
 
   // Workflow d'analyse
   status          String    @default("draft")
@@ -281,6 +339,11 @@ model ProjectDocument {
   type       String // bilan, compte_resultat, business_plan, contrat, garantie, etc.
   fileName   String
   fileUrl    String
+  storageKey String?
+  contentType String?
+  size       Int?
+  checksum   String?
+  isPublic   Boolean  @default(false)
   uploadedAt DateTime @default(now())
 }
 

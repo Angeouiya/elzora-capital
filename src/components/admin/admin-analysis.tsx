@@ -87,6 +87,27 @@ interface ProjectRow {
   ratePeriod: string | null;
   durationMonths: number | null;
   repaymentType: string | null;
+  fundingPurpose: string | null;
+  businessModel: string | null;
+  marketOverview: string | null;
+  competitiveAdvantage: string | null;
+  traction: string | null;
+  managementTeam: Array<{ fullName: string; role: string; experience: string }>;
+  employeeCount: number | null;
+  financialYear: number | null;
+  annualRevenue: number | null;
+  previousRevenue: number | null;
+  netIncome: number | null;
+  cashBalance: number | null;
+  existingDebt: number | null;
+  annualOperatingExpenses: number | null;
+  useOfFunds: Array<{ label: string; amount: number }>;
+  milestones: Array<{ title: string; targetDate: string; outcome: string }>;
+  repaymentSource: string | null;
+  guaranteeDescription: string | null;
+  shareholderStructure: string | null;
+  risksIdentified: string | null;
+  impactObjectives: string | null;
   status: string;
   submittedAt: string | null;
   reviewedAt: string | null;
@@ -107,6 +128,15 @@ interface ProjectRow {
   timeline?: ProjectEventRow[];
   offer?: OfferInline | null;
   regulatoryReview: AdminRegulatoryReview | null;
+  documents: Array<{
+    id: string;
+    type: string;
+    fileName: string;
+    fileUrl: string;
+    contentType: string | null;
+    size: number | null;
+    uploadedAt: string;
+  }>;
 }
 
 interface AnalysisResponse {
@@ -596,6 +626,112 @@ export function AdminAnalysis() {
                           </div>
                         </div>
 
+                        <details open className="mt-4 overflow-hidden rounded-xl border border-[#541249]/10 bg-background">
+                          <summary className="cursor-pointer bg-[#faf6f9] px-4 py-3 text-sm font-semibold text-[#541249]">
+                            Dossier complet de l’entreprise
+                          </summary>
+                          <div className="space-y-5 p-4">
+                            <div className="grid gap-4 sm:grid-cols-2">
+                              <AdminTextBlock title="Modèle économique" text={p.businessModel} />
+                              <AdminTextBlock title="Marché et clients" text={p.marketOverview} />
+                              <AdminTextBlock title="Avantage concurrentiel" text={p.competitiveAdvantage} />
+                              <AdminTextBlock title="Résultats obtenus" text={p.traction} />
+                            </div>
+
+                            <div>
+                              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                Équipe dirigeante · {p.employeeCount ?? 0} collaborateurs
+                              </p>
+                              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                                {(p.managementTeam || []).map((member, index) => (
+                                  <div key={member.fullName + index} className="rounded-lg border border-border/60 p-3">
+                                    <p className="text-sm font-semibold text-foreground">{member.fullName}</p>
+                                    <p className="mt-0.5 text-xs font-medium text-[#541249]">{member.role}</p>
+                                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{member.experience}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div>
+                              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                Chiffres de l’exercice {p.financialYear || "—"}
+                              </p>
+                              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                                <AdminMetric label="Chiffre d’affaires" value={p.annualRevenue} />
+                                <AdminMetric label="Exercice précédent" value={p.previousRevenue} />
+                                <AdminMetric label="Résultat net" value={p.netIncome} />
+                                <AdminMetric label="Dépenses annuelles" value={p.annualOperatingExpenses} />
+                                <AdminMetric label="Trésorerie" value={p.cashBalance} />
+                                <AdminMetric label="Dettes en cours" value={p.existingDebt} />
+                              </div>
+                            </div>
+
+                            <AdminTextBlock title="Objectif du financement" text={p.fundingPurpose} />
+
+                            <div className="grid gap-4 sm:grid-cols-2">
+                              <div>
+                                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Utilisation des fonds</p>
+                                <div className="mt-2 space-y-1.5">
+                                  {(p.useOfFunds || []).map((item, index) => (
+                                    <div key={item.label + index} className="flex items-center justify-between gap-3 rounded-lg bg-secondary/40 px-3 py-2 text-xs">
+                                      <span className="text-foreground">{item.label}</span>
+                                      <strong className="tnum shrink-0">{fmtFCFA(item.amount)}</strong>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                              <div>
+                                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Étapes prévues</p>
+                                <div className="mt-2 space-y-1.5">
+                                  {(p.milestones || []).map((item, index) => (
+                                    <div key={item.title + index} className="rounded-lg bg-secondary/40 px-3 py-2 text-xs">
+                                      <div className="flex items-center justify-between gap-3">
+                                        <strong className="text-foreground">{item.title}</strong>
+                                        <span className="tnum shrink-0 text-muted-foreground">{fmtDate(item.targetDate)}</span>
+                                      </div>
+                                      <p className="mt-1 leading-relaxed text-muted-foreground">{item.outcome}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="grid gap-4 sm:grid-cols-2">
+                              {p.instrumentType === "debt" ? (
+                                <>
+                                  <AdminTextBlock title="Source de remboursement" text={p.repaymentSource} />
+                                  <AdminTextBlock title="Garanties proposées" text={p.guaranteeDescription} />
+                                </>
+                              ) : (
+                                <AdminTextBlock title="Répartition du capital" text={p.shareholderStructure} />
+                              )}
+                              <AdminTextBlock title="Risques et mesures prévues" text={p.risksIdentified} />
+                              {p.impactObjectives && <AdminTextBlock title="Retombées attendues" text={p.impactObjectives} />}
+                            </div>
+
+                            <div>
+                              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                Pièces déposées ({p.documents?.length || 0})
+                              </p>
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                {(p.documents || []).map((document) => (
+                                  <a
+                                    key={document.id}
+                                    href={document.fileUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center rounded-full border border-[#541249]/15 bg-white px-3 py-2 text-xs font-medium text-[#541249] hover:bg-[#f8f0f6]"
+                                  >
+                                    <Eye className="mr-1.5 h-3.5 w-3.5" />
+                                    {document.fileName}
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </details>
+
                         {/* Offre créée — lien */}
                         {hasOffer && p.offer && (
                           <div className="mt-3 flex items-center gap-2 rounded-md border border-nexora-lime/40 bg-nexora-pale p-2.5">
@@ -904,6 +1040,24 @@ export function AdminAnalysis() {
           }}
         />
       ) : null}
+    </div>
+  );
+}
+
+function AdminTextBlock({ title, text }: { title: string; text: string | null | undefined }) {
+  return (
+    <div>
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{title}</p>
+      <p className="mt-1.5 whitespace-pre-line text-sm leading-relaxed text-foreground">{text || "—"}</p>
+    </div>
+  );
+}
+
+function AdminMetric({ label, value }: { label: string; value: number | null | undefined }) {
+  return (
+    <div className="rounded-lg bg-secondary/40 p-3">
+      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="tnum mt-1 text-sm font-semibold text-foreground">{fmtFCFA(value || 0)}</p>
     </div>
   );
 }

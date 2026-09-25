@@ -29,6 +29,27 @@ interface AnalysisProjectRow extends Record<string, unknown> {
   valuationPre: number | null;
   minInvestment: number;
   maxInvestment: number | null;
+  fundingPurpose: string | null;
+  businessModel: string | null;
+  marketOverview: string | null;
+  competitiveAdvantage: string | null;
+  traction: string | null;
+  managementTeam: string | null;
+  employeeCount: number | null;
+  financialYear: number | null;
+  annualRevenue: number | null;
+  previousRevenue: number | null;
+  netIncome: number | null;
+  cashBalance: number | null;
+  existingDebt: number | null;
+  annualOperatingExpenses: number | null;
+  useOfFunds: string | null;
+  milestones: string | null;
+  repaymentSource: string | null;
+  guaranteeDescription: string | null;
+  shareholderStructure: string | null;
+  risksIdentified: string | null;
+  impactObjectives: string | null;
   status: string;
   submittedAt: string | null;
   reviewedAt: string | null;
@@ -85,6 +106,18 @@ interface RegulatoryReviewRow extends Record<string, unknown> {
   updatedAt: string;
 }
 
+interface ProjectDocumentRow extends Record<string, unknown> {
+  id: string;
+  projectId: string;
+  type: string;
+  fileName: string;
+  fileUrl: string;
+  contentType: string | null;
+  size: number | null;
+  isPublic: number;
+  uploadedAt: string;
+}
+
 export async function GET(req: Request) {
   let admin;
   try {
@@ -94,7 +127,7 @@ export async function GET(req: Request) {
   }
 
   const database = getD1();
-  const [projectResult, eventResult, offerResult, reviewResult] = await Promise.all([
+  const [projectResult, eventResult, offerResult, reviewResult, documentResult] = await Promise.all([
     database
       .prepare(
         `SELECT p.id, p.companyId, p.submittedBy, p.title, p.description,
@@ -102,7 +135,15 @@ export async function GET(req: Request) {
                 p.instrumentType, p.fundingGoal, p.companyContribution,
                 p.annualRate, p.ratePeriod, p.durationMonths, p.repaymentType,
                 p.equityOfferedPct, p.valuationPre, p.minInvestment,
-                p.maxInvestment, p.status, p.submittedAt, p.reviewedAt,
+                p.maxInvestment, p.fundingPurpose, p.businessModel,
+                p.marketOverview, p.competitiveAdvantage, p.traction,
+                p.managementTeam, p.employeeCount, p.financialYear,
+                p.annualRevenue, p.previousRevenue, p.netIncome,
+                p.cashBalance, p.existingDebt, p.annualOperatingExpenses,
+                p.useOfFunds, p.milestones, p.repaymentSource,
+                p.guaranteeDescription, p.shareholderStructure,
+                p.risksIdentified, p.impactObjectives,
+                p.status, p.submittedAt, p.reviewedAt,
                 p.publishedAt, p.fundedAt, p.closedAt, p.rejectionReason,
                 p.analysisNote, p.createdAt, p.updatedAt,
                 c.legalName AS companyLegalName,
@@ -131,6 +172,12 @@ export async function GET(req: Request) {
     database
       .prepare(`SELECT * FROM RegulatoryReview ORDER BY updatedAt DESC`)
       .all<RegulatoryReviewRow>(),
+    database
+      .prepare(
+        `SELECT id, projectId, type, fileName, fileUrl, contentType, size, isPublic, uploadedAt
+         FROM ProjectDocument ORDER BY uploadedAt DESC`
+      )
+      .all<ProjectDocumentRow>(),
   ]);
 
   const eventsByProject = new Map<string, EventRow[]>();
@@ -143,6 +190,12 @@ export async function GET(req: Request) {
   const reviewsByProject = new Map(
     reviewResult.results.map((review) => [review.projectId, review])
   );
+  const documentsByProject = new Map<string, ProjectDocumentRow[]>();
+  for (const document of documentResult.results) {
+    const documents = documentsByProject.get(document.projectId) || [];
+    documents.push(document);
+    documentsByProject.set(document.projectId, documents);
+  }
 
   const projects = projectResult.results.map((row) => {
     const offer = offersByProject.get(row.id);
@@ -166,6 +219,27 @@ export async function GET(req: Request) {
       valuationPre: row.valuationPre == null ? null : Number(row.valuationPre),
       minInvestment: Number(row.minInvestment),
       maxInvestment: row.maxInvestment == null ? null : Number(row.maxInvestment),
+      fundingPurpose: row.fundingPurpose,
+      businessModel: row.businessModel,
+      marketOverview: row.marketOverview,
+      competitiveAdvantage: row.competitiveAdvantage,
+      traction: row.traction,
+      managementTeam: jsonValue(row.managementTeam, []),
+      employeeCount: row.employeeCount == null ? null : Number(row.employeeCount),
+      financialYear: row.financialYear == null ? null : Number(row.financialYear),
+      annualRevenue: row.annualRevenue == null ? null : Number(row.annualRevenue),
+      previousRevenue: row.previousRevenue == null ? null : Number(row.previousRevenue),
+      netIncome: row.netIncome == null ? null : Number(row.netIncome),
+      cashBalance: row.cashBalance == null ? null : Number(row.cashBalance),
+      existingDebt: row.existingDebt == null ? null : Number(row.existingDebt),
+      annualOperatingExpenses: row.annualOperatingExpenses == null ? null : Number(row.annualOperatingExpenses),
+      useOfFunds: jsonValue(row.useOfFunds, []),
+      milestones: jsonValue(row.milestones, []),
+      repaymentSource: row.repaymentSource,
+      guaranteeDescription: row.guaranteeDescription,
+      shareholderStructure: row.shareholderStructure,
+      risksIdentified: row.risksIdentified,
+      impactObjectives: row.impactObjectives,
       status: row.status,
       submittedAt: row.submittedAt,
       reviewedAt: row.reviewedAt,
@@ -185,6 +259,11 @@ export async function GET(req: Request) {
         country: row.companyCountry,
       },
       timeline: eventsByProject.get(row.id) || [],
+      documents: (documentsByProject.get(row.id) || []).map((document) => ({
+        ...document,
+        size: document.size == null ? null : Number(document.size),
+        isPublic: Boolean(document.isPublic),
+      })),
       regulatoryReview: regulatoryReview ? mapRegulatoryReview(regulatoryReview) : null,
       offer: offer
         ? {
@@ -466,4 +545,13 @@ function mapRegulatoryReview(row: RegulatoryReviewRow) {
     complete: isRegulatoryClearanceComplete(input),
     missing: missingRegulatoryRequirements(input),
   };
+}
+
+function jsonValue<T>(value: string | null, fallback: T): T {
+  if (!value) return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
 }
