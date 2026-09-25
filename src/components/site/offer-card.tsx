@@ -41,6 +41,7 @@ export function OfferCard({ offer, eager = false, compactOnMobile = false }: { o
   const pct = progressPct(offer.raisedAmount, offer.fundingGoal);
   const isEquity = offer.project.instrumentType === "equity";
   const isShowcase = offer.isDemo;
+  const isPrivate = offer.visibility === "restricted";
 
   return (
     <Card className={`group h-full gap-0 overflow-hidden rounded-[1.35rem] border border-[#541249]/10 bg-white/90 p-0 transition-all duration-300 hover:-translate-y-1 hover:border-[#541249]/25 hover:shadow-[0_24px_60px_rgba(56,12,49,.12)] ${compactOnMobile ? "flex flex-row sm:flex-col" : "flex flex-col"}`}>
@@ -74,9 +75,11 @@ export function OfferCard({ offer, eager = false, compactOnMobile = false }: { o
             </Badge>
           )}
         </div>
-        {isShowcase ? (
+        {isShowcase || isPrivate ? (
           <Badge className="absolute right-3 top-3 border border-white/25 bg-[#380c31]/88 text-[9px] uppercase tracking-[.1em] text-white shadow-sm backdrop-blur-md">
-            {locale === "fr" ? "Démonstration" : "Demo"}
+            {isShowcase
+              ? locale === "fr" ? "Démonstration" : "Demo"
+              : locale === "fr" ? "Accès privé" : "Private access"}
           </Badge>
         ) : null}
         <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/65 to-transparent" />

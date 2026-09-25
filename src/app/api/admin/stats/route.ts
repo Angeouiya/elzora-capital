@@ -22,6 +22,7 @@ interface OfferRow extends Record<string, unknown> {
   publishedAt: string;
   closingDate: string;
   visibility: string;
+  isDemo: number;
   projectId: string;
   projectTitle: string;
   projectSector: string;
@@ -84,7 +85,7 @@ export async function GET(req: Request) {
                   o.annualRate, o.ratePeriod, o.durationMonths, o.repaymentType,
                   o.equityOfferedPct, o.valuationPre, o.upfrontCommissionPct,
                   o.annualFollowUpPct, o.raisedAmount, o.committedAmount,
-                  o.backersCount, o.publishedAt, o.closingDate, o.visibility,
+                  o.backersCount, o.publishedAt, o.closingDate, o.visibility, o.isDemo,
                   p.id AS projectId, p.title AS projectTitle,
                   p.sector AS projectSector, p.country AS projectCountry,
                   p.instrumentType,
@@ -155,6 +156,7 @@ export async function GET(req: Request) {
     publishedAt: row.publishedAt,
     closingDate: row.closingDate,
     visibility: row.visibility,
+    isDemo: Boolean(row.isDemo),
     project: {
       id: row.projectId,
       title: row.projectTitle,

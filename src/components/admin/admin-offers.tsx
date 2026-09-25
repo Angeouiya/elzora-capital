@@ -29,6 +29,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { fmtCompact, fmtFCFA, fmtPct } from "@/lib/finance";
+import { PrivateInvitationsDialog } from "@/components/admin/private-invitations-dialog";
 import {
   BriefcaseBusiness,
   ChevronDown,
@@ -56,6 +57,8 @@ interface OfferRow {
   equityOfferedPct: number | null;
   upfrontCommissionPct: number;
   annualFollowUpPct: number;
+  visibility: string;
+  isDemo: boolean;
   project: {
     id: string;
     title: string;
@@ -113,6 +116,7 @@ export function AdminOffers() {
   const { data, loading } = useFetch<AdminStatsResponse>("/api/admin/stats");
   const [filter, setFilter] = useState<string>("all");
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [privateOffer, setPrivateOffer] = useState<OfferRow | null>(null);
 
   const offers = useMemo(() => {
     if (!data?.offers) return [];
@@ -226,6 +230,10 @@ export function AdminOffers() {
                             <BriefcaseBusiness className="h-3 w-3" />
                             {o.project?.company?.tradeName || o.project?.company?.legalName}
                           </p>
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {o.visibility === "restricted" ? <Badge variant="outline" className="border-[#541249]/20 text-[9px] text-[#541249]">Cercle privé</Badge> : null}
+                            {o.isDemo ? <Badge variant="outline" className="text-[9px]">Démonstration</Badge> : null}
+                          </div>
                         </TableCell>
                         <TableCell className="text-xs text-foreground">
                           {instrumentLabel(o)}
@@ -331,13 +339,24 @@ export function AdminOffers() {
                                 ]}
                               />
                               <div className="md:col-span-1 space-y-2">
-                                <Button
-                                  size="sm"
-                                  className="btn-nexora w-full"
-                                  onClick={() => openOffer(o.id)}
-                                >
-                                  Voir l&rsquo;offre publique
-                                </Button>
+                                {o.visibility === "restricted" ? (
+                                  <Button
+                                    size="sm"
+                                    className="btn-nexora w-full"
+                                    onClick={() => setPrivateOffer(o)}
+                                  >
+                                    <Users className="h-4 w-4" />
+                                    Gérer le cercle privé
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    size="sm"
+                                    className="btn-nexora w-full"
+                                    onClick={() => openOffer(o.id)}
+                                  >
+                                    Voir l&rsquo;offre
+                                  </Button>
+                                )}
                                 <div className="rounded-md bg-background p-2.5">
                                   <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
                                     Avertissement
@@ -360,6 +379,14 @@ export function AdminOffers() {
             </Table>
           </Card>
         )}
+        {privateOffer ? (
+          <PrivateInvitationsDialog
+            open
+            onOpenChange={(next) => { if (!next) setPrivateOffer(null); }}
+            offerId={privateOffer.id}
+            offerTitle={privateOffer.project.title}
+          />
+        ) : null}
       </div>
     </TooltipProvider>
   );

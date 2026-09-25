@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { getUserSession } from "@/lib/auth";
 
 type OfferRow = Record<string, string | number | null>;
 
@@ -9,6 +10,7 @@ export async function GET(req: NextRequest) {
   const country = searchParams.get("country");
   const instrument = searchParams.get("instrument");
 
+  const session = await getUserSession(req).catch(() => null);
   const { env } = getCloudflareContext();
   const result = await env.DB.prepare(`
     SELECT
@@ -31,9 +33,9 @@ export async function GET(req: NextRequest) {
     INNER JOIN Project p ON p.id = o.projectId
     INNER JOIN Company c ON c.id = p.companyId
     WHERE o.status = 'open'
-      AND o.visibility = 'public'
       AND (
-        o.isDemo = 1 OR EXISTS (
+        (o.visibility = 'public' AND (
+          o.isDemo = 1 OR EXISTS (
           SELECT 1 FROM RegulatoryReview r
           WHERE r.projectId = o.projectId
             AND r.decision = 'cleared'
@@ -50,11 +52,33 @@ export async function GET(req: NextRequest) {
             AND r.reviewedBy IS NOT NULL
             AND r.reviewedBy <> r.preparedBy
             AND r.reviewedAt IS NOT NULL
-        )
+          )
+        )) OR
+        (o.visibility = 'restricted' AND o.isDemo = 0 AND EXISTS (
+          SELECT 1 FROM RegulatoryReview r
+          WHERE r.projectId = o.projectId
+            AND r.decision = 'cleared'
+            AND r.distributionScope = 'restricted_private'
+            AND r.marketAuthorityPath IN ('private_route_confirmed', 'authority_clearance')
+            AND r.corporateActsStatus = 'confirmed'
+            AND r.paymentSafeguardingStatus = 'confirmed'
+            AND r.beneficialOwnersStatus = 'confirmed'
+            AND r.riskDisclosureStatus = 'confirmed'
+            AND r.countryOpinionRef IS NOT NULL
+            AND TRIM(r.countryOpinionRef) <> ''
+            AND r.reviewedBy IS NOT NULL
+            AND r.reviewedBy <> r.preparedBy
+            AND r.reviewedAt IS NOT NULL
+        ) AND EXISTS (
+          SELECT 1 FROM PrivateOfferInvitation i
+          WHERE i.offerId = o.id
+            AND i.userId = ?
+            AND i.status = 'accepted'
+        ))
       )
       AND datetime(o.closingDate) > datetime('now')
     ORDER BY o.publishedAt DESC
-  `).all<OfferRow>();
+  `).bind(session?.userId || null).all<OfferRow>();
 
   const offers = result.results.map((row) => ({
     id: row.id,

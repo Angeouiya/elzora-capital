@@ -395,6 +395,27 @@ model Offer {
   investments          Investment[]
   subscriptionEvidence SubscriptionEvidence[]
   equityIssuance       EquityIssuance?
+  privateInvitations   PrivateOfferInvitation[]
+}
+
+model PrivateOfferInvitation {
+  id             String   @id @default(cuid())
+  offerId        String
+  offer          Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  email          String
+  userId         String?
+  tokenHash      String   @unique
+  status         String   @default("pending") // pending, accepted, revoked, expired
+  maxInvestment  BigInt?
+  invitedBy      String
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([offerId, status])
+  @@index([email, status])
+  @@index([userId, status])
 }
 
 // ---------------------------------------------------------------------------

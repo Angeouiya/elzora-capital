@@ -267,6 +267,11 @@ export function OfferDetail() {
                 {text.demo}
               </Badge>
             ) : null}
+            {offer.visibility === "restricted" ? (
+              <Badge className="border border-white/20 bg-[#f4e7f1]/95 text-[#541249]">
+                {locale === "fr" ? "Invitation personnelle" : "Personal invitation"}
+              </Badge>
+            ) : null}
           </div>
           <h1 className="max-w-4xl text-2xl font-black leading-tight tracking-[-.035em] text-white sm:text-4xl">
             {offer.project.title}

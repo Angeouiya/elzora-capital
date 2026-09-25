@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireUser } from "@/lib/auth";
+import { getUserSession, requireUser } from "@/lib/auth";
 import { getD1, isoNow, requestIp } from "@/lib/d1";
 import { computeInvestorInterest } from "@/lib/finance";
 import { LEGAL_VERSIONS } from "@/lib/legal";
@@ -20,11 +20,13 @@ import {
   declaredInvestableCapitalMax,
   isInvestorProfileCurrent,
 } from "@/lib/investor-profile";
+import { effectivePrivateMaximum } from "@/lib/private-offer-access";
 
 interface OfferTermsRow extends SubscriptionOfferTerms {
   status: string;
   visibility: string;
   isDemo: number;
+  privateMaxInvestment: number | null;
   committedAmount: number;
 }
 
@@ -61,7 +63,7 @@ interface InvestmentRow extends Record<string, unknown> {
   paymentRef: string | null;
 }
 
-async function findOffer(id: string): Promise<OfferTermsRow | null> {
+async function findOffer(id: string, userId?: string | null): Promise<OfferTermsRow | null> {
   return getD1()
     .prepare(
       `SELECT o.id, o.projectId, o.status, o.visibility, o.isDemo, o.closingDate,
@@ -69,12 +71,14 @@ async function findOffer(id: string): Promise<OfferTermsRow | null> {
               o.annualRate, o.ratePeriod, o.durationMonths, o.repaymentType,
               o.equityOfferedPct, o.valuationPre, o.upfrontCommissionPct,
               o.annualFollowUpPct,
+              (SELECT i.maxInvestment FROM PrivateOfferInvitation i
+               WHERE i.offerId = o.id AND i.userId = ? AND i.status = 'accepted'
+               ORDER BY i.acceptedAt DESC LIMIT 1) AS privateMaxInvestment,
               p.instrumentType, p.title
        FROM Offer o
        JOIN Project p ON p.id = o.projectId
-       WHERE o.id = ?
-         AND o.visibility = 'public'
-         AND (
+       WHERE o.id = ? AND (
+         (o.visibility = 'public' AND (
            o.isDemo = 1 OR EXISTS (
              SELECT 1 FROM RegulatoryReview r
              WHERE r.projectId = o.projectId
@@ -93,10 +97,30 @@ async function findOffer(id: string): Promise<OfferTermsRow | null> {
                AND r.reviewedBy <> r.preparedBy
                AND r.reviewedAt IS NOT NULL
            )
-         )
+         )) OR
+         (o.visibility = 'restricted' AND o.isDemo = 0 AND EXISTS (
+           SELECT 1 FROM RegulatoryReview r
+           WHERE r.projectId = o.projectId
+             AND r.decision = 'cleared'
+             AND r.distributionScope = 'restricted_private'
+             AND r.marketAuthorityPath IN ('private_route_confirmed', 'authority_clearance')
+             AND r.corporateActsStatus = 'confirmed'
+             AND r.paymentSafeguardingStatus = 'confirmed'
+             AND r.beneficialOwnersStatus = 'confirmed'
+             AND r.riskDisclosureStatus = 'confirmed'
+             AND r.countryOpinionRef IS NOT NULL
+             AND TRIM(r.countryOpinionRef) <> ''
+             AND r.reviewedBy IS NOT NULL
+             AND r.reviewedBy <> r.preparedBy
+             AND r.reviewedAt IS NOT NULL
+         ) AND EXISTS (
+           SELECT 1 FROM PrivateOfferInvitation i
+           WHERE i.offerId = o.id AND i.userId = ? AND i.status = 'accepted'
+         ))
+       )
        LIMIT 1`
     )
-    .bind(id)
+    .bind(userId || null, id, userId || null)
     .first<OfferTermsRow>();
 }
 
@@ -105,12 +129,13 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const session = await getUserSession(req).catch(() => null);
   const amount = parseMoney(req.nextUrl.searchParams.get("amount"));
   if (amount === null || amount <= 0) {
     return NextResponse.json({ error: "Montant invalide" }, { status: 400 });
   }
 
-  const offer = await findOffer(id);
+  const offer = await findOffer(id, session?.userId);
   if (!offer) return NextResponse.json({ error: "Offre introuvable" }, { status: 404 });
 
   const offerAllocationPct = calculateOfferAllocationPct(amount, offer.fundingGoal);
@@ -187,7 +212,7 @@ export async function POST(
   const { id } = await params;
   const database = getD1();
   const [offer, investor] = await Promise.all([
-    findOffer(id),
+    findOffer(id, session.userId),
     database
       .prepare(
         `SELECT u.firstName, u.lastName, u.email, u.phone, u.country, u.kycStatus,
@@ -235,18 +260,23 @@ export async function POST(
   if (offer.status !== "open" || new Date(offer.closingDate).getTime() <= Date.now()) {
     return NextResponse.json({ error: "Cette offre n'est plus ouverte" }, { status: 409 });
   }
-  if (offer.visibility !== "public") {
-    return NextResponse.json({ error: "Accès restreint à cette offre" }, { status: 403 });
-  }
+  const permittedMaximum = effectivePrivateMaximum(
+    offer.maxInvestment === null ? null : Number(offer.maxInvestment),
+    offer.visibility === "restricted"
+      ? offer.privateMaxInvestment === null
+        ? null
+        : Number(offer.privateMaxInvestment)
+      : null
+  );
   if (amount < Number(offer.minInvestment)) {
     return NextResponse.json(
       { error: `Montant minimum : ${Number(offer.minInvestment).toLocaleString("fr-FR")} FCFA` },
       { status: 400 }
     );
   }
-  if (offer.maxInvestment !== null && amount > Number(offer.maxInvestment)) {
+  if (permittedMaximum !== null && amount > permittedMaximum) {
     return NextResponse.json(
-      { error: `Montant maximum : ${Number(offer.maxInvestment).toLocaleString("fr-FR")} FCFA` },
+      { error: `Montant maximum : ${permittedMaximum.toLocaleString("fr-FR")} FCFA` },
       { status: 400 }
     );
   }
@@ -272,16 +302,43 @@ export async function POST(
     }
   }
 
-  const capitalRow = await database
-    .prepare(
-      `SELECT COALESCE(SUM(amount), 0) AS activeCapital
-       FROM Investment
-       WHERE investorId = ? AND status IN ('pending_payment', 'payment_pending', 'confirmed')`
-    )
-    .bind(session.userId)
-    .first<{ activeCapital: number }>();
+  const [capitalRow, offerCapitalRow] = await Promise.all([
+    database
+      .prepare(
+        `SELECT COALESCE(SUM(amount), 0) AS activeCapital
+         FROM Investment
+         WHERE investorId = ? AND status IN ('pending_payment', 'payment_pending', 'confirmed')`
+      )
+      .bind(session.userId)
+      .first<{ activeCapital: number }>(),
+    database
+      .prepare(
+        `SELECT COALESCE(SUM(amount), 0) AS offerCapital
+         FROM Investment
+         WHERE offerId = ? AND investorId = ?
+           AND status IN ('pending_payment', 'payment_pending', 'confirmed')`
+      )
+      .bind(id, session.userId)
+      .first<{ offerCapital: number }>(),
+  ]);
   const activeCapital = Number(capitalRow?.activeCapital || 0);
   const projectedCapital = existing ? activeCapital : activeCapital + amount;
+  const currentOfferCapital = Number(offerCapitalRow?.offerCapital || 0);
+  const projectedOfferCapital = existing ? currentOfferCapital : currentOfferCapital + amount;
+  const privateMaximum = offer.visibility === "restricted" && offer.privateMaxInvestment !== null
+    ? Number(offer.privateMaxInvestment)
+    : null;
+  if (privateMaximum !== null && projectedOfferCapital > privateMaximum) {
+    return NextResponse.json(
+      {
+        error: "Ce montant dépasse le plafond prévu dans votre invitation.",
+        code: "PRIVATE_INVITATION_LIMIT",
+        privateMaximum,
+        projectedOfferCapital,
+      },
+      { status: 422 }
+    );
+  }
   const declaredCapacityMax = declaredInvestableCapitalMax(investor.investableCapitalRange);
   if (declaredCapacityMax !== null && projectedCapital > declaredCapacityMax) {
     return NextResponse.json(
@@ -355,9 +412,9 @@ export async function POST(
            FROM Offer o
            WHERE o.id = ?
              AND o.status = 'open'
-             AND o.visibility = 'public'
              AND o.isDemo = 0
-             AND EXISTS (
+             AND (
+               (o.visibility = 'public' AND EXISTS (
                SELECT 1 FROM RegulatoryReview r
                WHERE r.projectId = o.projectId
                  AND r.decision = 'cleared'
@@ -374,6 +431,35 @@ export async function POST(
                  AND r.reviewedBy IS NOT NULL
                  AND r.reviewedBy <> r.preparedBy
                  AND r.reviewedAt IS NOT NULL
+               )) OR
+               (o.visibility = 'restricted' AND EXISTS (
+                 SELECT 1 FROM RegulatoryReview r
+                 WHERE r.projectId = o.projectId
+                   AND r.decision = 'cleared'
+                   AND r.distributionScope = 'restricted_private'
+                   AND r.marketAuthorityPath IN ('private_route_confirmed', 'authority_clearance')
+                   AND r.corporateActsStatus = 'confirmed'
+                   AND r.paymentSafeguardingStatus = 'confirmed'
+                   AND r.beneficialOwnersStatus = 'confirmed'
+                   AND r.riskDisclosureStatus = 'confirmed'
+                   AND r.countryOpinionRef IS NOT NULL
+                   AND TRIM(r.countryOpinionRef) <> ''
+                   AND r.reviewedBy IS NOT NULL
+                   AND r.reviewedBy <> r.preparedBy
+                   AND r.reviewedAt IS NOT NULL
+               ) AND EXISTS (
+                 SELECT 1 FROM PrivateOfferInvitation i
+                 WHERE i.offerId = o.id
+                   AND i.userId = ?
+                   AND i.status = 'accepted'
+                   AND (i.maxInvestment IS NULL OR i.maxInvestment >= (
+                     SELECT COALESCE(SUM(inv.amount), 0) + ?
+                     FROM Investment inv
+                     WHERE inv.offerId = o.id
+                       AND inv.investorId = ?
+                       AND inv.status IN ('pending_payment', 'payment_pending', 'confirmed')
+                   ))
+               ))
              )
              AND datetime(o.closingDate) > datetime(?)
              AND o.committedAmount + ? <= o.fundingGoal`
@@ -392,6 +478,9 @@ export async function POST(
           now,
           now,
           id,
+          session.userId,
+          amount,
+          session.userId,
           now,
           amount
         ),

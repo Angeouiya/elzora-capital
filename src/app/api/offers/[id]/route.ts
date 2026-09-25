@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import { getD1 } from "@/lib/d1";
+import { getUserSession } from "@/lib/auth";
 
 type Row = Record<string, string | number | null>;
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const session = await getUserSession(req).catch(() => null);
   const database = getD1();
   const offer = await database
     .prepare(
@@ -27,8 +29,8 @@ export async function GET(
        FROM Offer o
        JOIN Project p ON p.id = o.projectId
        JOIN Company c ON c.id = p.companyId
-       WHERE o.id = ? AND o.visibility = 'public'
-         AND (
+       WHERE o.id = ? AND (
+         (o.visibility = 'public' AND (
            o.isDemo = 1 OR EXISTS (
              SELECT 1 FROM RegulatoryReview r
              WHERE r.projectId = o.projectId
@@ -47,10 +49,32 @@ export async function GET(
                AND r.reviewedBy <> r.preparedBy
                AND r.reviewedAt IS NOT NULL
            )
-         )
+         )) OR
+         (o.visibility = 'restricted' AND o.isDemo = 0 AND EXISTS (
+           SELECT 1 FROM RegulatoryReview r
+           WHERE r.projectId = o.projectId
+             AND r.decision = 'cleared'
+             AND r.distributionScope = 'restricted_private'
+             AND r.marketAuthorityPath IN ('private_route_confirmed', 'authority_clearance')
+             AND r.corporateActsStatus = 'confirmed'
+             AND r.paymentSafeguardingStatus = 'confirmed'
+             AND r.beneficialOwnersStatus = 'confirmed'
+             AND r.riskDisclosureStatus = 'confirmed'
+             AND r.countryOpinionRef IS NOT NULL
+             AND TRIM(r.countryOpinionRef) <> ''
+             AND r.reviewedBy IS NOT NULL
+             AND r.reviewedBy <> r.preparedBy
+             AND r.reviewedAt IS NOT NULL
+         ) AND EXISTS (
+           SELECT 1 FROM PrivateOfferInvitation i
+           WHERE i.offerId = o.id
+             AND i.userId = ?
+             AND i.status = 'accepted'
+         ))
+       )
        LIMIT 1`
     )
-    .bind(id)
+    .bind(id, session?.userId || null)
     .first<Row>();
 
   if (!offer) return NextResponse.json({ error: "Offre introuvable" }, { status: 404 });

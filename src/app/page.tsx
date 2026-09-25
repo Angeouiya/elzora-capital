@@ -6,6 +6,7 @@ import { Header } from "@/components/site/header";
 import { Footer } from "@/components/site/footer";
 import { DesktopAppSidebar } from "@/components/site/desktop-app-sidebar";
 import { Home } from "@/components/sections/home";
+import { InvitationGate } from "@/components/site/invitation-gate";
 
 const dynamicView = <T extends object>(loader: () => Promise<T>, key: keyof T) =>
   dynamic(() => loader().then((module) => module[key] as React.ComponentType), {
@@ -77,6 +78,7 @@ export default function Page() {
   return (
     <div className="app-shell flex min-h-screen flex-col bg-transparent">
       <Header sessionPending={sessionPending} />
+      <InvitationGate sessionPending={sessionPending} />
       {showBottomNav && <DesktopAppSidebar />}
       <main className={`flex-1 ${showBottomNav ? "app-workspace-main pb-20 lg:pb-0" : ""}`}>
         {publicView === "home" && (userEmail ? <MemberHome /> : <Home />)}
