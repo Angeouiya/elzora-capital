@@ -21,6 +21,10 @@ interface ReviewRow extends Record<string, unknown> {
   paymentSafeguardingStatus: RegulatoryReviewInput["paymentSafeguardingStatus"];
   beneficialOwnersStatus: RegulatoryReviewInput["beneficialOwnersStatus"];
   riskDisclosureStatus: RegulatoryReviewInput["riskDisclosureStatus"];
+  corporateApprovalRef: string | null;
+  paymentProviderName: string | null;
+  paymentProviderApprovalRef: string | null;
+  fundSafeguardingRef: string | null;
   countryOpinionRef: string | null;
   authorityReference: string | null;
   restrictions: string | null;
@@ -147,10 +151,11 @@ export async function PUT(req: NextRequest) {
           `INSERT INTO RegulatoryReview
            (id, projectId, distributionScope, marketAuthorityPath,
             corporateActsStatus, paymentSafeguardingStatus,
-            beneficialOwnersStatus, riskDisclosureStatus, countryOpinionRef,
-            authorityReference, restrictions, decision, preparedBy,
-            reviewedBy, reviewedAt, createdAt, updatedAt)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            beneficialOwnersStatus, riskDisclosureStatus, corporateApprovalRef,
+            paymentProviderName, paymentProviderApprovalRef, fundSafeguardingRef,
+            countryOpinionRef, authorityReference, restrictions, decision,
+            preparedBy, reviewedBy, reviewedAt, createdAt, updatedAt)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(projectId) DO UPDATE SET
              distributionScope = excluded.distributionScope,
              marketAuthorityPath = excluded.marketAuthorityPath,
@@ -158,6 +163,10 @@ export async function PUT(req: NextRequest) {
              paymentSafeguardingStatus = excluded.paymentSafeguardingStatus,
              beneficialOwnersStatus = excluded.beneficialOwnersStatus,
              riskDisclosureStatus = excluded.riskDisclosureStatus,
+             corporateApprovalRef = excluded.corporateApprovalRef,
+             paymentProviderName = excluded.paymentProviderName,
+             paymentProviderApprovalRef = excluded.paymentProviderApprovalRef,
+             fundSafeguardingRef = excluded.fundSafeguardingRef,
              countryOpinionRef = excluded.countryOpinionRef,
              authorityReference = excluded.authorityReference,
              restrictions = excluded.restrictions,
@@ -176,6 +185,10 @@ export async function PUT(req: NextRequest) {
           parsed.paymentSafeguardingStatus,
           parsed.beneficialOwnersStatus,
           parsed.riskDisclosureStatus,
+          parsed.corporateApprovalRef,
+          parsed.paymentProviderName,
+          parsed.paymentProviderApprovalRef,
+          parsed.fundSafeguardingRef,
           parsed.countryOpinionRef || null,
           parsed.authorityReference || null,
           parsed.restrictions || null,
@@ -253,6 +266,11 @@ function parseReview(body: Record<string, unknown>): RegulatoryReviewInput | nul
     paymentSafeguardingStatus,
     beneficialOwnersStatus,
     riskDisclosureStatus,
+    corporateApprovalRef: shortText(body.corporateApprovalRef, 240) || "",
+    paymentProviderName: shortText(body.paymentProviderName, 240) || "",
+    paymentProviderApprovalRef:
+      shortText(body.paymentProviderApprovalRef, 240) || "",
+    fundSafeguardingRef: shortText(body.fundSafeguardingRef, 240) || "",
     countryOpinionRef: shortText(body.countryOpinionRef, 240) || "",
     authorityReference: shortText(body.authorityReference, 240),
     restrictions: shortText(body.restrictions, 3000),
@@ -275,6 +293,10 @@ function mapReview(row: ReviewRow) {
     paymentSafeguardingStatus: row.paymentSafeguardingStatus,
     beneficialOwnersStatus: row.beneficialOwnersStatus,
     riskDisclosureStatus: row.riskDisclosureStatus,
+    corporateApprovalRef: row.corporateApprovalRef || "",
+    paymentProviderName: row.paymentProviderName || "",
+    paymentProviderApprovalRef: row.paymentProviderApprovalRef || "",
+    fundSafeguardingRef: row.fundSafeguardingRef || "",
     countryOpinionRef: row.countryOpinionRef || "",
     authorityReference: row.authorityReference,
     restrictions: row.restrictions,

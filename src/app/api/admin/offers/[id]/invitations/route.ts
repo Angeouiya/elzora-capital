@@ -306,6 +306,15 @@ async function findRestrictedOffer(database: D1Database, offerId: string) {
          AND r.decision = 'cleared'
          AND r.distributionScope = 'restricted_private'
          AND r.marketAuthorityPath IN ('private_route_confirmed', 'authority_clearance')
+         AND r.corporateActsStatus = 'confirmed'
+         AND r.paymentSafeguardingStatus = 'confirmed'
+         AND r.beneficialOwnersStatus = 'confirmed'
+         AND r.riskDisclosureStatus = 'confirmed'
+         AND r.corporateApprovalRef IS NOT NULL AND TRIM(r.corporateApprovalRef) <> ''
+         AND r.paymentProviderName IS NOT NULL AND TRIM(r.paymentProviderName) <> ''
+         AND r.paymentProviderApprovalRef IS NOT NULL AND TRIM(r.paymentProviderApprovalRef) <> ''
+         AND r.fundSafeguardingRef IS NOT NULL AND TRIM(r.fundSafeguardingRef) <> ''
+         AND r.countryOpinionRef IS NOT NULL AND TRIM(r.countryOpinionRef) <> ''
          AND r.reviewedBy IS NOT NULL
          AND r.reviewedBy <> r.preparedBy
          AND r.reviewedAt IS NOT NULL

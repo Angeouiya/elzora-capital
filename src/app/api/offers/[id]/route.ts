@@ -41,6 +41,10 @@ export async function GET(
                AND r.paymentSafeguardingStatus = 'confirmed'
                AND r.beneficialOwnersStatus = 'confirmed'
                AND r.riskDisclosureStatus = 'confirmed'
+               AND r.corporateApprovalRef IS NOT NULL AND TRIM(r.corporateApprovalRef) <> ''
+               AND r.paymentProviderName IS NOT NULL AND TRIM(r.paymentProviderName) <> ''
+               AND r.paymentProviderApprovalRef IS NOT NULL AND TRIM(r.paymentProviderApprovalRef) <> ''
+               AND r.fundSafeguardingRef IS NOT NULL AND TRIM(r.fundSafeguardingRef) <> ''
                AND r.countryOpinionRef IS NOT NULL
                AND TRIM(r.countryOpinionRef) <> ''
                AND r.authorityReference IS NOT NULL
@@ -60,6 +64,10 @@ export async function GET(
              AND r.paymentSafeguardingStatus = 'confirmed'
              AND r.beneficialOwnersStatus = 'confirmed'
              AND r.riskDisclosureStatus = 'confirmed'
+             AND r.corporateApprovalRef IS NOT NULL AND TRIM(r.corporateApprovalRef) <> ''
+             AND r.paymentProviderName IS NOT NULL AND TRIM(r.paymentProviderName) <> ''
+             AND r.paymentProviderApprovalRef IS NOT NULL AND TRIM(r.paymentProviderApprovalRef) <> ''
+             AND r.fundSafeguardingRef IS NOT NULL AND TRIM(r.fundSafeguardingRef) <> ''
              AND r.countryOpinionRef IS NOT NULL
              AND TRIM(r.countryOpinionRef) <> ''
              AND r.reviewedBy IS NOT NULL

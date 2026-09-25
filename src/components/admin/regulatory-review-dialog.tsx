@@ -38,6 +38,10 @@ export interface AdminRegulatoryReview {
   paymentSafeguardingStatus: ReviewCheckStatus;
   beneficialOwnersStatus: ReviewCheckStatus;
   riskDisclosureStatus: ReviewCheckStatus;
+  corporateApprovalRef: string | null;
+  paymentProviderName: string | null;
+  paymentProviderApprovalRef: string | null;
+  fundSafeguardingRef: string | null;
   countryOpinionRef: string | null;
   authorityReference: string | null;
   restrictions: string | null;
@@ -57,6 +61,10 @@ interface ReviewForm {
   paymentSafeguardingStatus: ReviewCheckStatus;
   beneficialOwnersStatus: ReviewCheckStatus;
   riskDisclosureStatus: ReviewCheckStatus;
+  corporateApprovalRef: string;
+  paymentProviderName: string;
+  paymentProviderApprovalRef: string;
+  fundSafeguardingRef: string;
   countryOpinionRef: string;
   authorityReference: string;
   restrictions: string;
@@ -69,6 +77,10 @@ const EMPTY_FORM: ReviewForm = {
   paymentSafeguardingStatus: "pending",
   beneficialOwnersStatus: "pending",
   riskDisclosureStatus: "pending",
+  corporateApprovalRef: "",
+  paymentProviderName: "",
+  paymentProviderApprovalRef: "",
+  fundSafeguardingRef: "",
   countryOpinionRef: "",
   authorityReference: "",
   restrictions: "",
@@ -109,6 +121,10 @@ export function RegulatoryReviewDialog({
             paymentSafeguardingStatus: review.paymentSafeguardingStatus,
             beneficialOwnersStatus: review.beneficialOwnersStatus,
             riskDisclosureStatus: review.riskDisclosureStatus,
+            corporateApprovalRef: review.corporateApprovalRef || "",
+            paymentProviderName: review.paymentProviderName || "",
+            paymentProviderApprovalRef: review.paymentProviderApprovalRef || "",
+            fundSafeguardingRef: review.fundSafeguardingRef || "",
             countryOpinionRef: review.countryOpinionRef || "",
             authorityReference: review.authorityReference || "",
             restrictions: review.restrictions || "",
@@ -228,6 +244,42 @@ export function RegulatoryReviewDialog({
           <CheckField label="Circuit de paiement et protection des fonds" value={form.paymentSafeguardingStatus} onChange={(value) => update("paymentSafeguardingStatus", value)} />
           <CheckField label="Dirigeants et bénéficiaires effectifs" value={form.beneficialOwnersStatus} onChange={(value) => update("beneficialOwnersStatus", value)} />
           <CheckField label="Information complète des investisseurs" value={form.riskDisclosureStatus} onChange={(value) => update("riskDisclosureStatus", value)} />
+
+          <Field label="Référence de la décision sociale · requise">
+            <Input
+              value={form.corporateApprovalRef}
+              onChange={(event) => update("corporateApprovalRef", event.target.value)}
+              placeholder="PV d’assemblée, décision d’associés ou mandat"
+              maxLength={240}
+            />
+          </Field>
+
+          <Field label="Prestataire de paiement retenu · requis">
+            <Input
+              value={form.paymentProviderName}
+              onChange={(event) => update("paymentProviderName", event.target.value)}
+              placeholder="Nom légal du prestataire autorisé"
+              maxLength={240}
+            />
+          </Field>
+
+          <Field label="Agrément ou enregistrement du prestataire · requis">
+            <Input
+              value={form.paymentProviderApprovalRef}
+              onChange={(event) => update("paymentProviderApprovalRef", event.target.value)}
+              placeholder="Référence vérifiée auprès de l’autorité"
+              maxLength={240}
+            />
+          </Field>
+
+          <Field label="Protection des fonds · preuve requise">
+            <Input
+              value={form.fundSafeguardingRef}
+              onChange={(event) => update("fundSafeguardingRef", event.target.value)}
+              placeholder="Convention, compte dédié ou attestation"
+              maxLength={240}
+            />
+          </Field>
 
           <Field label="Référence de l’avis juridique local">
             <Input

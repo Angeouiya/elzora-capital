@@ -20,6 +20,10 @@ export interface RegulatoryReviewInput {
   paymentSafeguardingStatus: ReviewCheckStatus;
   beneficialOwnersStatus: ReviewCheckStatus;
   riskDisclosureStatus: ReviewCheckStatus;
+  corporateApprovalRef: string;
+  paymentProviderName: string;
+  paymentProviderApprovalRef: string;
+  fundSafeguardingRef: string;
   countryOpinionRef: string;
   authorityReference?: string | null;
   restrictions?: string | null;
@@ -66,6 +70,18 @@ export function missingRegulatoryRequirements(
   }
   for (const field of CONFIRMED_FIELDS) {
     if (review[field.key] !== "confirmed") missing.push(field.label);
+  }
+  if (!review.corporateApprovalRef.trim()) {
+    missing.push("référence de la décision sociale");
+  }
+  if (!review.paymentProviderName.trim()) {
+    missing.push("prestataire de paiement identifié");
+  }
+  if (!review.paymentProviderApprovalRef.trim()) {
+    missing.push("agrément ou enregistrement du prestataire de paiement");
+  }
+  if (!review.fundSafeguardingRef.trim()) {
+    missing.push("preuve de protection des fonds");
   }
   if (!review.countryOpinionRef.trim()) missing.push("avis juridique local référencé");
   if (

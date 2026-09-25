@@ -15,6 +15,10 @@ const completeReview: RegulatoryReviewInput = {
   paymentSafeguardingStatus: "confirmed",
   beneficialOwnersStatus: "confirmed",
   riskDisclosureStatus: "confirmed",
+  corporateApprovalRef: "PV-AGE-2026-014",
+  paymentProviderName: "Prestataire agréé UMOA",
+  paymentProviderApprovalRef: "BCEAO-EP-2026-014",
+  fundSafeguardingRef: "CONV-CANTONNEMENT-2026-014",
   countryOpinionRef: "AVIS-CI-2026-014",
   authorityReference: null,
   restrictions: "Accès réservé aux personnes vérifiées.",
@@ -84,5 +88,22 @@ test("a cleared label cannot hide an incomplete operational checklist", () => {
   assert.deepEqual(missingRegulatoryRequirements(review), [
     "circuit de paiement et protection des fonds",
     "avis juridique local référencé",
+  ]);
+});
+
+test("clearance requires traceable corporate and payment evidence", () => {
+  const review = {
+    ...completeReview,
+    corporateApprovalRef: "",
+    paymentProviderName: "",
+    paymentProviderApprovalRef: "",
+    fundSafeguardingRef: "",
+  };
+  assert.equal(isRegulatoryClearanceComplete(review), false);
+  assert.deepEqual(missingRegulatoryRequirements(review), [
+    "référence de la décision sociale",
+    "prestataire de paiement identifié",
+    "agrément ou enregistrement du prestataire de paiement",
+    "preuve de protection des fonds",
   ]);
 });

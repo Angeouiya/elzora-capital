@@ -220,6 +220,10 @@ model RegulatoryReview {
   paymentSafeguardingStatus String    @default("pending")
   beneficialOwnersStatus    String    @default("pending")
   riskDisclosureStatus      String    @default("pending")
+  corporateApprovalRef      String?
+  paymentProviderName       String?
+  paymentProviderApprovalRef String?
+  fundSafeguardingRef       String?
   countryOpinionRef         String?
   authorityReference        String?
   restrictions              String?

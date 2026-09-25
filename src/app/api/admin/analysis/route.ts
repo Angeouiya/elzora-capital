@@ -97,6 +97,10 @@ interface RegulatoryReviewRow extends Record<string, unknown> {
   paymentSafeguardingStatus: RegulatoryReviewInput["paymentSafeguardingStatus"];
   beneficialOwnersStatus: RegulatoryReviewInput["beneficialOwnersStatus"];
   riskDisclosureStatus: RegulatoryReviewInput["riskDisclosureStatus"];
+  corporateApprovalRef: string | null;
+  paymentProviderName: string | null;
+  paymentProviderApprovalRef: string | null;
+  fundSafeguardingRef: string | null;
   countryOpinionRef: string | null;
   authorityReference: string | null;
   restrictions: string | null;
@@ -563,6 +567,10 @@ function regulatoryReviewInput(row: RegulatoryReviewRow): RegulatoryReviewInput 
     paymentSafeguardingStatus: row.paymentSafeguardingStatus,
     beneficialOwnersStatus: row.beneficialOwnersStatus,
     riskDisclosureStatus: row.riskDisclosureStatus,
+    corporateApprovalRef: row.corporateApprovalRef || "",
+    paymentProviderName: row.paymentProviderName || "",
+    paymentProviderApprovalRef: row.paymentProviderApprovalRef || "",
+    fundSafeguardingRef: row.fundSafeguardingRef || "",
     countryOpinionRef: row.countryOpinionRef || "",
     authorityReference: row.authorityReference,
     restrictions: row.restrictions,
