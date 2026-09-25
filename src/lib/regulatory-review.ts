@@ -50,6 +50,20 @@ export function missingRegulatoryRequirements(
   const missing: string[] = [];
   if (review.distributionScope === "pending") missing.push("périmètre de diffusion");
   if (review.marketAuthorityPath === "pending") missing.push("qualification AMF-UMOA");
+  if (
+    review.distributionScope === "restricted_private" &&
+    !["private_route_confirmed", "authority_clearance"].includes(
+      review.marketAuthorityPath
+    )
+  ) {
+    missing.push("parcours cohérent avec une diffusion privée");
+  }
+  if (
+    review.distributionScope === "public_offering" &&
+    review.marketAuthorityPath !== "visa_obtained"
+  ) {
+    missing.push("visa de l’autorité de marché");
+  }
   for (const field of CONFIRMED_FIELDS) {
     if (review[field.key] !== "confirmed") missing.push(field.label);
   }
@@ -67,6 +81,25 @@ export function isRegulatoryClearanceComplete(
   review: RegulatoryReviewInput | null | undefined
 ): boolean {
   return review?.decision === "cleared" && missingRegulatoryRequirements(review).length === 0;
+}
+
+export function isIndependentReviewComplete(review: {
+  preparedBy: string;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+} | null | undefined): boolean {
+  return Boolean(
+    review?.reviewedBy &&
+      review.reviewedAt &&
+      review.reviewedBy !== review.preparedBy
+  );
+}
+
+export function offerVisibilityForRegulatoryReview(
+  review: RegulatoryReviewInput | null | undefined
+): "public" | "restricted" | null {
+  if (!isRegulatoryClearanceComplete(review)) return null;
+  return review?.distributionScope === "public_offering" ? "public" : "restricted";
 }
 
 export function isReviewCheckStatus(value: unknown): value is ReviewCheckStatus {

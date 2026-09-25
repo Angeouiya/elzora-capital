@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/auth";
 import { getD1, isoNow, requestIp } from "@/lib/d1";
 import {
   isDistributionScope,
+  isIndependentReviewComplete,
   isMarketAuthorityPath,
   isRegulatoryClearanceComplete,
   isReviewCheckStatus,
@@ -118,8 +119,24 @@ export async function PUT(req: NextRequest) {
   }
 
   const existing = await getReview(database, projectId);
+  if (
+    parsed.decision === "cleared" &&
+    (!existing || existing.preparedBy === admin.adminId)
+  ) {
+    return NextResponse.json(
+      {
+        error: existing
+          ? "La confirmation finale doit être effectuée par une seconde personne habilitée."
+          : "Enregistrez d’abord l’étude. Une seconde personne habilitée pourra ensuite la confirmer.",
+        code: "INDEPENDENT_REVIEW_REQUIRED",
+      },
+      { status: 409 }
+    );
+  }
   const now = isoNow();
   const reviewId = existing?.id || crypto.randomUUID();
+  const preparedBy =
+    parsed.decision === "pending" ? admin.adminId : existing?.preparedBy || admin.adminId;
   const reviewedBy = parsed.decision === "pending" ? null : admin.adminId;
   const reviewedAt = parsed.decision === "pending" ? null : now;
 
@@ -145,6 +162,7 @@ export async function PUT(req: NextRequest) {
              authorityReference = excluded.authorityReference,
              restrictions = excluded.restrictions,
              decision = excluded.decision,
+             preparedBy = excluded.preparedBy,
              reviewedBy = excluded.reviewedBy,
              reviewedAt = excluded.reviewedAt,
              updatedAt = excluded.updatedAt`
@@ -162,7 +180,7 @@ export async function PUT(req: NextRequest) {
           parsed.authorityReference || null,
           parsed.restrictions || null,
           parsed.decision,
-          existing?.preparedBy || admin.adminId,
+          preparedBy,
           reviewedBy,
           reviewedAt,
           existing?.createdAt || now,
@@ -264,8 +282,14 @@ function mapReview(row: ReviewRow) {
   };
   return {
     ...row,
-    complete: isRegulatoryClearanceComplete(input),
-    missing: missingRegulatoryRequirements(input),
+    complete:
+      isRegulatoryClearanceComplete(input) && isIndependentReviewComplete(row),
+    missing: [
+      ...missingRegulatoryRequirements(input),
+      ...(isIndependentReviewComplete(row)
+        ? []
+        : ["confirmation par une seconde personne habilitée"]),
+    ],
   };
 }
 

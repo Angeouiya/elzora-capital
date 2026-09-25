@@ -32,6 +32,26 @@ export async function GET(req: NextRequest) {
     INNER JOIN Company c ON c.id = p.companyId
     WHERE o.status = 'open'
       AND o.visibility = 'public'
+      AND (
+        o.isDemo = 1 OR EXISTS (
+          SELECT 1 FROM RegulatoryReview r
+          WHERE r.projectId = o.projectId
+            AND r.decision = 'cleared'
+            AND r.distributionScope = 'public_offering'
+            AND r.marketAuthorityPath = 'visa_obtained'
+            AND r.corporateActsStatus = 'confirmed'
+            AND r.paymentSafeguardingStatus = 'confirmed'
+            AND r.beneficialOwnersStatus = 'confirmed'
+            AND r.riskDisclosureStatus = 'confirmed'
+            AND r.countryOpinionRef IS NOT NULL
+            AND TRIM(r.countryOpinionRef) <> ''
+            AND r.authorityReference IS NOT NULL
+            AND TRIM(r.authorityReference) <> ''
+            AND r.reviewedBy IS NOT NULL
+            AND r.reviewedBy <> r.preparedBy
+            AND r.reviewedAt IS NOT NULL
+        )
+      )
       AND datetime(o.closingDate) > datetime('now')
     ORDER BY o.publishedAt DESC
   `).all<OfferRow>();
@@ -58,6 +78,7 @@ export async function GET(req: NextRequest) {
     publishedAt: row.publishedAt,
     closingDate: row.closingDate,
     visibility: row.visibility,
+    isDemo: Number(row.isDemo) === 1,
     status: row.status,
     createdAt: row.createdAt,
     project: {

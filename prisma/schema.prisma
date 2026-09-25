@@ -388,6 +388,7 @@ model Offer {
   closingDate          DateTime
   // Visibilité
   visibility           String   @default("public") // public, restricted, whitelist
+  isDemo               Boolean  @default(false)
   status               String   @default("open") // open, closing, funded, failed, closed
   createdAt            DateTime @default(now())
 

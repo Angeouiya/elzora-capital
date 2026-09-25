@@ -190,6 +190,10 @@ export function RegulatoryReviewDialog({
           </div>
         </div>
 
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-700">
+          Enregistrez d’abord l’étude. Pour protéger la décision, une seconde personne habilitée devra confirmer le cadre de publication.
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Périmètre de diffusion">
             <Select

@@ -24,6 +24,7 @@ import {
 interface OfferTermsRow extends SubscriptionOfferTerms {
   status: string;
   visibility: string;
+  isDemo: number;
   committedAmount: number;
 }
 
@@ -63,7 +64,7 @@ interface InvestmentRow extends Record<string, unknown> {
 async function findOffer(id: string): Promise<OfferTermsRow | null> {
   return getD1()
     .prepare(
-      `SELECT o.id, o.projectId, o.status, o.visibility, o.closingDate,
+      `SELECT o.id, o.projectId, o.status, o.visibility, o.isDemo, o.closingDate,
               o.version, o.fundingGoal, o.committedAmount, o.minInvestment, o.maxInvestment,
               o.annualRate, o.ratePeriod, o.durationMonths, o.repaymentType,
               o.equityOfferedPct, o.valuationPre, o.upfrontCommissionPct,
@@ -71,7 +72,29 @@ async function findOffer(id: string): Promise<OfferTermsRow | null> {
               p.instrumentType, p.title
        FROM Offer o
        JOIN Project p ON p.id = o.projectId
-       WHERE o.id = ? LIMIT 1`
+       WHERE o.id = ?
+         AND o.visibility = 'public'
+         AND (
+           o.isDemo = 1 OR EXISTS (
+             SELECT 1 FROM RegulatoryReview r
+             WHERE r.projectId = o.projectId
+               AND r.decision = 'cleared'
+               AND r.distributionScope = 'public_offering'
+               AND r.marketAuthorityPath = 'visa_obtained'
+               AND r.corporateActsStatus = 'confirmed'
+               AND r.paymentSafeguardingStatus = 'confirmed'
+               AND r.beneficialOwnersStatus = 'confirmed'
+               AND r.riskDisclosureStatus = 'confirmed'
+               AND r.countryOpinionRef IS NOT NULL
+               AND TRIM(r.countryOpinionRef) <> ''
+               AND r.authorityReference IS NOT NULL
+               AND TRIM(r.authorityReference) <> ''
+               AND r.reviewedBy IS NOT NULL
+               AND r.reviewedBy <> r.preparedBy
+               AND r.reviewedAt IS NOT NULL
+           )
+         )
+       LIMIT 1`
     )
     .bind(id)
     .first<OfferTermsRow>();
@@ -180,6 +203,15 @@ export async function POST(
 
   if (!offer) return NextResponse.json({ error: "Offre introuvable" }, { status: 404 });
   if (!investor) return NextResponse.json({ error: "Compte introuvable" }, { status: 404 });
+  if (Number(offer.isDemo) === 1) {
+    return NextResponse.json(
+      {
+        error: "Cette présentation est un exemple et n’accepte aucun versement.",
+        code: "DEMO_OFFER",
+      },
+      { status: 403 }
+    );
+  }
   if (investor.kycStatus !== "verified") {
     return NextResponse.json(
       {
@@ -324,6 +356,25 @@ export async function POST(
            WHERE o.id = ?
              AND o.status = 'open'
              AND o.visibility = 'public'
+             AND o.isDemo = 0
+             AND EXISTS (
+               SELECT 1 FROM RegulatoryReview r
+               WHERE r.projectId = o.projectId
+                 AND r.decision = 'cleared'
+                 AND r.distributionScope = 'public_offering'
+                 AND r.marketAuthorityPath = 'visa_obtained'
+                 AND r.corporateActsStatus = 'confirmed'
+                 AND r.paymentSafeguardingStatus = 'confirmed'
+                 AND r.beneficialOwnersStatus = 'confirmed'
+                 AND r.riskDisclosureStatus = 'confirmed'
+                 AND r.countryOpinionRef IS NOT NULL
+                 AND TRIM(r.countryOpinionRef) <> ''
+                 AND r.authorityReference IS NOT NULL
+                 AND TRIM(r.authorityReference) <> ''
+                 AND r.reviewedBy IS NOT NULL
+                 AND r.reviewedBy <> r.preparedBy
+                 AND r.reviewedAt IS NOT NULL
+             )
              AND datetime(o.closingDate) > datetime(?)
              AND o.committedAmount + ? <= o.fundingGoal`
         )

@@ -4,7 +4,9 @@ import { getD1, isoNow, requestIp } from "@/lib/d1";
 import { canActorTransition, canTransition } from "@/lib/workflow";
 import {
   isRegulatoryClearanceComplete,
+  isIndependentReviewComplete,
   missingRegulatoryRequirements,
+  offerVisibilityForRegulatoryReview,
   type RegulatoryReviewInput,
 } from "@/lib/regulatory-review";
 
@@ -357,18 +359,26 @@ export async function PATCH(req: NextRequest) {
     );
   }
 
+  let clearedReview: RegulatoryReviewInput | null = null;
   if (["approved", "published"].includes(targetStatus)) {
     const review = await database
       .prepare(`SELECT * FROM RegulatoryReview WHERE projectId = ? LIMIT 1`)
       .bind(projectId)
       .first<RegulatoryReviewRow>();
-    const reviewInput = review ? regulatoryReviewInput(review) : null;
-    if (!isRegulatoryClearanceComplete(reviewInput)) {
+    clearedReview = review ? regulatoryReviewInput(review) : null;
+    if (
+      !isRegulatoryClearanceComplete(clearedReview) ||
+      !isIndependentReviewComplete(review)
+    ) {
+      const missing = missingRegulatoryRequirements(clearedReview);
+      if (!isIndependentReviewComplete(review)) {
+        missing.push("confirmation par une seconde personne habilitée");
+      }
       return NextResponse.json(
         {
           error:
             "La validation du cadre de publication doit être terminée avant cette décision.",
-          missing: missingRegulatoryRequirements(reviewInput),
+          missing,
         },
         { status: 409 }
       );
@@ -412,7 +422,17 @@ export async function PATCH(req: NextRequest) {
 
   let offerId = project.offerId;
   const offerCreated = targetStatus === "published" && !offerId;
+  const offerVisibility =
+    targetStatus === "published"
+      ? offerVisibilityForRegulatoryReview(clearedReview)
+      : null;
   if (offerCreated) {
+    if (!offerVisibility) {
+      return NextResponse.json(
+        { error: "Le périmètre de diffusion de cette offre n’est pas confirmé." },
+        { status: 409 }
+      );
+    }
     offerId = crypto.randomUUID();
     const closingDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
     statements.push(
@@ -423,8 +443,8 @@ export async function PATCH(req: NextRequest) {
             annualRate, ratePeriod, durationMonths, repaymentType,
             equityOfferedPct, valuationPre, upfrontCommissionPct,
             annualFollowUpPct, raisedAmount, committedAmount, backersCount,
-            publishedAt, closingDate, visibility, status, createdAt)
-           VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, 6, 2, 0, 0, 0, ?, ?, 'public', 'open', ?)`
+            publishedAt, closingDate, visibility, isDemo, status, createdAt)
+           VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, 6, 2, 0, 0, 0, ?, ?, ?, 0, 'open', ?)`
         )
         .bind(
           offerId,
@@ -440,8 +460,15 @@ export async function PATCH(req: NextRequest) {
           project.valuationPre,
           now,
           closingDate,
+          offerVisibility,
           now
         )
+    );
+  } else if (targetStatus === "published" && offerId && offerVisibility) {
+    statements.push(
+      database
+        .prepare(`UPDATE Offer SET visibility = ?, isDemo = 0 WHERE id = ?`)
+        .bind(offerVisibility, offerId)
     );
   }
 
@@ -488,10 +515,15 @@ export async function PATCH(req: NextRequest) {
       title: "Dossier refusé",
       message: `Votre dossier « ${project.title} » a été refusé : ${note}`,
     },
-    published: {
-      title: "Offre publiée",
-      message: `L'offre « ${project.title} » est désormais ouverte aux souscriptions.`,
-    },
+    published: offerVisibility === "public"
+      ? {
+          title: "Offre publiée",
+          message: `L'offre « ${project.title} » est désormais ouverte aux souscriptions.`,
+        }
+      : {
+          title: "Dossier prêt pour diffusion privée",
+          message: `L'offre « ${project.title} » est disponible uniquement dans son cercle autorisé.`,
+        },
     funded: {
       title: "Financement atteint",
       message: `Le financement de « ${project.title} » est atteint.`,
@@ -519,7 +551,7 @@ export async function PATCH(req: NextRequest) {
   await database.batch(statements);
   return NextResponse.json({
     project: { id: projectId, status: targetStatus, updatedAt: now },
-    offer: offerId ? { id: offerId, status: "open" } : null,
+    offer: offerId ? { id: offerId, status: "open", visibility: offerVisibility } : null,
   });
 }
 
@@ -542,8 +574,14 @@ function mapRegulatoryReview(row: RegulatoryReviewRow) {
   const input = regulatoryReviewInput(row);
   return {
     ...row,
-    complete: isRegulatoryClearanceComplete(input),
-    missing: missingRegulatoryRequirements(input),
+    complete:
+      isRegulatoryClearanceComplete(input) && isIndependentReviewComplete(row),
+    missing: [
+      ...missingRegulatoryRequirements(input),
+      ...(isIndependentReviewComplete(row)
+        ? []
+        : ["confirmation par une seconde personne habilitée"]),
+    ],
   };
 }
 

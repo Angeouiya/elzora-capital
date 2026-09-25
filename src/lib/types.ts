@@ -19,6 +19,7 @@ export interface OfferDTO {
   publishedAt: string;
   closingDate: string;
   visibility: string;
+  isDemo: boolean;
   status: string;
   project: ProjectDTO;
 }

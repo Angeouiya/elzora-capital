@@ -1,8 +1,8 @@
 export const LEGAL_VERSIONS = {
-  terms: "2026-09-22",
+  terms: "2026-09-25",
   privacy: "2026-09-22",
-  risk: "2026-09-22",
-  subscription: "2026-09-24",
+  risk: "2026-09-25",
+  subscription: "2026-09-25",
 } as const;
 
 export const REGULATORY_SOURCES = {

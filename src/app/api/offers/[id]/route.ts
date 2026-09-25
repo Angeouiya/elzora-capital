@@ -28,6 +28,26 @@ export async function GET(
        JOIN Project p ON p.id = o.projectId
        JOIN Company c ON c.id = p.companyId
        WHERE o.id = ? AND o.visibility = 'public'
+         AND (
+           o.isDemo = 1 OR EXISTS (
+             SELECT 1 FROM RegulatoryReview r
+             WHERE r.projectId = o.projectId
+               AND r.decision = 'cleared'
+               AND r.distributionScope = 'public_offering'
+               AND r.marketAuthorityPath = 'visa_obtained'
+               AND r.corporateActsStatus = 'confirmed'
+               AND r.paymentSafeguardingStatus = 'confirmed'
+               AND r.beneficialOwnersStatus = 'confirmed'
+               AND r.riskDisclosureStatus = 'confirmed'
+               AND r.countryOpinionRef IS NOT NULL
+               AND TRIM(r.countryOpinionRef) <> ''
+               AND r.authorityReference IS NOT NULL
+               AND TRIM(r.authorityReference) <> ''
+               AND r.reviewedBy IS NOT NULL
+               AND r.reviewedBy <> r.preparedBy
+               AND r.reviewedAt IS NOT NULL
+           )
+         )
        LIMIT 1`
     )
     .bind(id)
@@ -39,7 +59,9 @@ export async function GET(
     database
       .prepare(
         `SELECT id, projectId, type, fileName, fileUrl, uploadedAt
-         FROM ProjectDocument WHERE projectId = ? ORDER BY uploadedAt DESC`
+         FROM ProjectDocument
+         WHERE projectId = ? AND isPublic = 1
+         ORDER BY uploadedAt DESC`
       )
       .bind(offer.projectId)
       .all<Row>(),
@@ -84,6 +106,7 @@ export async function GET(
       publishedAt: offer.publishedAt,
       closingDate: offer.closingDate,
       visibility: offer.visibility,
+      isDemo: Number(offer.isDemo) === 1,
       status: offer.status,
       createdAt: offer.createdAt,
       project: {

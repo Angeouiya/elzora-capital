@@ -40,7 +40,7 @@ export function OfferCard({ offer, eager = false, compactOnMobile = false }: { o
   const displayCurrency = useAppStore((s) => s.displayCurrency);
   const pct = progressPct(offer.raisedAmount, offer.fundingGoal);
   const isEquity = offer.project.instrumentType === "equity";
-  const isShowcase = offer.id.startsWith("showcase-");
+  const isShowcase = offer.isDemo;
 
   return (
     <Card className={`group h-full gap-0 overflow-hidden rounded-[1.35rem] border border-[#541249]/10 bg-white/90 p-0 transition-all duration-300 hover:-translate-y-1 hover:border-[#541249]/25 hover:shadow-[0_24px_60px_rgba(56,12,49,.12)] ${compactOnMobile ? "flex flex-row sm:flex-col" : "flex flex-col"}`}>
