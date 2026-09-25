@@ -82,7 +82,7 @@ export async function GET(
   const [documents, timeline, investments] = await Promise.all([
     database
       .prepare(
-        `SELECT id, projectId, type, fileName, fileUrl, uploadedAt
+        `SELECT id, projectId, type, fileName, fileUrl, contentType, size, uploadedAt
          FROM ProjectDocument
          WHERE projectId = ? AND isPublic = 1
          ORDER BY uploadedAt DESC`

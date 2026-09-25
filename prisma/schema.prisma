@@ -454,6 +454,7 @@ model Investment {
   createdAt            DateTime                   @default(now())
   updatedAt            DateTime                   @updatedAt
   subscriptionEvidence SubscriptionEvidence?
+  contract             InvestmentContract?
   equityAllocation     EquityAllocation?
   equityDividends      EquityDividendAllocation[]
 
@@ -487,6 +488,24 @@ model SubscriptionEvidence {
 
   @@index([investorId, signedAt])
   @@index([offerId])
+}
+
+model InvestmentContract {
+  id               String     @id @default(cuid())
+  investmentId     String     @unique
+  investment       Investment @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+  contractNumber   String     @unique
+  documentVersion  String     @default("1.0")
+  locale           String     @default("fr")
+  snapshot         String
+  contentHash      String
+  issuedAt         DateTime
+  lastDownloadedAt DateTime?
+  downloadCount    Int        @default(0)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  @@index([issuedAt])
 }
 
 model EquityIssuance {

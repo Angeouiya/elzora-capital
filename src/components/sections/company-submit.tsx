@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type InputHTMLAttributes } from "react";
 import Image from "next/image";
 import { useAppStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
@@ -51,6 +51,9 @@ import {
   FileUp,
   FileCheck2,
   Eye,
+  FolderUp,
+  Images,
+  Files,
 } from "lucide-react";
 
 interface Membership {
@@ -180,7 +183,7 @@ const STEPS = [
   { id: 4, label: ["Équipe & chiffres", "Team & figures"], icon: UsersRound },
   { id: 5, label: ["Financement", "Funding"], icon: ChartNoAxesCombined },
   { id: 6, label: ["Plan d’exécution", "Execution plan"], icon: HandCoins },
-  { id: 7, label: ["Vérification", "Review"], icon: ClipboardCheck },
+  { id: 7, label: ["Dossier & envoi", "Files & submission"], icon: ClipboardCheck },
 ] as const;
 
 const COPY = {
@@ -221,6 +224,10 @@ const COPY = {
     coverHelp: "Une image horizontale nette qui représentera le projet auprès des investisseurs. JPG, PNG ou WebP, 5 Mo maximum.",
     choosePhoto: "Choisir une photo",
     replacePhoto: "Remplacer la photo",
+    gallery: "Galerie du projet",
+    galleryHelp: "Ajoutez jusqu’à 8 photos concrètes : activité, équipe, site, produits ou réalisations.",
+    addPhotos: "Ajouter des photos",
+    galleryLimit: "8 photos maximum",
     businessModel: "Comment l’entreprise gagne-t-elle de l’argent ?",
     market: "Marché visé et clients",
     advantage: "Ce qui vous distingue",
@@ -287,7 +294,7 @@ const COPY = {
     impact: "Retombées attendues (facultatif)",
     risksPlaceholder: "Présentez les risques commerciaux, financiers ou opérationnels, puis les mesures prévues.",
     documents: "Pièces prêtes pour l’analyse",
-    documentsIntro: "Déposez les pièces qui permettront à l’équipe d’analyser et de vérifier le projet. PDF, JPG, PNG ou WebP, 10 Mo maximum par fichier.",
+    documentsIntro: "Déposez les pièces qui permettront à l’équipe d’analyser et de vérifier le projet. PDF, DOCX, XLSX, JPG, PNG ou WebP, 10 Mo maximum par fichier.",
     registrationDocument: "Document d’immatriculation à jour",
     financialStatements: "États financiers du dernier exercice",
     bankStatements: "Relevés bancaires récents",
@@ -296,6 +303,19 @@ const COPY = {
     otherDocument: "Autre justificatif",
     contractDocument: "Contrat ou bon de commande",
     guaranteeDocument: "Justificatif de garantie",
+    pitchDeckDocument: "Présentation du projet",
+    forecastDocument: "Prévisions financières",
+    permitDocument: "Agrément, licence ou autorisation",
+    impactDocument: "Preuve d’impact ou certification",
+    bulkTitle: "Importer un dossier complet",
+    bulkHelp: "Ajoutez plusieurs fichiers en une fois ou sélectionnez un dossier entier. Les sous-dossiers sont conservés dans les noms des fichiers importés.",
+    bulkCategory: "Classer ces fichiers dans",
+    chooseFiles: "Choisir plusieurs fichiers",
+    chooseFolder: "Choisir un dossier",
+    importingFiles: "Import en cours",
+    importedFiles: "fichiers importés",
+    essentialFiles: "pièces indispensables",
+    totalFiles: "fichiers au total",
     uploadFile: "Importer",
     replaceFile: "Remplacer",
     viewFile: "Voir",
@@ -370,6 +390,10 @@ const COPY = {
     coverHelp: "A clear horizontal image that will represent the project to investors. JPG, PNG or WebP, up to 5 MB.",
     choosePhoto: "Choose a photo",
     replacePhoto: "Replace photo",
+    gallery: "Project gallery",
+    galleryHelp: "Add up to 8 real photos showing the activity, team, site, products or achievements.",
+    addPhotos: "Add photos",
+    galleryLimit: "Up to 8 photos",
     businessModel: "How does the company make money?",
     market: "Target market and customers",
     advantage: "What sets you apart",
@@ -436,7 +460,7 @@ const COPY = {
     impact: "Expected impact (optional)",
     risksPlaceholder: "Present commercial, financial or operating risks and the planned measures.",
     documents: "Documents ready for review",
-    documentsIntro: "Upload the documents the team needs to review and verify the project. PDF, JPG, PNG or WebP, up to 10 MB per file.",
+    documentsIntro: "Upload the documents the team needs to review and verify the project. PDF, DOCX, XLSX, JPG, PNG or WebP, up to 10 MB per file.",
     registrationDocument: "Current registration document",
     financialStatements: "Latest financial statements",
     bankStatements: "Recent bank statements",
@@ -445,6 +469,19 @@ const COPY = {
     otherDocument: "Other supporting document",
     contractDocument: "Contract or purchase order",
     guaranteeDocument: "Security evidence",
+    pitchDeckDocument: "Project presentation",
+    forecastDocument: "Financial forecasts",
+    permitDocument: "Permit, licence or authorisation",
+    impactDocument: "Impact evidence or certification",
+    bulkTitle: "Upload a complete folder",
+    bulkHelp: "Add several files at once or select a whole folder. Subfolder paths are retained in the uploaded file names.",
+    bulkCategory: "File these documents under",
+    chooseFiles: "Choose several files",
+    chooseFolder: "Choose a folder",
+    importingFiles: "Uploading",
+    importedFiles: "files uploaded",
+    essentialFiles: "essential documents",
+    totalFiles: "total files",
     uploadFile: "Upload",
     replaceFile: "Replace",
     viewFile: "View",
@@ -495,7 +532,19 @@ const EMPTY_DOCUMENTS: DocumentChecklistState = {
 const DOCUMENT_SLOTS: Array<{
   kind: string;
   checklistKey?: keyof DocumentChecklistState;
-  labelKey: "registrationDocument" | "financialStatements" | "bankStatements" | "businessPlan" | "taxDocument" | "contractDocument" | "guaranteeDocument" | "otherDocument";
+  labelKey:
+    | "registrationDocument"
+    | "financialStatements"
+    | "bankStatements"
+    | "businessPlan"
+    | "taxDocument"
+    | "contractDocument"
+    | "guaranteeDocument"
+    | "pitchDeckDocument"
+    | "forecastDocument"
+    | "permitDocument"
+    | "impactDocument"
+    | "otherDocument";
   required?: boolean;
 }> = [
   { kind: "registration_document", checklistKey: "registrationDocument", labelKey: "registrationDocument", required: true },
@@ -505,8 +554,26 @@ const DOCUMENT_SLOTS: Array<{
   { kind: "tax_document", checklistKey: "taxDocument", labelKey: "taxDocument" },
   { kind: "contract", labelKey: "contractDocument" },
   { kind: "guarantee", labelKey: "guaranteeDocument" },
-  { kind: "other", labelKey: "otherDocument" },
+  { kind: "pitch_deck", labelKey: "pitchDeckDocument" },
+  { kind: "financial_forecast", labelKey: "forecastDocument" },
+  { kind: "permit_license", labelKey: "permitDocument" },
+  { kind: "impact_evidence", labelKey: "impactDocument" },
 ];
+
+const BULK_DOCUMENT_CATEGORIES = [
+  { value: "other", labelKey: "otherDocument" },
+  { value: "contract", labelKey: "contractDocument" },
+  { value: "guarantee", labelKey: "guaranteeDocument" },
+  { value: "pitch_deck", labelKey: "pitchDeckDocument" },
+  { value: "financial_forecast", labelKey: "forecastDocument" },
+  { value: "permit_license", labelKey: "permitDocument" },
+  { value: "impact_evidence", labelKey: "impactDocument" },
+] as const;
+
+const DIRECTORY_INPUT_PROPS = {
+  webkitdirectory: "",
+  directory: "",
+} as InputHTMLAttributes<HTMLInputElement>;
 
 function rowId(prefix: string) {
   return prefix + "-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7);
@@ -595,6 +662,8 @@ export function CompanySubmit() {
   const [savingDraft, setSavingDraft] = useState(false);
   const [uploadingKind, setUploadingKind] = useState<string | null>(null);
   const [removingDocument, setRemovingDocument] = useState<string | null>(null);
+  const [bulkCategory, setBulkCategory] = useState("other");
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
 
   const loadWorkspace = useCallback(async () => {
     setLoading(true);
@@ -678,7 +747,20 @@ export function CompanySubmit() {
   );
   const fundingGoal = Number(form.fundingGoal) || 0;
   const allocationDifference = fundingGoal - allocatedAmount;
-  const confirmedDocuments = Object.values(form.documentChecklist).filter(Boolean).length;
+  const essentialDocumentsCount = [
+    form.documentChecklist.registrationDocument,
+    form.documentChecklist.financialStatements,
+    form.documentChecklist.bankStatements,
+    form.documentChecklist.businessPlan,
+  ].filter(Boolean).length;
+  const galleryDocuments = documents.filter((document) => document.type === "gallery");
+  const primaryDocumentIds = new Set(
+    DOCUMENT_SLOTS.map((slot) => documents.find((document) => document.type === slot.kind)?.id).filter(Boolean)
+  );
+  const additionalDocuments = documents.filter(
+    (document) =>
+      !["cover", "gallery"].includes(document.type) && !primaryDocumentIds.has(document.id)
+  );
 
   const debtSimulation = useMemo(() => {
     if (form.instrumentType !== "debt") return null;
@@ -950,38 +1032,94 @@ export function CompanySubmit() {
     await saveDraft(false);
   };
 
+  const sendProjectFile = async (projectId: string, kind: string, file: File, replace = true) => {
+    const data = new FormData();
+    data.set("kind", kind);
+    data.set("replace", replace ? "1" : "0");
+    data.set("file", file, file.webkitRelativePath || file.name);
+    const response = await fetch("/api/projects/" + projectId + "/documents", {
+      method: "POST",
+      body: data,
+    });
+    const body = (await response.json().catch(() => ({}))) as {
+      error?: string;
+      document?: ProjectDocumentRecord;
+      coverUrl?: string | null;
+    };
+    if (!response.ok || !body.document) throw new Error(body.error || copy.retry);
+    return { document: body.document, coverUrl: body.coverUrl ?? null };
+  };
+
+  const refreshDocuments = async (projectId: string) => {
+    const response = await fetch("/api/projects/" + projectId + "/documents");
+    const body = (await response.json().catch(() => ({ documents: [] }))) as {
+      documents?: ProjectDocumentRecord[];
+    };
+    if (response.ok) applyDocuments(body.documents ?? []);
+  };
+
   const uploadDocument = async (kind: string, file: File) => {
     setUploadingKind(kind);
     try {
       const projectId = draftProjectId || (await saveDraft(true));
       if (!projectId) return;
-      const data = new FormData();
-      data.set("kind", kind);
-      data.set("file", file);
-      const response = await fetch("/api/projects/" + projectId + "/documents", {
-        method: "POST",
-        body: data,
-      });
-      const body = (await response.json().catch(() => ({}))) as {
-        error?: string;
-        document?: ProjectDocumentRecord;
-        coverUrl?: string | null;
-      };
-      if (!response.ok || !body.document) {
-        toast({ title: copy.uploadFailed, description: body.error || copy.retry, variant: "destructive" });
-        return;
-      }
+      const body = await sendProjectFile(projectId, kind, file);
       const nextDocuments = [
         body.document,
-        ...documents.filter((document) => kind === "other" || document.type !== kind),
+        ...documents.filter(
+          (document) => ["gallery", "other"].includes(kind) || document.type !== kind
+        ),
       ];
       applyDocuments(nextDocuments);
       if (body.coverUrl) set("imageUrl", body.coverUrl);
       toast({ title: copy.fileUploaded, description: body.document.fileName });
-    } catch {
-      toast({ title: copy.uploadFailed, description: copy.retry, variant: "destructive" });
+    } catch (error) {
+      toast({
+        title: copy.uploadFailed,
+        description: error instanceof Error ? error.message : copy.retry,
+        variant: "destructive",
+      });
     } finally {
       setUploadingKind(null);
+    }
+  };
+
+  const uploadMultipleDocuments = async (kind: string, selectedFiles: FileList | File[]) => {
+    const files = Array.from(selectedFiles);
+    if (files.length === 0) return;
+    setUploadingKind(kind);
+    setBulkProgress({ done: 0, total: files.length });
+    try {
+      const projectId = draftProjectId || (await saveDraft(true));
+      if (!projectId) return;
+      let completed = 0;
+      let lastError = "";
+      for (const file of files) {
+        try {
+          await sendProjectFile(projectId, kind, file, false);
+          completed += 1;
+        } catch (error) {
+          lastError = error instanceof Error ? error.message : copy.retry;
+        }
+        setBulkProgress({ done: completed, total: files.length });
+      }
+      await refreshDocuments(projectId);
+      if (completed > 0) {
+        toast({
+          title: copy.fileUploaded,
+          description: `${completed}/${files.length} ${copy.importedFiles}`,
+        });
+      }
+      if (completed < files.length) {
+        toast({
+          title: copy.uploadFailed,
+          description: lastError || copy.retry,
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setUploadingKind(null);
+      setBulkProgress(null);
     }
   };
 
@@ -1345,6 +1483,77 @@ export function CompanySubmit() {
                     </div>
                   </div>
                 </div>
+                <div className="rounded-2xl border border-[#541249]/10 bg-[#fcfafb] p-4 sm:p-5">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-start gap-3">
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#f4e7f1] text-[#541249]">
+                        <Images className="h-5 w-5" />
+                      </span>
+                      <div>
+                        <h3 className="text-sm font-semibold text-foreground">{copy.gallery}</h3>
+                        <p className="mt-1 max-w-xl text-sm leading-relaxed text-muted-foreground">
+                          {copy.galleryHelp}
+                        </p>
+                      </div>
+                    </div>
+                    <label
+                      className={
+                        "inline-flex h-10 shrink-0 items-center justify-center rounded-full border border-[#541249]/15 bg-white px-4 text-sm font-medium text-foreground transition-colors hover:bg-[#f8f0f6] " +
+                        (galleryDocuments.length >= 8 || uploadingKind !== null ? "cursor-not-allowed opacity-55" : "cursor-pointer")
+                      }
+                    >
+                      {uploadingKind === "gallery" ? (
+                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <ImagePlus className="mr-2 h-4 w-4" />
+                      )}
+                      {uploadingKind === "gallery" && bulkProgress
+                        ? `${bulkProgress.done}/${bulkProgress.total}`
+                        : copy.addPhotos}
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        multiple
+                        className="sr-only"
+                        disabled={galleryDocuments.length >= 8 || uploadingKind !== null}
+                        onChange={(event) => {
+                          const files = Array.from(event.target.files ?? []).slice(0, 8 - galleryDocuments.length);
+                          if (files.length) void uploadMultipleDocuments("gallery", files);
+                          event.target.value = "";
+                        }}
+                      />
+                    </label>
+                  </div>
+                  {galleryDocuments.length > 0 ? (
+                    <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                      {galleryDocuments.map((document) => (
+                        <div key={document.id} className="group relative aspect-[4/3] overflow-hidden rounded-xl bg-[#ead7e6]">
+                          <Image src={document.fileUrl} alt={document.fileName} fill unoptimized className="object-cover" />
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="icon"
+                            className="absolute right-2 top-2 h-8 w-8 rounded-full bg-white/90 text-[#541249] shadow-sm backdrop-blur hover:text-destructive"
+                            aria-label={copy.remove}
+                            disabled={removingDocument === document.id}
+                            onClick={() => void deleteDocument(document)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="mt-4 flex min-h-24 items-center justify-center rounded-xl border border-dashed border-[#541249]/15 bg-white px-4 text-center text-sm text-muted-foreground">
+                      {copy.galleryLimit}
+                    </div>
+                  )}
+                  {galleryDocuments.length > 0 && (
+                    <p className="mt-3 text-xs text-muted-foreground">
+                      {galleryDocuments.length}/8 · {copy.galleryLimit}
+                    </p>
+                  )}
+                </div>
               </div>
             )}
 
@@ -1592,6 +1801,81 @@ export function CompanySubmit() {
                 <div className="rounded-2xl border border-[#541249]/10 p-5">
                   <h3 className="text-base font-semibold text-foreground">{copy.documents}</h3>
                   <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{copy.documentsIntro}</p>
+                  <div className="mt-5 rounded-2xl bg-[linear-gradient(145deg,#2f0a29,#541249)] p-4 text-white sm:p-5">
+                    <div className="flex items-start gap-3">
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white/10 text-[#efc9e8]">
+                        <FolderUp className="h-5 w-5" />
+                      </span>
+                      <div>
+                        <h4 className="text-sm font-semibold">{copy.bulkTitle}</h4>
+                        <p className="mt-1 max-w-2xl text-sm leading-relaxed text-white/65">{copy.bulkHelp}</p>
+                      </div>
+                    </div>
+                    <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:items-end">
+                      <div>
+                        <Label className="mb-2 block text-xs font-medium text-white/70">{copy.bulkCategory}</Label>
+                        <Select value={bulkCategory} onValueChange={setBulkCategory}>
+                          <SelectTrigger className="h-11 rounded-xl border-white/15 bg-white/10 text-white data-[placeholder]:text-white/55">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {BULK_DOCUMENT_CATEGORIES.map((category) => (
+                              <SelectItem key={category.value} value={category.value}>
+                                {copy[category.labelKey]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <label className="inline-flex h-11 cursor-pointer items-center justify-center rounded-full bg-white px-4 text-sm font-semibold text-[#380c31] shadow-sm transition-transform hover:-translate-y-0.5">
+                        <Files className="mr-2 h-4 w-4" />
+                        {copy.chooseFiles}
+                        <input
+                          type="file"
+                          accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/msword,application/vnd.ms-excel,image/jpeg,image/png,image/webp"
+                          multiple
+                          className="sr-only"
+                          disabled={uploadingKind !== null}
+                          onChange={(event) => {
+                            if (event.target.files?.length) {
+                              void uploadMultipleDocuments(bulkCategory, event.target.files);
+                            }
+                            event.target.value = "";
+                          }}
+                        />
+                      </label>
+                      <label className="inline-flex h-11 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white transition-colors hover:bg-white/15">
+                        <FolderUp className="mr-2 h-4 w-4" />
+                        {copy.chooseFolder}
+                        <input
+                          {...DIRECTORY_INPUT_PROPS}
+                          type="file"
+                          accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/msword,application/vnd.ms-excel,image/jpeg,image/png,image/webp"
+                          multiple
+                          className="sr-only"
+                          disabled={uploadingKind !== null}
+                          onChange={(event) => {
+                            if (event.target.files?.length) {
+                              void uploadMultipleDocuments(bulkCategory, event.target.files);
+                            }
+                            event.target.value = "";
+                          }}
+                        />
+                      </label>
+                    </div>
+                    {bulkProgress && (
+                      <div className="mt-4">
+                        <div className="mb-2 flex items-center justify-between gap-3 text-xs text-white/70">
+                          <span>{copy.importingFiles}</span>
+                          <span>{bulkProgress.done}/{bulkProgress.total}</span>
+                        </div>
+                        <Progress
+                          value={(bulkProgress.done / Math.max(1, bulkProgress.total)) * 100}
+                          className="h-1.5 bg-white/15 [&_[data-slot=progress-indicator]]:bg-[#e6b7dc]"
+                        />
+                      </div>
+                    )}
+                  </div>
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     {DOCUMENT_SLOTS.map((slot) => {
                       const document = documents.find((item) => item.type === slot.kind);
@@ -1627,10 +1911,10 @@ export function CompanySubmit() {
                           <div className="mt-3 flex flex-wrap items-center gap-2">
                             <label className="inline-flex h-9 cursor-pointer items-center justify-center rounded-full border border-[#541249]/15 bg-white px-3 text-xs font-medium text-foreground transition-colors hover:bg-[#f8f0f6]">
                               {uploadingKind === slot.kind ? <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <FileUp className="mr-1.5 h-3.5 w-3.5" />}
-                              {document && slot.kind !== "other" ? copy.replaceFile : copy.uploadFile}
+                              {document ? copy.replaceFile : copy.uploadFile}
                               <input
                                 type="file"
-                                accept="application/pdf,image/jpeg,image/png,image/webp"
+                                accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/msword,application/vnd.ms-excel,image/jpeg,image/png,image/webp"
                                 className="sr-only"
                                 disabled={uploadingKind !== null || removingDocument !== null}
                                 onChange={(event) => {
@@ -1640,7 +1924,7 @@ export function CompanySubmit() {
                                 }}
                               />
                             </label>
-                            {document && slot.kind !== "other" && (
+                            {document && (
                               <>
                                 <a
                                   href={document.fileUrl}
@@ -1669,9 +1953,9 @@ export function CompanySubmit() {
                       );
                     })}
                   </div>
-                  {documents.some((document) => document.type === "other") && (
+                  {additionalDocuments.length > 0 && (
                     <div className="mt-3 space-y-2">
-                      {documents.filter((document) => document.type === "other").map((document) => (
+                      {additionalDocuments.map((document) => (
                         <div key={document.id} className="flex items-center gap-3 rounded-xl border border-[#541249]/10 bg-white px-3 py-2.5">
                           <FileCheck2 className="h-4 w-4 shrink-0 text-emerald-700" />
                           <span className="min-w-0 flex-1 truncate text-sm text-foreground">{document.fileName}</span>
@@ -1683,7 +1967,10 @@ export function CompanySubmit() {
                       ))}
                     </div>
                   )}
-                  <p className="mt-3 text-xs text-muted-foreground">{confirmedDocuments}/5 {copy.documentsCount}</p>
+                  <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl bg-[#faf6f9] px-4 py-3 text-xs text-muted-foreground">
+                    <span className="font-medium text-[#541249]">{essentialDocumentsCount}/4 {copy.essentialFiles}</span>
+                    <span>{documents.length} {copy.totalFiles}</span>
+                  </div>
                 </div>
 
                 <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[#541249]/15 bg-[#f8f0f6] p-5">

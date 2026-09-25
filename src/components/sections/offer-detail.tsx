@@ -28,6 +28,7 @@ import {
   ShieldCheck,
   TriangleAlert,
   FileText,
+  Download,
 } from "lucide-react";
 import type { OfferDTO, SimulationResult } from "@/lib/types";
 
@@ -48,10 +49,10 @@ export function OfferDetail() {
     formatDisplayMoney(value, displayCurrency, locale, compact);
   const text = locale === "fr" ? {
     missing: "Offre introuvable.", back: "Retour aux offres", low: "Montant insuffisant", login: "Connexion requise", loginText: "Connectez-vous pour enregistrer votre engagement.", failed: "Souscription échouée", saved: "Souscription enregistrée", savedText: "Votre engagement est réservé. Les instructions de paiement seront affichées dans votre espace.", paymentReady: "Ouverture du paiement sécurisé…", error: "Erreur", unknown: "Erreur inconnue",
-    equity: "Part de l’entreprise", debt: "Avec remboursement", conditions: "L’essentiel", overview: "Aperçu", details: "Le projet", subscribeNav: "Souscrire", invest: "Investir", demo: "Démonstration", simulate: "Simuler", demoText: "Cette opportunité est un exemple de présentation. Vous pouvez tester les montants, mais aucun versement ne sera demandé.", goal: "Objectif", raised: "Déjà réuni", offered: "Part proposée", return: "Gain prévu", duration: "Durée", long: "Long terme", months: "mois", of: "sur", investors: "investisseurs", from: "Dès", cap: "Maximum", close: "Clôture prévue", project: "Présentation du projet", company: "Entreprise", verified: "Entreprise vérifiée", legalForm: "Forme juridique", country: "Pays", activity: "Activité", founded: "Fondée en", budget: "Utilisation des fonds", allocation: "Répartition prévue", source: "Origine des futurs paiements", exit: " / de la revente", risks: "Risques à connaître", simulator: "Choisir mon investissement", amount: "Montant à investir", minimum: "Minimum", maximum: "maximum", share: "Votre part de", expected: "Montant prévu à terme", interest: "Gain estimé inclus", projected: "Estimation non garantie, soumise aux risques du projet.", enter: "Saisissez un montant pour voir l’estimation", secure: "Une souscription personnelle et protégée", secureText: "Les informations déjà vérifiées dans votre compte seront utilisées pour préparer votre souscription.", consentTitle: "Avant de continuer", acceptAgreement: "Je confirme le montant et j’accepte le bulletin de souscription.", acceptRisk: "J’ai lu les risques et j’accepte la possibilité de perdre tout ou partie du capital investi.", readTerms: "Lire les conditions", readRisk: "Lire les risques", consentRequired: "Confirmez le bulletin et la lecture des risques avant de continuer.", submitting: "Validation en cours…", submit: "Continuer vers le paiement", payment: "Vous pourrez payer par carte ou Mobile Money. Une confirmation vous sera toujours demandée avant le débit.", riskText: "L’investissement présente un risque de perte en capital. Les performances passées ne préjugent pas des performances futures.",
+    equity: "Part de l’entreprise", debt: "Avec remboursement", conditions: "L’essentiel", overview: "Aperçu", details: "Le projet", subscribeNav: "Souscrire", invest: "Investir", demo: "Démonstration", simulate: "Simuler", demoText: "Cette opportunité est un exemple de présentation. Vous pouvez tester les montants, mais aucun versement ne sera demandé.", goal: "Objectif", raised: "Déjà réuni", offered: "Part proposée", return: "Gain prévu", duration: "Durée", long: "Long terme", months: "mois", of: "sur", investors: "investisseurs", from: "Dès", cap: "Maximum", close: "Clôture prévue", project: "Présentation du projet", gallery: "Le projet en images", documents: "Documents à consulter", documentsHelp: "Retrouvez les informations mises à disposition avant votre décision.", download: "Télécharger", company: "Entreprise", verified: "Entreprise vérifiée", legalForm: "Forme juridique", country: "Pays", activity: "Activité", founded: "Fondée en", budget: "Utilisation des fonds", allocation: "Répartition prévue", source: "Origine des futurs paiements", exit: " / de la revente", risks: "Risques à connaître", simulator: "Choisir mon investissement", amount: "Montant à investir", minimum: "Minimum", maximum: "maximum", share: "Votre part de", expected: "Montant prévu à terme", interest: "Gain estimé inclus", projected: "Estimation non garantie, soumise aux risques du projet.", enter: "Saisissez un montant pour voir l’estimation", secure: "Une souscription personnelle et protégée", secureText: "Les informations déjà vérifiées dans votre compte seront utilisées pour préparer votre souscription.", consentTitle: "Avant de continuer", acceptAgreement: "Je confirme le montant et j’accepte le bulletin de souscription.", acceptRisk: "J’ai lu les risques et j’accepte la possibilité de perdre tout ou partie du capital investi.", readTerms: "Lire les conditions", readRisk: "Lire les risques", consentRequired: "Confirmez le bulletin et la lecture des risques avant de continuer.", submitting: "Validation en cours…", submit: "Continuer vers le paiement", payment: "Vous pourrez payer par carte ou Mobile Money. Une confirmation vous sera toujours demandée avant le débit.", riskText: "L’investissement présente un risque de perte en capital. Les performances passées ne préjugent pas des performances futures.",
   } : {
     missing: "Offer not found.", back: "Back to opportunities", low: "Amount too low", login: "Sign-in required", loginText: "Sign in to save your commitment.", failed: "Subscription failed", saved: "Subscription saved", savedText: "Your commitment is reserved. Payment instructions will appear in your account.", paymentReady: "Opening secure payment…", error: "Error", unknown: "Unknown error",
-    equity: "Company ownership", debt: "With repayment", conditions: "Key information", overview: "Overview", details: "The project", subscribeNav: "Subscribe", invest: "Invest", demo: "Demo", simulate: "Simulate", demoText: "This opportunity is a presentation example. You can try different amounts, but no payment will be requested.", goal: "Target", raised: "Already raised", offered: "Ownership offered", return: "Expected return", duration: "Duration", long: "Long term", months: "months", of: "of", investors: "investors", from: "From", cap: "Maximum", close: "Expected closing", project: "Project overview", company: "Company", verified: "Verified company", legalForm: "Legal form", country: "Country", activity: "Activity", founded: "Founded", budget: "Use of funds", allocation: "Planned allocation", source: "Source of future payments", exit: " / resale", risks: "Risks to know", simulator: "Choose my investment", amount: "Amount to invest", minimum: "Minimum", maximum: "maximum", share: "Your share of", expected: "Expected amount at term", interest: "Estimated gain included", projected: "Estimate only, not guaranteed and subject to project risks.", enter: "Enter an amount to view the estimate", secure: "A personal, protected subscription", secureText: "Information already verified in your account will be used to prepare your subscription.", consentTitle: "Before continuing", acceptAgreement: "I confirm the amount and accept the subscription form.", acceptRisk: "I have read the risks and accept that I may lose some or all of the capital invested.", readTerms: "Read the terms", readRisk: "Read the risks", consentRequired: "Confirm the form and that you have read the risks before continuing.", submitting: "Approving…", submit: "Continue to payment", payment: "You can pay by card or Mobile Money. You will always be asked to confirm before any debit.", riskText: "Investing involves a risk of capital loss. Past performance does not predict future performance.",
+    equity: "Company ownership", debt: "With repayment", conditions: "Key information", overview: "Overview", details: "The project", subscribeNav: "Subscribe", invest: "Invest", demo: "Demo", simulate: "Simulate", demoText: "This opportunity is a presentation example. You can try different amounts, but no payment will be requested.", goal: "Target", raised: "Already raised", offered: "Ownership offered", return: "Expected return", duration: "Duration", long: "Long term", months: "months", of: "of", investors: "investors", from: "From", cap: "Maximum", close: "Expected closing", project: "Project overview", gallery: "The project in pictures", documents: "Documents to review", documentsHelp: "Review the information made available before making your decision.", download: "Download", company: "Company", verified: "Verified company", legalForm: "Legal form", country: "Country", activity: "Activity", founded: "Founded", budget: "Use of funds", allocation: "Planned allocation", source: "Source of future payments", exit: " / resale", risks: "Risks to know", simulator: "Choose my investment", amount: "Amount to invest", minimum: "Minimum", maximum: "maximum", share: "Your share of", expected: "Expected amount at term", interest: "Estimated gain included", projected: "Estimate only, not guaranteed and subject to project risks.", enter: "Enter an amount to view the estimate", secure: "A personal, protected subscription", secureText: "Information already verified in your account will be used to prepare your subscription.", consentTitle: "Before continuing", acceptAgreement: "I confirm the amount and accept the subscription form.", acceptRisk: "I have read the risks and accept that I may lose some or all of the capital invested.", readTerms: "Read the terms", readRisk: "Read the risks", consentRequired: "Confirm the form and that you have read the risks before continuing.", submitting: "Approving…", submit: "Continue to payment", payment: "You can pay by card or Mobile Money. You will always be asked to confirm before any debit.", riskText: "Investing involves a risk of capital loss. Past performance does not predict future performance.",
   };
 
   const { data, loading } = useFetch<{ offer: OfferDTO }>(
@@ -216,7 +217,25 @@ export function OfferDetail() {
   };
 
   const company = offer.project.company;
+  const gallery = (offer.project.documents ?? []).filter((document) => document.type === "gallery");
+  const investorDocuments = (offer.project.documents ?? []).filter(
+    (document) => !["cover", "gallery"].includes(document.type)
+  );
   const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const openSimulator = () => {
+    const simulator = document.getElementById("subscription-simulator");
+    if (!simulator) return;
+    simulator.scrollIntoView({ behavior: "smooth", block: "start" });
+    simulator.animate(
+      [
+        { transform: "scale(1)", filter: "drop-shadow(0 0 0 rgba(84,18,73,0))" },
+        { transform: "scale(1.012)", filter: "drop-shadow(0 18px 28px rgba(84,18,73,.18))" },
+        { transform: "scale(1)", filter: "drop-shadow(0 0 0 rgba(84,18,73,0))" },
+      ],
+      { duration: 720, easing: "ease-out" }
+    );
+    window.setTimeout(() => document.getElementById("amount")?.focus({ preventScroll: true }), 420);
+  };
 
   return (
     <div className="reveal-in overflow-x-clip pb-36 lg:pb-10">
@@ -288,7 +307,7 @@ export function OfferDetail() {
       <nav className="sticky top-[4.05rem] z-30 mb-4 flex gap-1.5 overflow-x-auto rounded-2xl border border-[#541249]/10 bg-[#fffefd]/94 p-1.5 shadow-[0_10px_30px_rgba(56,12,49,.07)] backdrop-blur-xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mb-5 lg:static lg:w-fit" aria-label={locale === "fr" ? "Sections de l’opportunité" : "Opportunity sections"}>
         <Button type="button" variant="ghost" size="sm" onClick={() => scrollTo("offer-overview")} className="shrink-0 rounded-xl">{text.overview}</Button>
         <Button type="button" variant="ghost" size="sm" onClick={() => scrollTo("offer-project")} className="shrink-0 rounded-xl">{text.details}</Button>
-        <Button type="button" size="sm" onClick={() => scrollTo("subscription-simulator")} className="btn-nexora shrink-0 rounded-xl">{offer.isDemo ? text.simulate : text.subscribeNav}</Button>
+        <Button type="button" size="sm" onClick={openSimulator} className="btn-nexora shrink-0 rounded-xl">{offer.isDemo ? text.simulate : text.subscribeNav}</Button>
       </nav>
 
       <div className="grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-3">
@@ -416,6 +435,58 @@ export function OfferDetail() {
               <p className="text-sm leading-relaxed text-foreground/90">
                 {offer.project.longDescription || offer.project.description}
               </p>
+              {gallery.length > 0 && (
+                <div className="mt-5">
+                  <p className="mb-3 text-sm font-semibold text-foreground">{text.gallery}</p>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {gallery.map((document, index) => (
+                      <div
+                        key={document.id}
+                        className={
+                          "relative overflow-hidden rounded-xl bg-[#ead7e6] " +
+                          (index === 0 && gallery.length > 2 ? "col-span-2 aspect-[2/1]" : "aspect-[4/3]")
+                        }
+                      >
+                        <Image
+                          src={document.fileUrl}
+                          alt={document.fileName}
+                          fill
+                          unoptimized
+                          className="object-cover transition-transform duration-500 hover:scale-[1.03]"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {investorDocuments.length > 0 && (
+                <div className="mt-6 border-t border-[#541249]/10 pt-5">
+                  <p className="text-sm font-semibold text-foreground">{text.documents}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{text.documentsHelp}</p>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    {investorDocuments.map((document) => (
+                      <a
+                        key={document.id}
+                        href={`${document.fileUrl}?download=1`}
+                        className="group flex min-w-0 items-center gap-3 rounded-xl border border-[#541249]/10 bg-[#fcfafb] p-3 transition-colors hover:border-[#541249]/25 hover:bg-[#f8f0f6]"
+                      >
+                        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-[#541249] shadow-sm">
+                          <FileText className="h-4 w-4" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-medium text-foreground">{document.fileName}</span>
+                          <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                            {document.fileName.split(".").pop()?.toUpperCase() || "DOCUMENT"}
+                            {document.size ? ` · ${(document.size / 1024 / 1024).toFixed(1)} Mo` : ""}
+                          </span>
+                        </span>
+                        <span className="sr-only">{text.download}</span>
+                        <Download className="h-4 w-4 shrink-0 text-[#541249] transition-transform group-hover:translate-y-0.5" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -707,7 +778,7 @@ export function OfferDetail() {
             <p className="text-[10px] font-semibold uppercase tracking-[.12em] text-white/55">{text.from}</p>
             <p className="tnum truncate text-sm font-extrabold">{money(minInv, true)}</p>
           </div>
-          <Button type="button" onClick={() => scrollTo("subscription-simulator")} className="btn-nexora min-h-11 shrink-0 rounded-xl px-5">{offer.isDemo ? text.simulate : text.invest}</Button>
+          <Button type="button" onClick={openSimulator} className="btn-nexora min-h-11 shrink-0 rounded-xl px-5">{offer.isDemo ? text.simulate : text.invest}</Button>
         </div>
       </div>
     </div>

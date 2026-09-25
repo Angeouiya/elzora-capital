@@ -15,6 +15,7 @@ import {
   settleEquityDividend,
   type EquityDividendSettlement,
 } from "@/lib/equity-dividend-settlement";
+import { ensureInvestmentContract } from "@/lib/investment-contract";
 
 interface InvestmentPaymentRow extends Record<string, unknown> {
   id: string;
@@ -115,6 +116,7 @@ async function handleInvestmentWebhook(
       );
     }
     if (investment.status === "confirmed") {
+      await issueContractWithoutBlocking(database, investment.id);
       await finalizeFundedOffer(investment.offerId);
       return NextResponse.json({ received: true, idempotent: true });
     }
@@ -128,11 +130,13 @@ async function handleInvestmentWebhook(
         .bind(investment.id)
         .first<{ status: string }>();
       if (current?.status === "confirmed") {
+        await issueContractWithoutBlocking(database, investment.id);
         await finalizeFundedOffer(investment.offerId);
         return NextResponse.json({ received: true, idempotent: true });
       }
       return NextResponse.json({ error: "Transaction à rapprocher" }, { status: 409 });
     }
+    await issueContractWithoutBlocking(database, investment.id);
     await finalizeFundedOffer(investment.offerId);
     return NextResponse.json({ received: true, status: "confirmed" });
   }
@@ -143,6 +147,18 @@ async function handleInvestmentWebhook(
   }
 
   return NextResponse.json({ received: true, status: status || "pending" });
+}
+
+async function issueContractWithoutBlocking(database: D1Database, investmentId: string) {
+  try {
+    await ensureInvestmentContract(database, investmentId);
+  } catch (error) {
+    console.error(
+      "investment_contract_issue_failed",
+      investmentId,
+      error instanceof Error ? error.message : "unknown_error"
+    );
+  }
 }
 
 async function handleCompanyPaymentWebhook(

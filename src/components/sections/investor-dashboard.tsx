@@ -50,6 +50,7 @@ import {
   FileCheck2,
   Loader2,
   Undo2,
+  FileDown,
 } from "lucide-react";
 
 const CHART_COLORS = ["#541249", "#7A246C", "#250820", "#A55B98", "#C62828"];
@@ -99,6 +100,11 @@ interface DashboardInvestment {
   remainingDue: number | null;
   availableBalance: number;
   projectionLabel: string | null;
+  contract: {
+    number: string | null;
+    issuedAt: string | null;
+    downloadUrl: string;
+  } | null;
   equityPosition: {
     status: string;
     ownershipPct: number;
@@ -755,6 +761,39 @@ export function InvestorDashboard() {
                             </span>
                           </div>
                         )}
+                      </div>
+                    )}
+
+                    {inv.status === "confirmed" && inv.contract && (
+                      <div
+                        className="mt-3 flex flex-col gap-3 rounded-xl border border-[#541249]/15 bg-[linear-gradient(135deg,#fbf7fa,#f3e7f0)] p-3 sm:flex-row sm:items-center sm:justify-between"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <div className="flex min-w-0 items-start gap-3">
+                          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-[#541249] shadow-sm">
+                            <FileCheck2 className="h-4 w-4" />
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-foreground">
+                              {en ? "Agreement and proof" : "Contrat et preuve"}
+                            </p>
+                            <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                              {inv.contract.number
+                                ? `${en ? "Reference" : "Référence"} ${inv.contract.number}`
+                                : en
+                                  ? "Ready to be issued and recorded"
+                                  : "Prêt à être émis et enregistré"}
+                            </p>
+                          </div>
+                        </div>
+                        <a
+                          href={`${inv.contract.downloadUrl}?locale=${locale}`}
+                          className="inline-flex h-9 shrink-0 items-center justify-center rounded-full bg-[#541249] px-4 text-xs font-semibold text-white shadow-sm transition-transform hover:-translate-y-0.5"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <FileDown className="mr-2 h-3.5 w-3.5" />
+                          {en ? "Download agreement" : "Télécharger le contrat"}
+                        </a>
                       </div>
                     )}
 

@@ -41,7 +41,19 @@ export interface ProjectDTO {
   risksIdentified: string;
   repaymentSource: string;
   budgetDetail: string;
+  documents?: ProjectDocumentDTO[];
   company: CompanyDTO;
+}
+
+export interface ProjectDocumentDTO {
+  id: string;
+  projectId: string;
+  type: string;
+  fileName: string;
+  fileUrl: string;
+  contentType?: string | null;
+  size?: number | null;
+  uploadedAt: string;
 }
 
 export interface Project extends ProjectDTO {

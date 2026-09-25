@@ -3,9 +3,13 @@ import { requireUser } from "@/lib/auth";
 import { getD1, isoNow, requestIp } from "@/lib/d1";
 import { getKycBucket, safeFileName, sha256Hex } from "@/lib/kyc";
 import {
+  PROJECT_MAX_DOCUMENTS,
+  PROJECT_MAX_GALLERY_IMAGES,
   PROJECT_DOCUMENT_KINDS,
+  PROJECT_MULTI_FILE_KINDS,
   canManageProjectDocuments,
   hasValidProjectFileMagic,
+  isInvestorProjectDocumentKind,
   isEditableProjectStatus,
   validateProjectFile,
   type ProjectDocumentKind,
@@ -112,6 +116,38 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
   const validationError = validateProjectFile(fileValue, kind as ProjectDocumentKind);
   if (validationError) return NextResponse.json({ error: validationError }, { status: 400, headers: noStore });
 
+  const replaceRequested = form.get("replace") !== "0";
+  const replaceExisting =
+    replaceRequested && !PROJECT_MULTI_FILE_KINDS.includes(kind as "gallery" | "other");
+  const previous = replaceExisting
+    ? await database
+        .prepare(`SELECT id, storageKey FROM ProjectDocument WHERE projectId = ? AND type = ?`)
+        .bind(projectId, kind)
+        .all<{ id: string; storageKey: string | null }>()
+    : { results: [] as Array<{ id: string; storageKey: string | null }> };
+  const counts = await database
+    .prepare(
+      `SELECT COUNT(*) AS total,
+              SUM(CASE WHEN type = 'gallery' THEN 1 ELSE 0 END) AS galleryTotal
+       FROM ProjectDocument WHERE projectId = ?`
+    )
+    .bind(projectId)
+    .first<{ total: number; galleryTotal: number }>();
+  const totalDocuments = Number(counts?.total ?? 0);
+  const galleryTotal = Number(counts?.galleryTotal ?? 0);
+  if (totalDocuments >= PROJECT_MAX_DOCUMENTS && (!replaceExisting || previous.results.length === 0)) {
+    return NextResponse.json(
+      { error: `Ce dossier contient déjà ${PROJECT_MAX_DOCUMENTS} fichiers, la limite autorisée.` },
+      { status: 409, headers: noStore }
+    );
+  }
+  if (kind === "gallery" && galleryTotal >= PROJECT_MAX_GALLERY_IMAGES) {
+    return NextResponse.json(
+      { error: `La galerie est limitée à ${PROJECT_MAX_GALLERY_IMAGES} photos.` },
+      { status: 409, headers: noStore }
+    );
+  }
+
   const bucket = getKycBucket();
   if (!bucket) {
     return NextResponse.json(
@@ -133,14 +169,6 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
   const checksum = await sha256Hex(buffer);
   const fileUrl = `/api/projects/documents/${documentId}`;
   const now = isoNow();
-
-  const replaceExisting = kind !== "other";
-  const previous = replaceExisting
-    ? await database
-        .prepare(`SELECT id, storageKey FROM ProjectDocument WHERE projectId = ? AND type = ?`)
-        .bind(projectId, kind)
-        .all<{ id: string; storageKey: string | null }>()
-    : { results: [] as Array<{ id: string; storageKey: string | null }> };
 
   try {
     await bucket.put(storageKey, buffer, {
@@ -171,7 +199,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
           fileValue.type,
           fileValue.size,
           checksum,
-          kind === "cover" ? 1 : 0,
+          kind === "cover" || kind === "gallery" || isInvestorProjectDocumentKind(kind) ? 1 : 0,
           now
         ),
       database
@@ -217,7 +245,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
         fileUrl,
         contentType: fileValue.type,
         size: fileValue.size,
-        isPublic: kind === "cover",
+        isPublic: kind === "cover" || kind === "gallery" || isInvestorProjectDocumentKind(kind),
         uploadedAt: now,
       },
       coverUrl: kind === "cover" ? fileUrl : null,

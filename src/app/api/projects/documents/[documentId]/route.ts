@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import { requireAdmin, requireUser } from "@/lib/auth";
 import { getD1, isoNow, requestIp } from "@/lib/d1";
 import { getKycBucket } from "@/lib/kyc";
-import { canManageProjectDocuments, isEditableProjectStatus } from "@/lib/project-documents";
+import {
+  canManageProjectDocuments,
+  isEditableProjectStatus,
+  isInvestorProjectDocumentKind,
+} from "@/lib/project-documents";
 
 interface DocumentAccessRow extends Record<string, unknown> {
   id: string;
@@ -16,6 +20,8 @@ interface DocumentAccessRow extends Record<string, unknown> {
   contentType: string | null;
   size: number | null;
   isPublic: number;
+  offerId: string | null;
+  offerVisibility: string | null;
 }
 
 const publicProjectStatuses = new Set([
@@ -33,9 +39,11 @@ async function getDocument(database: D1Database, documentId: string) {
     .prepare(
       `SELECT d.id, d.projectId, d.type, d.storageKey, d.fileName, d.fileUrl,
               d.contentType, d.size, d.isPublic,
-              p.companyId, p.status AS projectStatus
+              p.companyId, p.status AS projectStatus,
+              o.id AS offerId, o.visibility AS offerVisibility
        FROM ProjectDocument d
        JOIN Project p ON p.id = d.projectId
+       LEFT JOIN Offer o ON o.projectId = p.id
        WHERE d.id = ? LIMIT 1`
     )
     .bind(documentId)
@@ -50,10 +58,25 @@ export async function GET(req: Request, context: { params: Promise<{ documentId:
     return NextResponse.json({ error: "Fichier introuvable" }, { status: 404 });
   }
 
-  const publicCover = Boolean(document.isPublic) && document.type === "cover" && publicProjectStatuses.has(document.projectStatus);
+  const distributionFile =
+    Boolean(document.isPublic) &&
+    (["cover", "gallery"].includes(document.type) || isInvestorProjectDocumentKind(document.type)) &&
+    publicProjectStatuses.has(document.projectStatus);
+  const publicDistribution = distributionFile && document.offerVisibility === "public";
+  const downloadRequested = new URL(req.url).searchParams.get("download") === "1";
   let actorType = "public";
   let actorId = "anonymous";
-  if (!publicCover) {
+  if (publicDistribution) {
+    if (downloadRequested) {
+      try {
+        const session = await requireUser(req);
+        actorType = "user";
+        actorId = session.userId;
+      } catch {
+        // Public offer documents remain accessible without an account.
+      }
+    }
+  } else {
     let allowed = false;
     try {
       const session = await requireUser(req);
@@ -62,6 +85,16 @@ export async function GET(req: Request, context: { params: Promise<{ documentId:
         .bind(document.companyId, session.userId)
         .first<{ id: string }>();
       allowed = Boolean(membership);
+      if (!allowed && distributionFile && document.offerVisibility === "restricted" && document.offerId) {
+        const invitation = await database
+          .prepare(
+            `SELECT id FROM PrivateOfferInvitation
+             WHERE offerId = ? AND userId = ? AND status = 'accepted' LIMIT 1`
+          )
+          .bind(document.offerId, session.userId)
+          .first<{ id: string }>();
+        allowed = Boolean(invitation);
+      }
       actorType = "user";
       actorId = session.userId;
     } catch {
@@ -82,31 +115,39 @@ export async function GET(req: Request, context: { params: Promise<{ documentId:
   const object = await bucket.get(document.storageKey);
   if (!object) return NextResponse.json({ error: "Fichier introuvable" }, { status: 404 });
 
-  if (!publicCover) {
+  if (!publicDistribution || downloadRequested) {
     const now = isoNow();
     await database
       .prepare(
         `INSERT INTO AuditLog
            (id, actorType, actorId, action, entityType, entityId, metadata, ipAddress, createdAt)
-         VALUES (?, ?, ?, 'project.document_viewed', 'ProjectDocument', ?, ?, ?, ?)`
+         VALUES (?, ?, ?, ?, 'ProjectDocument', ?, ?, ?, ?)`
       )
       .bind(
         crypto.randomUUID(),
         actorType,
         actorId,
+        downloadRequested ? "project.document_downloaded" : "project.document_viewed",
         document.id,
-        JSON.stringify({ projectId: document.projectId }),
+        JSON.stringify({ projectId: document.projectId, type: document.type }),
         requestIp(req),
         now
       )
       .run();
   }
 
+  const officeDocument = [
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/msword",
+    "application/vnd.ms-excel",
+  ].includes(document.contentType);
+  const disposition = downloadRequested || officeDocument ? "attachment" : "inline";
   return new Response(object.body, {
     headers: {
       "Content-Type": document.contentType,
-      "Content-Disposition": `inline; filename="${document.fileName.replace(/[\r\n\"]/g, "-")}"`,
-      "Cache-Control": publicCover ? "public, max-age=3600" : "private, no-store, max-age=0",
+      "Content-Disposition": `${disposition}; filename="${document.fileName.replace(/[\r\n\"]/g, "-")}"`,
+      "Cache-Control": publicDistribution ? "public, max-age=3600" : "private, no-store, max-age=0",
       "X-Content-Type-Options": "nosniff",
     },
   });

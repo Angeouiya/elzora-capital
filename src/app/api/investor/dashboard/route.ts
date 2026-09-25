@@ -62,6 +62,8 @@ interface InvestmentDashboardRow extends Record<string, unknown> {
   equityIssuedAt: string | null;
   equityIssuanceStatus: string | null;
   equityShareClass: string | null;
+  contractNumber: string | null;
+  contractIssuedAt: string | null;
 }
 
 interface NotificationRow extends Record<string, unknown> {
@@ -114,6 +116,7 @@ export async function GET(req: Request) {
            ea.status AS equityAllocationStatus,
            ea.ownershipMicroPct, ea.certificateNo, ea.issuedAt AS equityIssuedAt,
            ei.status AS equityIssuanceStatus, ei.shareClass AS equityShareClass,
+           ic.contractNumber, ic.issuedAt AS contractIssuedAt,
            COALESCE((
              SELECT SUM(d.amount) FROM Distribution d
              WHERE d.investmentId = i.id AND d.status = 'available'
@@ -128,6 +131,7 @@ export async function GET(req: Request) {
          JOIN Offer o ON o.id = i.offerId
          LEFT JOIN EquityAllocation ea ON ea.investmentId = i.id
          LEFT JOIN EquityIssuance ei ON ei.id = ea.issuanceId
+         LEFT JOIN InvestmentContract ic ON ic.investmentId = i.id
          WHERE i.investorId = ?
          ORDER BY i.createdAt DESC`
       )
@@ -227,6 +231,14 @@ export async function GET(req: Request) {
       remainingDue,
       availableBalance,
       projectionLabel,
+      contract:
+        row.status === "confirmed"
+          ? {
+              number: row.contractNumber,
+              issuedAt: row.contractIssuedAt,
+              downloadUrl: `/api/investor/investments/${row.id}/contract`,
+            }
+          : null,
       equityPosition:
         row.instrumentType === "equity"
           ? {
