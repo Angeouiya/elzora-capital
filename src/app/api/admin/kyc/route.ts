@@ -26,6 +26,15 @@ interface KycCaseRow extends Record<string, unknown> {
   reviewedBy: string | null;
   decidedBy: string | null;
   decisionReason: string | null;
+  investmentExperience: string | null;
+  investmentObjective: string | null;
+  investmentHorizon: string | null;
+  investableCapitalRange: string | null;
+  lossCapacity: string | null;
+  riskComfort: string | null;
+  investorAttentionLevel: string | null;
+  investorProfileCompletedAt: string | null;
+  investorProfileExpiresAt: string | null;
 }
 
 interface KycDocumentRow extends Record<string, unknown> {
@@ -58,9 +67,17 @@ export async function GET(req: Request) {
               k.identityType, k.identityNumberLast4, k.documentCountry, k.expiresAt,
               k.residentialAddress, k.city, k.occupation, k.sourceOfFunds,
               k.politicallyExposed, k.actingForSelf, k.reviewedAt, k.reviewedBy,
-              k.decidedBy, k.decisionReason
+              k.decidedBy, k.decisionReason,
+              ip.experience AS investmentExperience,
+              ip.objective AS investmentObjective,
+              ip.horizon AS investmentHorizon,
+              ip.investableCapitalRange, ip.lossCapacity, ip.riskComfort,
+              ip.attentionLevel AS investorAttentionLevel,
+              ip.completedAt AS investorProfileCompletedAt,
+              ip.expiresAt AS investorProfileExpiresAt
        FROM User u
        LEFT JOIN KycProfile k ON k.userId = u.id
+       LEFT JOIN InvestorProfile ip ON ip.userId = u.id
        WHERE (? IS NULL OR u.id = ?)
          AND (k.userId IS NOT NULL OR u.kycStatus != 'incomplete')
        ORDER BY CASE u.kycStatus WHEN 'pending' THEN 0 WHEN 'review' THEN 1 ELSE 2 END,

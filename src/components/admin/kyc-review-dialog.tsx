@@ -45,6 +45,15 @@ interface KycCase {
   reviewedBy: string | null;
   decidedBy: string | null;
   decisionReason: string | null;
+  investmentExperience: string | null;
+  investmentObjective: string | null;
+  investmentHorizon: string | null;
+  investableCapitalRange: string | null;
+  lossCapacity: string | null;
+  riskComfort: string | null;
+  investorAttentionLevel: string | null;
+  investorProfileCompletedAt: string | null;
+  investorProfileExpiresAt: string | null;
   documents: KycDocument[];
 }
 
@@ -131,6 +140,29 @@ export function KycReviewDialog({ userId, open, onOpenChange, onChanged }: {
               <Info label="Agit pour son compte" value={item.actingForSelf ? "Oui" : "Non"} />
             </div>
 
+            <div className="rounded-2xl border border-[#E8D7E5] bg-[#FCF8FB] p-4">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-semibold">Projet d’investissement</p>
+                <Badge variant="outline" className={item.investorProfileCompletedAt ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-900"}>
+                  {item.investorProfileCompletedAt ? "Complété" : "Non complété"}
+                </Badge>
+              </div>
+              {item.investorProfileCompletedAt ? (
+                <div className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+                  <Info label="Expérience" value={labelInvestorAnswer("experience", item.investmentExperience)} />
+                  <Info label="Objectif" value={labelInvestorAnswer("objective", item.investmentObjective)} />
+                  <Info label="Horizon" value={labelInvestorAnswer("horizon", item.investmentHorizon)} />
+                  <Info label="Capital déclaré disponible" value={labelInvestorAnswer("capital", item.investableCapitalRange)} />
+                  <Info label="Perte supportable" value={labelInvestorAnswer("loss", item.lossCapacity)} />
+                  <Info label="Approche choisie" value={labelInvestorAnswer("risk", item.riskComfort)} />
+                  <Info label="Accompagnement" value={item.investorAttentionLevel === "heightened" ? "Explications renforcées" : "Standard"} />
+                  <Info label="À actualiser avant le" value={item.investorProfileExpiresAt ? new Date(item.investorProfileExpiresAt).toLocaleDateString("fr-FR") : "Non renseigné"} />
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">La personne n’a pas encore répondu aux six questions préalables à une souscription.</p>
+              )}
+            </div>
+
             <div>
               <p className="mb-2 text-sm font-semibold">Justificatifs</p>
               <div className="grid gap-2 sm:grid-cols-2">
@@ -209,4 +241,16 @@ function labelSource(value: string) {
 }
 function labelDocument(value: string) {
   return ({ identity_front: "Pièce — recto", identity_back: "Pièce — verso", proof_address: "Justificatif de domicile" } as Record<string, string>)[value] || value;
+}
+function labelInvestorAnswer(group: "experience" | "objective" | "horizon" | "capital" | "loss" | "risk", value: string | null) {
+  if (!value) return "Non renseigné";
+  const labels: Record<string, Record<string, string>> = {
+    experience: { first_time: "Première expérience", occasional: "Quelques investissements", experienced: "Investit régulièrement" },
+    objective: { income: "Recevoir des revenus", growth: "Faire grandir le capital", diversify: "Diversifier l’épargne" },
+    horizon: { under_1y: "Moins d’un an", one_to_three: "1 à 3 ans", three_to_five: "3 à 5 ans", over_five: "Plus de 5 ans" },
+    capital: { under_100k: "Moins de 100 000 FCFA", "100k_500k": "100 000 à 500 000 FCFA", "500k_2m": "500 000 à 2 000 000 FCFA", "2m_10m": "2 000 000 à 10 000 000 FCFA", over_10m: "Plus de 10 000 000 FCFA" },
+    loss: { limited: "Très limitée", partial: "Une partie", substantial: "Une grande partie" },
+    risk: { cautious: "Prudente", balanced: "Équilibrée", dynamic: "Dynamique" },
+  };
+  return labels[group][value] || value;
 }

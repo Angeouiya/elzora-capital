@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PayoutDialog } from "@/components/investor/payout-dialog";
 import { KycDialog } from "@/components/investor/kyc-dialog";
+import { InvestorProfileDialog } from "@/components/investor/investor-profile-dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -61,6 +62,13 @@ interface DashboardUser {
   country: string;
   language: string;
   kycStatus: string;
+  investmentProfile: {
+    complete: boolean;
+    needsRefresh: boolean;
+    attentionLevel: string | null;
+    completedAt: string | null;
+    expiresAt: string | null;
+  };
 }
 
 interface DashboardInvestment {
@@ -280,6 +288,7 @@ export function InvestorDashboard() {
   const [reloadKey, setReloadKey] = useState(0);
   const [payoutOpen, setPayoutOpen] = useState(false);
   const [kycOpen, setKycOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<DashboardInvestment | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
@@ -343,6 +352,18 @@ export function InvestorDashboard() {
     if (!userEmail) return;
     void reload();
   }, [userEmail, reloadKey, reload]);
+
+  useEffect(() => {
+    if (!userEmail) return;
+    if (window.sessionStorage.getItem("nexora-open-kyc") === "1") {
+      window.sessionStorage.removeItem("nexora-open-kyc");
+      setKycOpen(true);
+    }
+    if (window.sessionStorage.getItem("nexora-open-investor-profile") === "1") {
+      window.sessionStorage.removeItem("nexora-open-investor-profile");
+      setProfileOpen(true);
+    }
+  }, [userEmail]);
 
   if (!userEmail) return <NotLoggedIn />;
 
@@ -500,6 +521,34 @@ export function InvestorDashboard() {
         </div>
       </div>
 
+      {!user.investmentProfile.complete ? (
+        <div className="mb-5 flex flex-col gap-4 rounded-[1.35rem] border border-[#541249]/12 bg-gradient-to-r from-[#fbf6fa] to-white p-4 shadow-[0_14px_40px_-30px_rgba(84,18,73,.55)] sm:flex-row sm:items-center sm:justify-between sm:p-5">
+          <div className="flex min-w-0 items-start gap-3.5">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#541249] text-white">
+              <FileCheck2 className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="text-sm font-bold text-foreground">
+                {user.investmentProfile.needsRefresh
+                  ? en ? "Update your investment plans" : "Actualisez votre projet d’investissement"
+                  : en ? "Before your first investment" : "Avant votre première souscription"}
+              </p>
+              <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">
+                {en
+                  ? "Answer six simple questions so the opportunities and amounts shown remain suited to your situation."
+                  : "Répondez à six questions simples afin que les opportunités et les montants proposés restent adaptés à votre situation."}
+              </p>
+            </div>
+          </div>
+          <Button className="btn-nexora w-full shrink-0 sm:w-auto" size="sm" onClick={() => setProfileOpen(true)}>
+            {user.investmentProfile.needsRefresh
+              ? en ? "Update my answers" : "Mettre à jour"
+              : en ? "Answer the 6 questions" : "Répondre aux 6 questions"}
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </div>
+      ) : null}
+
       {/* Prochaine étape banner — pending investments */}
       {pendingCount > 0 && (
         <div className="private-notice mt-6 flex flex-col items-start gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -541,7 +590,7 @@ export function InvestorDashboard() {
                   {en ? "You do not have any investments yet" : "Vous n’avez encore aucun investissement"}
                 </p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  {en ? `Explore available opportunities and invest from ${money(10_000)}.` : `Explorez les offres disponibles et souscrivez à partir de ${money(10_000)}.`}
+                  {en ? "Discover carefully selected companies and choose the opportunity that suits you." : "Découvrez des entreprises soigneusement sélectionnées et choisissez l’opportunité qui vous correspond."}
                 </p>
               </div>
               <Button
@@ -896,6 +945,13 @@ export function InvestorDashboard() {
         locale={locale}
         status={user.kycStatus}
         onSubmitted={() => setReloadKey((key) => key + 1)}
+      />
+
+      <InvestorProfileDialog
+        open={profileOpen}
+        onOpenChange={setProfileOpen}
+        locale={locale}
+        onSaved={() => setReloadKey((key) => key + 1)}
       />
 
       <PayoutDialog

@@ -16,6 +16,10 @@ import {
   createSubscriptionEvidence,
   type SubscriptionOfferTerms,
 } from "@/lib/subscription-evidence";
+import {
+  declaredInvestableCapitalMax,
+  isInvestorProfileCurrent,
+} from "@/lib/investor-profile";
 
 interface OfferTermsRow extends SubscriptionOfferTerms {
   status: string;
@@ -30,6 +34,9 @@ interface InvestorRow {
   kycStatus: string;
   phone: string | null;
   country: string;
+  profileCompletedAt: string | null;
+  profileExpiresAt: string | null;
+  investableCapitalRange: string | null;
 }
 
 interface InvestmentRow extends Record<string, unknown> {
@@ -159,7 +166,14 @@ export async function POST(
   const [offer, investor] = await Promise.all([
     findOffer(id),
     database
-      .prepare(`SELECT firstName, lastName, email, phone, country, kycStatus FROM User WHERE id = ? LIMIT 1`)
+      .prepare(
+        `SELECT u.firstName, u.lastName, u.email, u.phone, u.country, u.kycStatus,
+                ip.completedAt AS profileCompletedAt, ip.expiresAt AS profileExpiresAt,
+                ip.investableCapitalRange
+         FROM User u
+         LEFT JOIN InvestorProfile ip ON ip.userId = u.id
+         WHERE u.id = ? LIMIT 1`
+      )
       .bind(session.userId)
       .first<InvestorRow>(),
   ]);
@@ -172,6 +186,16 @@ export async function POST(
         error: "Vérification d'identité requise",
         code: "KYC_REQUIRED",
         message: "Finalisez la vérification de votre identité avant de souscrire.",
+      },
+      { status: 403 }
+    );
+  }
+  if (!isInvestorProfileCurrent({ completedAt: investor.profileCompletedAt, expiresAt: investor.profileExpiresAt })) {
+    return NextResponse.json(
+      {
+        error: "Votre projet d’investissement doit être complété avant de souscrire.",
+        code: "INVESTOR_PROFILE_REQUIRED",
+        message: "Répondez à six questions simples depuis votre espace personnel, puis reprenez votre souscription.",
       },
       { status: 403 }
     );
@@ -214,6 +238,33 @@ export async function POST(
         { status: 409 }
       );
     }
+  }
+
+  const capitalRow = await database
+    .prepare(
+      `SELECT COALESCE(SUM(amount), 0) AS activeCapital
+       FROM Investment
+       WHERE investorId = ? AND status IN ('pending_payment', 'payment_pending', 'confirmed')`
+    )
+    .bind(session.userId)
+    .first<{ activeCapital: number }>();
+  const activeCapital = Number(capitalRow?.activeCapital || 0);
+  const projectedCapital = existing ? activeCapital : activeCapital + amount;
+  const declaredCapacityMax = declaredInvestableCapitalMax(investor.investableCapitalRange);
+  if (declaredCapacityMax !== null && projectedCapital > declaredCapacityMax) {
+    return NextResponse.json(
+      {
+        error: "Ce montant dépasse la somme que vous avez indiquée comme disponible pour investir.",
+        code: "AMOUNT_EXCEEDS_DECLARED_CAPACITY",
+        message: "Choisissez un montant plus faible ou actualisez vos réponses depuis votre espace personnel.",
+        declaredCapacityMax,
+        projectedCapital,
+      },
+      { status: 422 }
+    );
+  }
+
+  if (existing) {
     try {
       const signedInvestment = await ensureSubscriptionEvidence(
         req,

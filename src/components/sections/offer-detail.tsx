@@ -43,6 +43,7 @@ export function OfferDetail() {
   const displayCurrency = useAppStore((s) => s.displayCurrency);
   const userEmail = useAppStore((s) => s.userEmail);
   const { toast } = useToast();
+  const en = locale === "en";
   const money = (value: bigint | number, compact = false) =>
     formatDisplayMoney(value, displayCurrency, locale, compact);
   const text = locale === "fr" ? {
@@ -145,6 +146,9 @@ export function OfferDetail() {
       });
       const json = (await res.json()) as {
         error?: string;
+        message?: string;
+        code?: string;
+        declaredCapacityMax?: number;
         payment?: { checkoutUrl?: string; status?: string };
       };
       if (res.status === 401) {
@@ -155,8 +159,36 @@ export function OfferDetail() {
         setView("login");
         return;
       }
+      if (json.code === "KYC_REQUIRED") {
+        window.sessionStorage.setItem("nexora-open-kyc", "1");
+        toast({
+          title: en ? "One last identity check" : "Une dernière vérification d’identité",
+          description: en ? "Complete the secure check from your personal space, then return to this opportunity." : "Finalisez le contrôle sécurisé depuis votre espace personnel, puis revenez sur cette opportunité.",
+        });
+        setView("investor_dashboard");
+        return;
+      }
+      if (json.code === "INVESTOR_PROFILE_REQUIRED") {
+        window.sessionStorage.setItem("nexora-open-investor-profile", "1");
+        toast({
+          title: en ? "Tell us about your investment plans" : "Parlez-nous de votre projet d’investissement",
+          description: en ? "Six simple questions are required before your first investment." : "Six questions simples sont nécessaires avant votre première souscription.",
+        });
+        setView("investor_dashboard");
+        return;
+      }
+      if (json.code === "AMOUNT_EXCEEDS_DECLARED_CAPACITY") {
+        toast({
+          title: en ? "Amount to review" : "Montant à revoir",
+          description: en
+            ? "Choose a lower amount or update your answers from your personal space."
+            : "Choisissez un montant plus faible ou actualisez vos réponses depuis votre espace personnel.",
+          variant: "destructive",
+        });
+        return;
+      }
       if (!res.ok) {
-        throw new Error(text.failed);
+        throw new Error(json.error || text.failed);
       }
       if (json.payment?.status === "ready" && json.payment.checkoutUrl) {
         const checkout = new URL(json.payment.checkoutUrl);
@@ -175,7 +207,7 @@ export function OfferDetail() {
     } catch (e) {
       toast({
         title: text.error,
-        description: e instanceof Error && e.message === text.failed ? e.message : text.failed,
+        description: e instanceof Error ? e.message : text.failed,
         variant: "destructive",
       });
     } finally {

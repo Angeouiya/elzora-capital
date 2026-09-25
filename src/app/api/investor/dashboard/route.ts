@@ -4,6 +4,7 @@ import { getD1 } from "@/lib/d1";
 import { simulateDebtFinancing } from "@/lib/finance";
 import { getPaymentCapabilities } from "@/lib/payment-capabilities";
 import { getCancellationEligibility } from "@/lib/investment-cancellation";
+import { isInvestorProfileCurrent } from "@/lib/investor-profile";
 
 interface UserRow extends Record<string, unknown> {
   id: string;
@@ -13,6 +14,9 @@ interface UserRow extends Record<string, unknown> {
   country: string;
   language: string;
   kycStatus: string;
+  profileCompletedAt: string | null;
+  profileExpiresAt: string | null;
+  profileAttentionLevel: string | null;
 }
 
 interface InvestmentDashboardRow extends Record<string, unknown> {
@@ -83,8 +87,12 @@ export async function GET(req: Request) {
   const [user, investmentResult, balanceRow, notificationResult] = await Promise.all([
     database
       .prepare(
-        `SELECT id, email, firstName, lastName, country, language, kycStatus
-         FROM User WHERE id = ? LIMIT 1`
+        `SELECT u.id, u.email, u.firstName, u.lastName, u.country, u.language, u.kycStatus,
+                ip.completedAt AS profileCompletedAt, ip.expiresAt AS profileExpiresAt,
+                ip.attentionLevel AS profileAttentionLevel
+         FROM User u
+         LEFT JOIN InvestorProfile ip ON ip.userId = u.id
+         WHERE u.id = ? LIMIT 1`
       )
       .bind(session.userId)
       .first<UserRow>(),
@@ -253,7 +261,22 @@ export async function GET(req: Request) {
 
   return NextResponse.json(
     {
-      user,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        country: user.country,
+        language: user.language,
+        kycStatus: user.kycStatus,
+        investmentProfile: {
+          complete: isInvestorProfileCurrent({ completedAt: user.profileCompletedAt, expiresAt: user.profileExpiresAt }),
+          needsRefresh: Boolean(user.profileCompletedAt) && !isInvestorProfileCurrent({ completedAt: user.profileCompletedAt, expiresAt: user.profileExpiresAt }),
+          attentionLevel: user.profileAttentionLevel,
+          completedAt: user.profileCompletedAt,
+          expiresAt: user.profileExpiresAt,
+        },
+      },
       investments,
       portfolio: {
         totalInvested,

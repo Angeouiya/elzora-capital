@@ -49,6 +49,7 @@ model User {
   notifications        Notification[]
   submittedProjects    Project[]              @relation("ProjectSubmitter")
   kycProfile           KycProfile?
+  investorProfile      InvestorProfile?
   kycDocuments         KycDocument[]
   legalAcceptances     LegalAcceptance[]
   subscriptionEvidence SubscriptionEvidence[]
@@ -90,6 +91,28 @@ model KycProfile {
   decisionReason      String?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
+}
+
+model InvestorProfile {
+  id                      String   @id @default(cuid())
+  userId                  String   @unique
+  user                    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  experience              String
+  objective               String
+  horizon                 String
+  investableCapitalRange  String
+  lossCapacity            String
+  riskComfort             String
+  understandsCapitalLoss  Boolean  @default(false)
+  understandsIlliquidity  Boolean  @default(false)
+  attentionLevel          String
+  version                 String
+  completedAt             DateTime
+  expiresAt               DateTime
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@index([expiresAt])
 }
 
 model KycDocument {
