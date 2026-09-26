@@ -13,6 +13,7 @@ export type PortalView =
   | "risks"
   | "register"
   | "login"
+  | "google_complete"
   | "dashboard"
   | "account"
   // Espace investisseur

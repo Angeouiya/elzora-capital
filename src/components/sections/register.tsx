@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { COUNTRIES, getCountryLabel } from "@/lib/countries";
+import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import {
   UserRound,
   ContactRound,
@@ -234,6 +235,14 @@ export function Register() {
           {/* STEP 1 — Account type */}
           {step === 1 && (
             <>
+              <GoogleSignInButton />
+              <div className="flex items-center gap-3" aria-hidden="true">
+                <span className="h-px flex-1 bg-[#541249]/10" />
+                <span className="text-[11px] font-medium text-muted-foreground">
+                  {locale === "fr" ? "ou créer votre espace manuellement" : "or create your account manually"}
+                </span>
+                <span className="h-px flex-1 bg-[#541249]/10" />
+              </div>
               <p className="text-sm text-muted-foreground">
                 {copy.choose}
               </p>

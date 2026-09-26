@@ -29,6 +29,8 @@ interface AccountPayload {
     kycStatus: string;
     createdAt: string;
     lastLoginAt: string | null;
+    passwordEnabled: boolean;
+    loginMethods: string[];
   };
   sessions: Array<{
     id: string;
@@ -66,6 +68,8 @@ const COPY = {
     changePassword: "Modifier mon mot de passe",
     changing: "Modification…",
     passwordChanged: "Mot de passe modifié",
+    googleConnected: "Compte Google connecté",
+    googleOnlyHelp: "Vous vous connectez avec Google. Aucun mot de passe NEXORA n’est enregistré pour ce compte.",
     devices: "Appareils connectés",
     devicesHelp: "Fermez toute connexion que vous ne reconnaissez pas.",
     thisDevice: "Cet appareil",
@@ -110,6 +114,8 @@ const COPY = {
     changePassword: "Change my password",
     changing: "Changing…",
     passwordChanged: "Password changed",
+    googleConnected: "Google account connected",
+    googleOnlyHelp: "You sign in with Google. No NEXORA password is stored for this account.",
     devices: "Connected devices",
     devicesHelp: "Close any connection you do not recognize.",
     thisDevice: "This device",
@@ -332,7 +338,13 @@ export function Account() {
         <div className="space-y-5">
           <article className="rounded-[1.5rem] border border-[#541249]/10 bg-white p-5 shadow-[0_16px_42px_rgba(56,12,49,.055)] sm:p-7">
             <SectionHeading icon={LockKeyhole} title={copy.security} text={copy.securityHelp} />
-            <div className="mt-5 space-y-4">
+            {data.account.loginMethods.includes("google") ? (
+              <div className="mt-5 flex items-center gap-3 rounded-xl border border-[#541249]/10 bg-[#faf6f9] p-3.5">
+                <ShieldCheck className="h-5 w-5 shrink-0 text-[#541249]" />
+                <div><p className="text-sm font-bold">{copy.googleConnected}</p>{!data.account.passwordEnabled ? <p className="mt-1 text-xs leading-5 text-muted-foreground">{copy.googleOnlyHelp}</p> : null}</div>
+              </div>
+            ) : null}
+            {data.account.passwordEnabled ? <div className="mt-5 space-y-4">
               <PasswordField label={copy.currentPassword} value={passwords.current} onChange={(value) => setPasswords((current) => ({ ...current, current: value }))} autoComplete="current-password" />
               <PasswordField label={copy.nextPassword} value={passwords.next} onChange={(value) => setPasswords((current) => ({ ...current, next: value }))} autoComplete="new-password" />
               <PasswordField label={copy.confirmPassword} value={passwords.confirm} onChange={(value) => setPasswords((current) => ({ ...current, confirm: value }))} autoComplete="new-password" />
@@ -346,7 +358,7 @@ export function Account() {
                 <KeyRound className="h-4 w-4" />
                 {savingPassword ? copy.changing : copy.changePassword}
               </Button>
-            </div>
+            </div> : null}
           </article>
         </div>
       </div>

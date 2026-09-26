@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ShieldCheck, Lock, Mail, ArrowRight, AlertCircle, Fingerprint, ScanLine } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 
 export function Login() {
   const setView = useAppStore((s) => s.setView);
@@ -24,6 +25,7 @@ export function Login() {
     submitting: "Connexion…",
     noAccount: "Pas encore de compte ?",
     register: "Créer un compte",
+    orEmail: "ou avec votre adresse email",
     security: "Votre mot de passe et vos informations de connexion restent protégés à chaque visite.",
     kicker: "Votre espace privé", asideTitle: "Retrouvez vos décisions, pas du bruit.", asideText: "Suivez vos engagements, vos documents et vos mouvements depuis un espace unique, pensé pour rester lisible.", protected: "Session protégée", verified: "Identité vérifiée avant souscription",
     invalid: "Adresse email ou mot de passe incorrect.", refused: "Connexion refusée", unavailable: "Connexion momentanément indisponible. Réessayez dans quelques instants.", errorTitle: "Connexion indisponible", welcome: "Bienvenue", welcomeText: (email: string) => `Vous êtes connecté avec ${email}.`,
@@ -35,6 +37,7 @@ export function Login() {
     submitting: "Signing in…",
     noAccount: "Don’t have an account yet?",
     register: "Create account",
+    orEmail: "or with your email address",
     security: "Your password and sign-in information remain protected on every visit.",
     kicker: "Your private space", asideTitle: "Find your decisions, not the noise.", asideText: "Track commitments, documents and movements from one clear, carefully designed space.", protected: "Protected session", verified: "Identity verified before subscription",
     invalid: "Incorrect email address or password.", refused: "Sign-in refused", unavailable: "Sign-in is temporarily unavailable. Please try again shortly.", errorTitle: "Sign-in unavailable", welcome: "Welcome", welcomeText: (email: string) => `You are signed in with ${email}.`,
@@ -116,6 +119,12 @@ export function Login() {
             <CardDescription className="mt-1 text-sm text-muted-foreground">{copy.intro}</CardDescription>
           </CardHeader>
           <CardContent className="px-5 pb-8 sm:px-10 sm:pb-12">
+          <GoogleSignInButton />
+          <div className="my-5 flex items-center gap-3" aria-hidden="true">
+            <span className="h-px flex-1 bg-[#541249]/10" />
+            <span className="text-[11px] font-medium text-muted-foreground">{copy.orEmail}</span>
+            <span className="h-px flex-1 bg-[#541249]/10" />
+          </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label htmlFor="login-email" className="text-xs">

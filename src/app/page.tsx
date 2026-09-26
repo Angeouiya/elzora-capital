@@ -7,6 +7,7 @@ import { Footer } from "@/components/site/footer";
 import { DesktopAppSidebar } from "@/components/site/desktop-app-sidebar";
 import { Home } from "@/components/sections/home";
 import { InvitationGate } from "@/components/site/invitation-gate";
+import { toast } from "@/hooks/use-toast";
 
 const dynamicView = <T extends object>(loader: () => Promise<T>, key: keyof T) =>
   dynamic(() => loader().then((module) => module[key] as React.ComponentType), {
@@ -18,6 +19,7 @@ const OfferDetail = dynamicView(() => import("@/components/sections/offer-detail
 const HowItWorks = dynamicView(() => import("@/components/sections/how"), "HowItWorks");
 const Login = dynamicView(() => import("@/components/sections/login"), "Login");
 const Register = dynamicView(() => import("@/components/sections/register"), "Register");
+const GoogleRegistration = dynamicView(() => import("@/components/sections/google-registration"), "GoogleRegistration");
 const InvestorDashboard = dynamicView(() => import("@/components/sections/investor-dashboard"), "InvestorDashboard");
 const CompanyDashboard = dynamicView(() => import("@/components/sections/company-dashboard"), "CompanyDashboard");
 const CompanySubmit = dynamicView(() => import("@/components/sections/company-submit"), "CompanySubmit");
@@ -42,11 +44,41 @@ export default function Page() {
   const userEmail = useAppStore((s) => s.userEmail);
   const hydratePreferences = useAppStore((s) => s.hydratePreferences);
   const restoreUser = useAppStore((s) => s.restoreUser);
+  const setView = useAppStore((s) => s.setView);
   const [sessionPending, setSessionPending] = useState(true);
 
   useEffect(() => {
     hydratePreferences();
   }, [hydratePreferences]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const authStatus = params.get("auth");
+    if (!authStatus) return;
+    const requestedLocale = params.get("locale");
+    if (requestedLocale === "fr" || requestedLocale === "en") {
+      useAppStore.getState().setLocale(requestedLocale);
+    }
+    if (authStatus === "google_complete") {
+      setView("google_complete");
+    } else if (authStatus === "google_success") {
+      toast({
+        title: requestedLocale === "en" ? "Google sign-in successful" : "Connexion Google réussie",
+        description: requestedLocale === "en" ? "Your secure space is ready." : "Votre espace sécurisé est prêt.",
+      });
+    } else {
+      setView("login");
+      const cancelled = authStatus === "google_cancelled";
+      toast({
+        title: requestedLocale === "en" ? "Google sign-in" : "Connexion Google",
+        description: cancelled
+          ? (requestedLocale === "en" ? "Sign-in was cancelled." : "La connexion a été annulée.")
+          : (requestedLocale === "en" ? "Google sign-in is temporarily unavailable." : "La connexion Google est momentanément indisponible."),
+        variant: cancelled ? "default" : "destructive",
+      });
+    }
+    window.history.replaceState({}, "", window.location.pathname);
+  }, [setView]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -89,6 +121,7 @@ export default function Page() {
         {publicView === "how" && <HowItWorks />}
         {publicView === "login" && <Login />}
         {publicView === "register" && <Register />}
+        {publicView === "google_complete" && <GoogleRegistration />}
         {publicView === "investor_dashboard" && <InvestorDashboard />}
         {publicView === "investor_payments" && <WalletHistory />}
         {publicView === "company_dashboard" && <CompanyDashboard />}

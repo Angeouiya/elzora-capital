@@ -14,6 +14,11 @@ interface AccountRow extends Record<string, unknown> {
   kycStatus: string;
   createdAt: string;
   lastLoginAt: string | null;
+  passwordHash: string;
+}
+
+interface IdentityRow extends Record<string, unknown> {
+  provider: string;
 }
 
 interface SessionRow extends Record<string, unknown> {
@@ -35,11 +40,11 @@ export async function GET(req: Request) {
 
   const database = getD1();
   const currentSessionId = readTokenFromRequest(req, "x-nexora-token");
-  const [account, sessions] = await Promise.all([
+  const [account, sessions, identities] = await Promise.all([
     database
       .prepare(
         `SELECT id, email, phone, firstName, lastName, country, language,
-                kycStatus, createdAt, lastLoginAt
+                kycStatus, createdAt, lastLoginAt, passwordHash
          FROM User WHERE id = ? LIMIT 1`
       )
       .bind(session.userId)
@@ -53,15 +58,24 @@ export async function GET(req: Request) {
       )
       .bind(session.userId)
       .all<SessionRow>(),
+    database
+      .prepare(`SELECT provider FROM ExternalIdentity WHERE userId = ? ORDER BY provider ASC`)
+      .bind(session.userId)
+      .all<IdentityRow>(),
   ]);
 
   if (!account) {
     return NextResponse.json({ error: "Compte introuvable" }, { status: 404, headers: noStore });
   }
 
+  const { passwordHash, ...safeAccount } = account;
   return NextResponse.json(
     {
-      account,
+      account: {
+        ...safeAccount,
+        passwordEnabled: passwordHash.startsWith("pbkdf2_sha256$"),
+        loginMethods: identities.results.map((entry) => entry.provider),
+      },
       sessions: sessions.results.map((item) => ({
         ...item,
         current: item.id === currentSessionId,

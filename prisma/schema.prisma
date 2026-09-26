@@ -55,6 +55,38 @@ model User {
   subscriptionEvidence SubscriptionEvidence[]
   portfolioStatements  PortfolioStatement[]
   offerConfirmations   ProjectOfferConfirmation[]
+  externalIdentities   ExternalIdentity[]
+}
+
+model ExternalIdentity {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider    String
+  subject     String
+  email       String
+  createdAt   DateTime @default(now())
+  lastLoginAt DateTime
+
+  @@unique([provider, subject])
+  @@index([userId])
+  @@index([email])
+}
+
+model ExternalAuthPending {
+  id        String    @id @default(cuid())
+  provider  String
+  subject   String
+  email     String
+  firstName String
+  lastName  String
+  locale    String    @default("fr")
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  @@unique([provider, subject])
+  @@index([expiresAt])
 }
 
 model PortfolioStatement {
