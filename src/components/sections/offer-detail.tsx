@@ -46,8 +46,12 @@ import {
   Smartphone,
   Landmark,
   LoaderCircle,
+  CircleCheck,
+  Circle,
 } from "lucide-react";
 import type { OfferDTO, SimulationResult } from "@/lib/types";
+
+type InvestmentReadiness = "checking" | "guest" | "kyc" | "profile" | "ready" | "unavailable";
 
 function progressPct(raised: number, goal: number): number {
   if (!goal || goal <= 0) return 0;
@@ -66,10 +70,10 @@ export function OfferDetail() {
     formatDisplayMoney(value, displayCurrency, locale, compact);
   const text = locale === "fr" ? {
     missing: "Offre introuvable.", back: "Retour aux offres", low: "Montant insuffisant", login: "Connexion requise", loginText: "Connectez-vous pour enregistrer votre engagement.", failed: "Souscription échouée", saved: "Souscription enregistrée", savedText: "Votre engagement est réservé. Les instructions de paiement seront affichées dans votre espace.", paymentReady: "Ouverture du paiement sécurisé…", error: "Erreur", unknown: "Erreur inconnue",
-    equity: "Part de l’entreprise", debt: "Avec remboursement", conditions: "L’essentiel", overview: "Aperçu", details: "Le projet", subscribeNav: "Souscrire", invest: "Payer mon investissement", demo: "Démonstration", simulate: "Simuler uniquement", runSimulation: "Simuler ce montant", simulationLoading: "Calcul en cours…", simulationError: "L’estimation est momentanément indisponible.", demoText: "Cette opportunité est un exemple de présentation. Le paiement apparaîtra uniquement sur une offre réelle, vérifiée et ouverte aux souscriptions.", goal: "Objectif", raised: "Déjà réuni", offered: "Part proposée", return: "Gain prévu", duration: "Durée", long: "Long terme", months: "mois", of: "sur", investors: "investisseurs", from: "Dès", cap: "Maximum", close: "Clôture prévue", project: "Présentation du projet", gallery: "Le projet en images", documents: "Documents à consulter", documentsHelp: "Ces documents sont librement consultables et téléchargeables, sans créer de compte.", view: "Consulter", download: "Télécharger", company: "Entreprise", verified: "Entreprise vérifiée", legalForm: "Forme juridique", country: "Pays", activity: "Activité", founded: "Fondée en", budget: "Utilisation des fonds", allocation: "Répartition prévue", source: "Origine des futurs paiements", exit: " / de la revente", risks: "Risques à connaître", simulator: "Choisir mon investissement", amount: "Montant à investir", minimum: "Minimum", maximum: "maximum", share: "Votre part de", expected: "Montant prévu à terme", interest: "Gain estimé inclus", projected: "Estimation non garantie, soumise aux risques du projet.", enter: "Saisissez un montant pour voir l’estimation", paymentChoice: "Mode de paiement souhaité", card: "Carte bancaire", mobileMoney: "Mobile Money", bankTransfer: "Virement", walletBalance: "Mon portefeuille", limitIntro: "Limite interne pour ce moyen", limitExceeded: "Ce montant dépasse la limite par opération. Réduisez le montant ou choisissez un autre moyen.", secure: "Une souscription personnelle et protégée", secureText: "Les informations déjà vérifiées dans votre compte seront utilisées pour préparer votre souscription.", consentTitle: "Avant de continuer", acceptAgreement: "Je confirme le montant et j’accepte le bulletin de souscription.", acceptRisk: "J’ai lu les risques et j’accepte la possibilité de perdre tout ou partie du capital investi.", readTerms: "Lire les conditions", readRisk: "Lire les risques", consentRequired: "Confirmez le bulletin et la lecture des risques avant de continuer.", submitting: "Validation en cours…", submit: "Payer cet investissement", payment: "Les paiements sont soumis aux contrôles d’identité, d’origine des fonds et de suivi des opérations. Une confirmation est toujours demandée avant le débit.", riskText: "L’investissement présente un risque de perte en capital. Les performances passées ne préjugent pas des performances futures.",
+    equity: "Part de l’entreprise", debt: "Avec remboursement", conditions: "L’essentiel", overview: "Aperçu", details: "Le projet", subscribeNav: "Souscrire", invest: "Payer mon investissement", investmentCta: "Investir maintenant", demo: "Démonstration", simulate: "Simuler uniquement", runSimulation: "Simuler ce montant", simulationLoading: "Calcul en cours…", simulationError: "L’estimation est momentanément indisponible.", demoText: "Cette opportunité est un exemple de présentation. Vous pouvez préparer votre parcours investisseur, mais aucun montant ne sera débité tant qu’une offre réelle, vérifiée et ouverte n’aura pas été publiée.", goal: "Objectif", raised: "Déjà réuni", offered: "Part proposée", return: "Gain prévu", duration: "Durée", long: "Long terme", months: "mois", of: "sur", investors: "investisseurs", from: "Dès", cap: "Maximum", close: "Clôture prévue", project: "Présentation du projet", gallery: "Le projet en images", documents: "Documents à consulter", documentsHelp: "Ces documents sont librement consultables et téléchargeables, sans créer de compte.", view: "Consulter", download: "Télécharger", company: "Entreprise", verified: "Entreprise vérifiée", legalForm: "Forme juridique", country: "Pays", activity: "Activité", founded: "Fondée en", budget: "Utilisation des fonds", allocation: "Répartition prévue", source: "Origine des futurs paiements", exit: " / de la revente", risks: "Risques à connaître", simulator: "Choisir mon investissement", amount: "Montant à investir", minimum: "Minimum", maximum: "maximum", share: "Votre part de", expected: "Montant prévu à terme", interest: "Gain estimé inclus", projected: "Estimation non garantie, soumise aux risques du projet.", enter: "Saisissez un montant pour voir l’estimation", paymentChoice: "Mode de paiement souhaité", card: "Carte bancaire", mobileMoney: "Mobile Money", bankTransfer: "Virement", walletBalance: "Mon portefeuille", limitIntro: "Limite interne pour ce moyen", limitExceeded: "Ce montant dépasse la limite par opération. Réduisez le montant ou choisissez un autre moyen.", secure: "Une souscription personnelle et protégée", secureText: "Les informations déjà vérifiées dans votre compte seront utilisées pour préparer votre souscription.", consentTitle: "Avant de continuer", acceptAgreement: "Je confirme le montant et j’accepte le bulletin de souscription.", acceptRisk: "J’ai lu les risques et j’accepte la possibilité de perdre tout ou partie du capital investi.", readTerms: "Lire les conditions", readRisk: "Lire les risques", consentRequired: "Confirmez le bulletin et la lecture des risques avant de continuer.", submitting: "Validation en cours…", submit: "Payer cet investissement", payment: "Les paiements sont soumis aux contrôles d’identité, d’origine des fonds et de suivi des opérations. Une confirmation est toujours demandée avant le débit.", riskText: "L’investissement présente un risque de perte en capital. Les performances passées ne préjugent pas des performances futures.",
   } : {
     missing: "Offer not found.", back: "Back to opportunities", low: "Amount too low", login: "Sign-in required", loginText: "Sign in to save your commitment.", failed: "Subscription failed", saved: "Subscription saved", savedText: "Your commitment is reserved. Payment instructions will appear in your account.", paymentReady: "Opening secure payment…", error: "Error", unknown: "Unknown error",
-    equity: "Company ownership", debt: "With repayment", conditions: "Key information", overview: "Overview", details: "The project", subscribeNav: "Subscribe", invest: "Pay for my investment", demo: "Demo", simulate: "Simulate only", runSimulation: "Simulate this amount", simulationLoading: "Calculating…", simulationError: "The estimate is temporarily unavailable.", demoText: "This opportunity is a presentation example. Payment appears only for a real, verified opportunity that is open for investment.", goal: "Target", raised: "Already raised", offered: "Ownership offered", return: "Expected return", duration: "Duration", long: "Long term", months: "months", of: "of", investors: "investors", from: "From", cap: "Maximum", close: "Expected closing", project: "Project overview", gallery: "The project in pictures", documents: "Documents to review", documentsHelp: "These documents can be viewed and downloaded freely, without creating an account.", view: "View", download: "Download", company: "Company", verified: "Verified company", legalForm: "Legal form", country: "Country", activity: "Activity", founded: "Founded", budget: "Use of funds", allocation: "Planned allocation", source: "Source of future payments", exit: " / resale", risks: "Risks to know", simulator: "Choose my investment", amount: "Amount to invest", minimum: "Minimum", maximum: "maximum", share: "Your share of", expected: "Expected amount at term", interest: "Estimated gain included", projected: "Estimate only, not guaranteed and subject to project risks.", enter: "Enter an amount to view the estimate", paymentChoice: "Preferred payment method", card: "Bank card", mobileMoney: "Mobile Money", bankTransfer: "Bank transfer", walletBalance: "My wallet", limitIntro: "Internal limit for this method", limitExceeded: "This amount exceeds the per-transaction limit. Reduce it or choose another method.", secure: "A personal, protected subscription", secureText: "Information already verified in your account will be used to prepare your subscription.", consentTitle: "Before continuing", acceptAgreement: "I confirm the amount and accept the subscription form.", acceptRisk: "I have read the risks and accept that I may lose some or all of the capital invested.", readTerms: "Read the terms", readRisk: "Read the risks", consentRequired: "Confirm the form and that you have read the risks before continuing.", submitting: "Approving…", submit: "Pay for this investment", payment: "Payments are subject to identity, source-of-funds and transaction-monitoring checks. You will always be asked to confirm before any debit.", riskText: "Investing involves a risk of capital loss. Past performance does not predict future performance.",
+    equity: "Company ownership", debt: "With repayment", conditions: "Key information", overview: "Overview", details: "The project", subscribeNav: "Subscribe", invest: "Pay for my investment", investmentCta: "Invest now", demo: "Demo", simulate: "Simulate only", runSimulation: "Simulate this amount", simulationLoading: "Calculating…", simulationError: "The estimate is temporarily unavailable.", demoText: "This opportunity is a presentation example. You can prepare your investor journey, but no amount will be debited until a real, verified opportunity is published and open for investment.", goal: "Target", raised: "Already raised", offered: "Ownership offered", return: "Expected return", duration: "Duration", long: "Long term", months: "months", of: "of", investors: "investors", from: "From", cap: "Maximum", close: "Expected closing", project: "Project overview", gallery: "The project in pictures", documents: "Documents to review", documentsHelp: "These documents can be viewed and downloaded freely, without creating an account.", view: "View", download: "Download", company: "Company", verified: "Verified company", legalForm: "Legal form", country: "Country", activity: "Activity", founded: "Founded", budget: "Use of funds", allocation: "Planned allocation", source: "Source of future payments", exit: " / resale", risks: "Risks to know", simulator: "Choose my investment", amount: "Amount to invest", minimum: "Minimum", maximum: "maximum", share: "Your share of", expected: "Expected amount at term", interest: "Estimated gain included", projected: "Estimate only, not guaranteed and subject to project risks.", enter: "Enter an amount to view the estimate", paymentChoice: "Preferred payment method", card: "Bank card", mobileMoney: "Mobile Money", bankTransfer: "Bank transfer", walletBalance: "My wallet", limitIntro: "Internal limit for this method", limitExceeded: "This amount exceeds the per-transaction limit. Reduce it or choose another method.", secure: "A personal, protected subscription", secureText: "Information already verified in your account will be used to prepare your subscription.", consentTitle: "Before continuing", acceptAgreement: "I confirm the amount and accept the subscription form.", acceptRisk: "I have read the risks and accept that I may lose some or all of the capital invested.", readTerms: "Read the terms", readRisk: "Read the risks", consentRequired: "Confirm the form and that you have read the risks before continuing.", submitting: "Approving…", submit: "Pay for this investment", payment: "Payments are subject to identity, source-of-funds and transaction-monitoring checks. You will always be asked to confirm before any debit.", riskText: "Investing involves a risk of capital loss. Past performance does not predict future performance.",
   };
 
   const { data, loading } = useFetch<{ offer: OfferDTO }>(
@@ -88,6 +92,8 @@ export function OfferDetail() {
   const [acceptRisks, setAcceptRisks] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"card" | "mobile_money" | "bank_transfer" | "wallet_balance">("card");
   const [paymentConfirmOpen, setPaymentConfirmOpen] = useState(false);
+  const [investmentGateOpen, setInvestmentGateOpen] = useState(false);
+  const [investmentReadiness, setInvestmentReadiness] = useState<InvestmentReadiness>("checking");
   const [simulationRun, setSimulationRun] = useState(0);
 
   // Reset amount when offer changes
@@ -301,6 +307,55 @@ export function OfferDetail() {
     window.setTimeout(() => document.getElementById("amount")?.focus({ preventScroll: true }), 420);
   };
 
+  const openInvestmentJourney = async () => {
+    setInvestmentReadiness("checking");
+    setInvestmentGateOpen(true);
+    try {
+      const authResponse = await fetch("/api/auth/me", { cache: "no-store" });
+      const auth = (await authResponse.json()) as { user?: { kycStatus?: string } | null };
+      if (!authResponse.ok || !auth.user) {
+        setInvestmentReadiness("guest");
+        return;
+      }
+      if (auth.user.kycStatus !== "verified") {
+        setInvestmentReadiness("kyc");
+        return;
+      }
+      const profileResponse = await fetch("/api/investor/profile", { cache: "no-store" });
+      if (!profileResponse.ok) {
+        setInvestmentReadiness(profileResponse.status === 401 ? "guest" : "unavailable");
+        return;
+      }
+      const profile = (await profileResponse.json()) as { complete?: boolean };
+      setInvestmentReadiness(profile.complete ? "ready" : "profile");
+    } catch {
+      setInvestmentReadiness("unavailable");
+    }
+  };
+
+  const continueInvestmentJourney = () => {
+    setInvestmentGateOpen(false);
+    if (investmentReadiness === "guest") {
+      setView("login");
+      return;
+    }
+    if (investmentReadiness === "kyc") {
+      window.sessionStorage.setItem("nexora-open-kyc", "1");
+      setView("investor_dashboard");
+      return;
+    }
+    if (investmentReadiness === "profile") {
+      window.sessionStorage.setItem("nexora-open-investor-profile", "1");
+      setView("investor_dashboard");
+      return;
+    }
+    if (investmentReadiness === "ready") openSimulator();
+  };
+
+  const signedIn = !["checking", "guest", "unavailable"].includes(investmentReadiness);
+  const identityVerified = ["profile", "ready"].includes(investmentReadiness);
+  const profileComplete = investmentReadiness === "ready";
+
   return (
     <div className="reveal-in overflow-x-clip pb-36 lg:pb-10">
       <div className="page-shell py-3 sm:py-4">
@@ -371,7 +426,7 @@ export function OfferDetail() {
       <nav className="sticky top-[4.05rem] z-30 mb-4 flex gap-1.5 overflow-x-auto rounded-2xl border border-[#541249]/10 bg-[#fffefd]/94 p-1.5 shadow-[0_10px_30px_rgba(56,12,49,.07)] backdrop-blur-xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mb-5 lg:static lg:w-fit" aria-label={locale === "fr" ? "Sections de l’opportunité" : "Opportunity sections"}>
         <Button type="button" variant="ghost" size="sm" onClick={() => scrollTo("offer-overview")} className="shrink-0 rounded-xl">{text.overview}</Button>
         <Button type="button" variant="ghost" size="sm" onClick={() => scrollTo("offer-project")} className="shrink-0 rounded-xl">{text.details}</Button>
-        <Button type="button" size="sm" onClick={openSimulator} className="btn-nexora shrink-0 rounded-xl">{offer.isDemo ? text.simulate : text.subscribeNav}</Button>
+        <Button type="button" size="sm" onClick={() => void openInvestmentJourney()} className="btn-nexora shrink-0 rounded-xl">{text.investmentCta}</Button>
       </nav>
 
       <div className="grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-3">
@@ -797,6 +852,9 @@ export function OfferDetail() {
                   <div className="rounded-xl border border-[#541249]/20 bg-[#FBF7FA] p-3.5 text-xs leading-5 text-[#541249]">
                     <p className="font-bold">{text.demo}</p>
                     <p className="mt-1">{text.demoText}</p>
+                    <Button type="button" onClick={() => void openInvestmentJourney()} className="btn-nexora mt-3 w-full rounded-xl">
+                      {text.investmentCta}
+                    </Button>
                   </div>
                 ) : <>
                 <div>
@@ -939,9 +997,81 @@ export function OfferDetail() {
             <p className="text-[10px] font-semibold uppercase tracking-[.12em] text-white/55">{text.from}</p>
             <p className="tnum truncate text-sm font-extrabold">{money(minInv, true)}</p>
           </div>
-          <Button type="button" onClick={openSimulator} className="btn-nexora min-h-11 shrink-0 rounded-xl px-5">{offer.isDemo ? text.simulate : text.invest}</Button>
+          <Button type="button" onClick={() => void openInvestmentJourney()} className="btn-nexora min-h-11 shrink-0 rounded-xl px-5">{text.investmentCta}</Button>
         </div>
       </div>
+      <AlertDialog open={investmentGateOpen} onOpenChange={setInvestmentGateOpen}>
+        <AlertDialogContent className="max-w-md rounded-[1.6rem]">
+          <AlertDialogHeader>
+            <div className="mx-auto mb-2 grid h-12 w-12 place-items-center rounded-2xl bg-[#f4e8f2] text-[#541249]"><Wallet className="h-5 w-5" /></div>
+            <AlertDialogTitle className="text-center">
+              {en ? "Your path to investing" : "Votre parcours pour investir"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-center leading-6">
+              {investmentReadiness === "checking"
+                ? (en ? "We are securely checking the next step for you." : "Nous vérifions de façon sécurisée la prochaine étape pour vous.")
+                : investmentReadiness === "guest"
+                  ? (en ? "Sign in or create your account. You will then be guided step by step." : "Connectez-vous ou créez votre compte. Vous serez ensuite guidé étape par étape.")
+                  : investmentReadiness === "kyc"
+                    ? (en ? "A quick identity check is required before investing." : "Une vérification rapide de votre identité est nécessaire avant d’investir.")
+                    : investmentReadiness === "profile"
+                      ? (en ? "Answer six simple questions about your investment plans." : "Répondez à six questions simples sur votre projet d’investissement.")
+                      : investmentReadiness === "ready" && offer.isDemo
+                        ? (en ? "Your account is ready. This presentation does not accept payments yet, but you can already simulate an amount." : "Votre compte est prêt. Cette présentation n’accepte pas encore de paiement, mais vous pouvez déjà simuler un montant.")
+                        : investmentReadiness === "ready"
+                          ? (en ? "Everything is ready. Choose your amount and preferred payment method." : "Tout est prêt. Choisissez votre montant et votre moyen de paiement.")
+                          : (en ? "We could not check your information. Please try again." : "Nous n’avons pas pu vérifier vos informations. Réessayez.")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-2 rounded-2xl border border-[#541249]/10 bg-[#fbf7fa] p-3">
+            {[
+              { label: en ? "Personal account" : "Compte personnel", complete: signedIn },
+              { label: en ? "Identity verified" : "Identité vérifiée", complete: identityVerified },
+              { label: en ? "Investor profile" : "Profil investisseur", complete: profileComplete },
+              { label: en ? "Amount and payment method" : "Montant et moyen de paiement", complete: false },
+            ].map((step) => (
+              <div key={step.label} className="flex items-center gap-3 rounded-xl bg-white px-3 py-2.5 text-sm">
+                {step.complete ? <CircleCheck className="h-4 w-4 shrink-0 text-emerald-600" /> : <Circle className="h-4 w-4 shrink-0 text-[#541249]/35" />}
+                <span className={step.complete ? "font-semibold text-foreground" : "text-muted-foreground"}>{step.label}</span>
+                {step.complete ? <span className="ml-auto text-[10px] font-bold uppercase tracking-wide text-emerald-700">{en ? "Done" : "Terminé"}</span> : null}
+              </div>
+            ))}
+          </div>
+
+          {offer.isDemo && investmentReadiness !== "checking" ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-center text-xs leading-5 text-amber-950">
+              {en ? "Presentation project: no card, wallet or Mobile Money debit is possible." : "Projet de présentation : aucun débit par carte, portefeuille ou Mobile Money n’est possible."}
+            </div>
+          ) : null}
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>{en ? "Not now" : "Pas maintenant"}</AlertDialogCancel>
+            {investmentReadiness === "checking" ? (
+              <Button type="button" disabled className="btn-nexora"><LoaderCircle className="h-4 w-4 animate-spin" />{en ? "Checking…" : "Vérification…"}</Button>
+            ) : investmentReadiness === "unavailable" ? (
+              <Button type="button" className="btn-nexora" onClick={() => void openInvestmentJourney()}>{en ? "Try again" : "Réessayer"}</Button>
+            ) : (
+              <AlertDialogAction className="btn-nexora" onClick={continueInvestmentJourney}>
+                {investmentReadiness === "guest"
+                  ? (en ? "Sign in" : "Se connecter")
+                  : investmentReadiness === "kyc"
+                    ? (en ? "Verify my identity" : "Vérifier mon identité")
+                    : investmentReadiness === "profile"
+                      ? (en ? "Complete my profile" : "Compléter mon profil")
+                      : offer.isDemo
+                        ? (en ? "Simulate an amount" : "Simuler un montant")
+                        : (en ? "Choose my investment" : "Choisir mon investissement")}
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+          {investmentReadiness === "guest" ? (
+            <Button type="button" variant="ghost" className="w-full rounded-xl" onClick={() => { setInvestmentGateOpen(false); setView("register"); }}>
+              {en ? "Create an account" : "Créer un compte"}
+            </Button>
+          ) : null}
+        </AlertDialogContent>
+      </AlertDialog>
       {!offer.isDemo ? (
         <AlertDialog open={paymentConfirmOpen} onOpenChange={setPaymentConfirmOpen}>
           <AlertDialogContent className="max-w-md rounded-[1.6rem]">
