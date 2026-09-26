@@ -56,6 +56,7 @@ model User {
   portfolioStatements  PortfolioStatement[]
   offerConfirmations   ProjectOfferConfirmation[]
   externalIdentities   ExternalIdentity[]
+  passwordResetTokens  PasswordResetToken[]
 }
 
 model ExternalIdentity {
@@ -87,6 +88,32 @@ model ExternalAuthPending {
 
   @@unique([provider, subject])
   @@index([expiresAt])
+}
+
+model PasswordResetToken {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash       String    @unique
+  createdAt       DateTime  @default(now())
+  expiresAt       DateTime
+  usedAt          DateTime?
+  consumeKey      String?   @unique
+  requestedIpHash String?
+
+  @@index([userId, createdAt])
+  @@index([expiresAt])
+}
+
+model PasswordResetAttempt {
+  id        String   @id @default(cuid())
+  emailHash String
+  ipHash    String
+  delivered Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([emailHash, createdAt])
+  @@index([ipHash, createdAt])
 }
 
 model PortfolioStatement {

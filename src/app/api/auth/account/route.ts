@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireUser, readTokenFromRequest } from "@/lib/auth";
 import { getD1, isoNow, requestIp } from "@/lib/d1";
 import { hashPassword, verifyPassword } from "@/lib/password";
+import { isStrongPassword } from "@/lib/password-policy";
 
 interface AccountRow extends Record<string, unknown> {
   id: string;
@@ -148,9 +149,9 @@ export async function PATCH(req: NextRequest) {
 
   const currentPassword = String(body.currentPassword || "");
   const nextPassword = String(body.nextPassword || "");
-  if (nextPassword.length < 10 || nextPassword.length > 200 || currentPassword.length > 200) {
+  if (!isStrongPassword(nextPassword) || currentPassword.length > 200) {
     return NextResponse.json(
-      { error: "Le nouveau mot de passe doit contenir au moins 10 caractères." },
+      { error: "Le nouveau mot de passe doit contenir au moins 10 caractères et combiner trois types de caractères." },
       { status: 400, headers: noStore }
     );
   }

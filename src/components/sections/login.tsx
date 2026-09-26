@@ -21,6 +21,7 @@ export function Login() {
     title: "Connexion à votre espace",
     intro: "Accédez à votre portefeuille ou à l’espace entreprise.",
     password: "Mot de passe",
+    forgot: "Mot de passe oublié ?",
     submit: "Se connecter",
     submitting: "Connexion…",
     noAccount: "Pas encore de compte ?",
@@ -33,6 +34,7 @@ export function Login() {
     title: "Sign in to your account",
     intro: "Access your portfolio or company workspace.",
     password: "Password",
+    forgot: "Forgot password?",
     submit: "Sign in",
     submitting: "Signing in…",
     noAccount: "Don’t have an account yet?",
@@ -146,9 +148,19 @@ export function Login() {
               </div>
             </div>
             <div>
-              <Label htmlFor="login-password" className="text-xs">
-                {copy.password}
-              </Label>
+              <div className="flex items-center justify-between gap-3">
+                <Label htmlFor="login-password" className="text-xs">
+                  {copy.password}
+                </Label>
+                <Button
+                  type="button"
+                  variant="link"
+                  className="h-auto p-0 text-xs font-semibold"
+                  onClick={() => setView("forgot_password")}
+                >
+                  {copy.forgot}
+                </Button>
+              </div>
               <div className="relative mt-1">
                 <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input

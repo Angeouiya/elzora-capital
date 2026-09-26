@@ -5,6 +5,7 @@ import {
   ContactRound,
   KeyRound,
   LockKeyhole,
+  MailCheck,
   ShieldCheck,
   Smartphone,
   UserRound,
@@ -15,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/hooks/use-toast";
+import { isStrongPassword } from "@/lib/password-policy";
 import { useAppStore, type Locale } from "@/lib/store";
 
 interface AccountPayload {
@@ -64,8 +66,9 @@ const COPY = {
     currentPassword: "Mot de passe actuel",
     nextPassword: "Nouveau mot de passe",
     confirmPassword: "Confirmer le nouveau mot de passe",
-    passwordHint: "Au moins 10 caractères.",
+    passwordHint: "10 caractères minimum avec au moins trois éléments : majuscule, minuscule, chiffre ou symbole.",
     changePassword: "Modifier mon mot de passe",
+    emailPassword: "Recevoir un lien sécurisé par e-mail",
     changing: "Modification…",
     passwordChanged: "Mot de passe modifié",
     googleConnected: "Compte Google connecté",
@@ -110,8 +113,9 @@ const COPY = {
     currentPassword: "Current password",
     nextPassword: "New password",
     confirmPassword: "Confirm new password",
-    passwordHint: "At least 10 characters.",
+    passwordHint: "At least 10 characters with three of: uppercase, lowercase, number or symbol.",
     changePassword: "Change my password",
+    emailPassword: "Receive a secure link by email",
     changing: "Changing…",
     passwordChanged: "Password changed",
     googleConnected: "Google account connected",
@@ -353,12 +357,20 @@ export function Account() {
                 variant="outline"
                 className="h-11 w-full rounded-xl border-[#541249]/20 text-[#541249] hover:bg-[#f8eef6]"
                 onClick={() => void changePassword()}
-                disabled={savingPassword || !passwords.current || passwords.next.length < 10 || !passwords.confirm}
+                disabled={savingPassword || !passwords.current || !isStrongPassword(passwords.next) || !passwords.confirm}
               >
                 <KeyRound className="h-4 w-4" />
                 {savingPassword ? copy.changing : copy.changePassword}
               </Button>
             </div> : null}
+            <Button
+              variant="ghost"
+              className="mt-3 h-11 w-full rounded-xl text-[#541249]"
+              onClick={() => setView("forgot_password")}
+            >
+              <MailCheck className="h-4 w-4" />
+              {copy.emailPassword}
+            </Button>
           </article>
         </div>
       </div>

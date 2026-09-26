@@ -13,6 +13,8 @@ export type PortalView =
   | "risks"
   | "register"
   | "login"
+  | "forgot_password"
+  | "reset_password"
   | "google_complete"
   | "dashboard"
   | "account"

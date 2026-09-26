@@ -18,6 +18,8 @@ const Explore = dynamicView(() => import("@/components/sections/explore"), "Expl
 const OfferDetail = dynamicView(() => import("@/components/sections/offer-detail"), "OfferDetail");
 const HowItWorks = dynamicView(() => import("@/components/sections/how"), "HowItWorks");
 const Login = dynamicView(() => import("@/components/sections/login"), "Login");
+const ForgotPassword = dynamicView(() => import("@/components/sections/forgot-password"), "ForgotPassword");
+const ResetPassword = dynamicView(() => import("@/components/sections/reset-password"), "ResetPassword");
 const Register = dynamicView(() => import("@/components/sections/register"), "Register");
 const GoogleRegistration = dynamicView(() => import("@/components/sections/google-registration"), "GoogleRegistration");
 const InvestorDashboard = dynamicView(() => import("@/components/sections/investor-dashboard"), "InvestorDashboard");
@@ -61,6 +63,9 @@ export default function Page() {
     }
     if (authStatus === "google_complete") {
       setView("google_complete");
+    } else if (authStatus === "password_reset" && params.get("token")) {
+      setView("reset_password");
+      return;
     } else if (authStatus === "google_success") {
       toast({
         title: requestedLocale === "en" ? "Google sign-in successful" : "Connexion Google réussie",
@@ -120,6 +125,8 @@ export default function Page() {
         {publicView === "offer" && <OfferDetail />}
         {publicView === "how" && <HowItWorks />}
         {publicView === "login" && <Login />}
+        {publicView === "forgot_password" && <ForgotPassword />}
+        {publicView === "reset_password" && <ResetPassword />}
         {publicView === "register" && <Register />}
         {publicView === "google_complete" && <GoogleRegistration />}
         {publicView === "investor_dashboard" && <InvestorDashboard />}
