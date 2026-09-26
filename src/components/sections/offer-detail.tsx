@@ -48,6 +48,8 @@ import {
   LoaderCircle,
   CircleCheck,
   Circle,
+  TrendingUp,
+  TrendingDown,
 } from "lucide-react";
 import type { OfferDTO, SimulationResult } from "@/lib/types";
 
@@ -74,6 +76,45 @@ export function OfferDetail() {
   } : {
     missing: "Offer not found.", back: "Back to opportunities", low: "Amount too low", login: "Sign-in required", loginText: "Sign in to save your commitment.", failed: "Subscription failed", saved: "Subscription saved", savedText: "Your commitment is reserved. Payment instructions will appear in your account.", paymentReady: "Opening secure payment…", error: "Error", unknown: "Unknown error",
     equity: "Company ownership", debt: "With repayment", conditions: "Key information", overview: "Overview", details: "The project", subscribeNav: "Subscribe", invest: "Pay for my investment", investmentCta: "Invest now", demo: "Demo", simulate: "Simulate only", runSimulation: "Simulate this amount", simulationLoading: "Calculating…", simulationError: "The estimate is temporarily unavailable.", demoText: "This opportunity is a presentation example. You can prepare your investor journey, but no amount will be debited until a real, verified opportunity is published and open for investment.", goal: "Target", raised: "Already raised", offered: "Ownership offered", return: "Expected return", duration: "Duration", long: "Long term", months: "months", of: "of", investors: "investors", from: "From", cap: "Maximum", close: "Expected closing", project: "Project overview", gallery: "The project in pictures", documents: "Documents to review", documentsHelp: "These documents can be viewed and downloaded freely, without creating an account.", view: "View", download: "Download", company: "Company", verified: "Verified company", legalForm: "Legal form", country: "Country", activity: "Activity", founded: "Founded", budget: "Use of funds", allocation: "Planned allocation", source: "Source of future payments", exit: " / resale", risks: "Risks to know", simulator: "Choose my investment", amount: "Amount to invest", minimum: "Minimum", maximum: "maximum", share: "Your share of", expected: "Expected amount at term", interest: "Estimated gain included", projected: "Estimate only, not guaranteed and subject to project risks.", enter: "Enter an amount to view the estimate", paymentChoice: "Preferred payment method", card: "Bank card", mobileMoney: "Mobile Money", bankTransfer: "Bank transfer", walletBalance: "My wallet", limitIntro: "Internal limit for this method", limitExceeded: "This amount exceeds the per-transaction limit. Reduce it or choose another method.", secure: "A personal, protected subscription", secureText: "Information already verified in your account will be used to prepare your subscription.", consentTitle: "Before continuing", acceptAgreement: "I confirm the amount and accept the subscription form.", acceptRisk: "I have read the risks and accept that I may lose some or all of the capital invested.", readTerms: "Read the terms", readRisk: "Read the risks", consentRequired: "Confirm the form and that you have read the risks before continuing.", submitting: "Approving…", submit: "Pay for this investment", payment: "Payments are subject to identity, source-of-funds and transaction-monitoring checks. You will always be asked to confirm before any debit.", riskText: "Investing involves a risk of capital loss. Past performance does not predict future performance.",
+  };
+  const simulationText = locale === "fr" ? {
+    title: "Votre simulation",
+    stake: "Votre mise",
+    ownership: "Part du capital obtenue",
+    offerShare: "Part de l’offre financée",
+    rate: "Taux appliqué",
+    annual: "par an",
+    totalRate: "sur toute la durée",
+    duration: "Durée",
+    estimatedGain: "Gain estimé",
+    expectedTotal: "Total prévu à terme",
+    totalReturn: "Rendement total estimé",
+    scenarios: "Scénarios indicatifs de valeur",
+    rise: "Si la valeur progresse de",
+    fall: "Si la valeur baisse de",
+    positionValue: "Valeur estimée de votre part",
+    potentialGain: "Gain potentiel",
+    potentialLoss: "Perte potentielle",
+    equityNotice: "Ces scénarios servent uniquement à visualiser une variation de valeur. Ils ne constituent ni une promesse de gain, ni un dividende, ni une garantie de revente.",
+  } : {
+    title: "Your simulation",
+    stake: "Your investment",
+    ownership: "Ownership obtained",
+    offerShare: "Share of the offer funded",
+    rate: "Applied rate",
+    annual: "per year",
+    totalRate: "over the full term",
+    duration: "Duration",
+    estimatedGain: "Estimated gain",
+    expectedTotal: "Expected total at term",
+    totalReturn: "Estimated total return",
+    scenarios: "Illustrative value scenarios",
+    rise: "If the value rises by",
+    fall: "If the value falls by",
+    positionValue: "Estimated value of your position",
+    potentialGain: "Potential gain",
+    potentialLoss: "Potential loss",
+    equityNotice: "These scenarios only illustrate a change in value. They are not a promise of return, a dividend, or a guaranteed resale value.",
   };
 
   const { data, loading } = useFetch<{ offer: OfferDTO }>(
@@ -800,60 +841,111 @@ export function OfferDetail() {
                 </div>
 
                 {/* Results */}
-                <div className="rounded-md bg-secondary/60 p-3" aria-live="polite">
+                <div className="overflow-hidden rounded-2xl border border-[#541249]/15 bg-[#FBF8FA]" aria-live="polite">
                   {simLoading ? (
-                    <div className="flex items-center justify-center gap-2 py-5 text-xs text-muted-foreground">
+                    <div className="flex items-center justify-center gap-2 px-4 py-8 text-xs text-muted-foreground">
                       <LoaderCircle className="h-4 w-4 animate-spin" />
                       {text.simulationLoading}
                     </div>
                   ) : simError ? (
-                    <p className="text-center text-xs text-nexora-danger">{text.simulationError}</p>
+                    <p className="px-4 py-8 text-center text-xs text-nexora-danger">{text.simulationError}</p>
                   ) : simData ? (
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">
-                          {text.share} {isEquity ? (locale === "fr" ? "capital" : "equity") : (locale === "fr" ? "l’offre" : "the offer")}
-                        </span>
-                        <span className="tnum font-bold text-foreground">
-                          {fmtPct(simData.sharePct ?? 0, 3)}
-                        </span>
-                      </div>
-                      {!isEquity && (
-                        <>
-                          <div className="flex items-center justify-between">
-                            <span className="text-muted-foreground">
-                              {text.expected}
-                            </span>
-                            <span className="tnum font-bold text-foreground">
-                              {money(simData.expectedRepayment ?? simData.perInvestorRepayment ?? 0)}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-muted-foreground">
-                              {text.interest}
-                            </span>
-                            <span className="tnum font-medium text-foreground">
-                              {money(
-                                simData.investorInterest ??
-                                  (simData.expectedRepayment ?? simData.perInvestorRepayment ?? 0) - (simulationAmount ?? amount)
-                              )}
-                            </span>
-                          </div>
-                          <p className="pt-1 text-[10px] text-muted-foreground">
-                            {text.projected}
-                          </p>
-                        </>
-                      )}
-                      {isEquity && (
-                        <p className="pt-1 text-[11px] text-muted-foreground">
-                          {locale === "fr"
-                            ? "Pas d’échéancier — sortie envisagée à terme, non garantie."
-                            : "No repayment schedule — a future exit is contemplated but not guaranteed."}
+                    <div className="text-sm">
+                      <div className="bg-gradient-to-br from-[#541249] via-[#380c31] to-[#1c0618] px-4 py-4 text-white">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/65">
+                          {simulationText.title}
                         </p>
+                        <div className="mt-3 grid grid-cols-2 gap-3">
+                          <div>
+                            <p className="text-[11px] text-white/65">{simulationText.stake}</p>
+                            <p className="tnum mt-1 text-base font-bold">{money(simData.investmentAmount ?? simulationAmount ?? amount)}</p>
+                          </div>
+                          <div>
+                            <p className="text-[11px] text-white/65">{isEquity ? simulationText.ownership : simulationText.offerShare}</p>
+                            <p className="tnum mt-1 text-base font-bold">{fmtPct(simData.sharePct ?? 0, 3)}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {!isEquity ? (
+                        <div className="space-y-3 p-4">
+                          <div className="grid grid-cols-2 gap-2.5">
+                            <div className="rounded-xl border border-[#541249]/10 bg-white p-3">
+                              <p className="text-[10px] text-muted-foreground">{simulationText.rate}</p>
+                              <p className="tnum mt-1 font-bold text-[#541249]">
+                                {fmtPct(simData.annualRatePct ?? offer.annualRate ?? 0, 2)}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground">
+                                {simData.ratePeriod === "annual" ? simulationText.annual : simulationText.totalRate}
+                              </p>
+                            </div>
+                            <div className="rounded-xl border border-[#541249]/10 bg-white p-3">
+                              <p className="text-[10px] text-muted-foreground">{simulationText.duration}</p>
+                              <p className="tnum mt-1 font-bold text-[#541249]">
+                                {simData.durationMonths ?? offer.durationMonths ?? 0} {text.months}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="rounded-xl bg-[#F1E6EF] p-3.5">
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="text-xs text-[#541249]/75">{simulationText.estimatedGain}</span>
+                              <span className="tnum font-bold text-emerald-700">+{money(simData.investorInterest ?? 0)}</span>
+                            </div>
+                            <div className="mt-2 flex items-center justify-between gap-3 border-t border-[#541249]/10 pt-2">
+                              <span className="text-xs text-[#541249]/75">{simulationText.expectedTotal}</span>
+                              <span className="tnum text-base font-extrabold text-[#541249]">
+                                {money(simData.expectedRepayment ?? simData.perInvestorRepayment ?? 0)}
+                              </span>
+                            </div>
+                            <div className="mt-1 flex items-center justify-between gap-3">
+                              <span className="text-[10px] text-[#541249]/60">{simulationText.totalReturn}</span>
+                              <span className="tnum text-xs font-semibold text-[#541249]">{fmtPct(simData.totalReturnPct ?? 0, 2)}</span>
+                            </div>
+                          </div>
+                          <p className="text-[10px] leading-4 text-muted-foreground">{text.projected}</p>
+                        </div>
+                      ) : simData.equityScenarios ? (
+                        <div className="space-y-3 p-4">
+                          <p className="text-xs font-bold text-foreground">{simulationText.scenarios}</p>
+                          <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                            <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 p-3">
+                              <div className="flex items-center gap-2 text-emerald-800">
+                                <TrendingUp className="h-4 w-4" aria-hidden="true" />
+                                <p className="text-[11px] font-semibold">
+                                  {simulationText.rise} {fmtPct(Math.abs(simData.equityScenarios.upside.changePct), 0)}
+                                </p>
+                              </div>
+                              <p className="mt-3 text-[10px] text-emerald-900/60">{simulationText.positionValue}</p>
+                              <p className="tnum mt-0.5 font-extrabold text-emerald-900">{money(simData.equityScenarios.upside.estimatedValue)}</p>
+                              <p className="tnum mt-1 text-[11px] font-semibold text-emerald-700">
+                                {simulationText.potentialGain} : +{money(simData.equityScenarios.upside.gainOrLoss)}
+                              </p>
+                            </div>
+                            <div className="rounded-xl border border-rose-200 bg-rose-50/80 p-3">
+                              <div className="flex items-center gap-2 text-rose-800">
+                                <TrendingDown className="h-4 w-4" aria-hidden="true" />
+                                <p className="text-[11px] font-semibold">
+                                  {simulationText.fall} {fmtPct(Math.abs(simData.equityScenarios.downside.changePct), 0)}
+                                </p>
+                              </div>
+                              <p className="mt-3 text-[10px] text-rose-900/60">{simulationText.positionValue}</p>
+                              <p className="tnum mt-0.5 font-extrabold text-rose-900">{money(simData.equityScenarios.downside.estimatedValue)}</p>
+                              <p className="tnum mt-1 text-[11px] font-semibold text-rose-700">
+                                {simulationText.potentialLoss} : {money(simData.equityScenarios.downside.gainOrLoss)}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-[10px] leading-4 text-amber-950/75">
+                            <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                            <p>{simulationText.equityNotice}</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="p-4 text-[11px] text-muted-foreground">{simulationText.equityNotice}</p>
                       )}
                     </div>
                   ) : (
-                    <p className="text-center text-xs text-muted-foreground">
+                    <p className="px-4 py-8 text-center text-xs text-muted-foreground">
                       {text.enter}
                     </p>
                   )}

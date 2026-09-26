@@ -110,18 +110,29 @@ export interface InvestmentDTO {
 }
 
 export interface SimulationResult {
+  instrument?: "debt" | "equity";
+  investmentAmount?: number;
   expectedRepayment?: number;
-  perInvestorRepayment: number;
-  capitalPlusInterest: number;
-  investorInterest: number;
-  upfrontCommission: number;
-  netToCompany: number;
-  followUpCommission: number;
-  totalCompanyPayment: number;
-  platformRevenue: number;
+  perInvestorRepayment?: number;
+  capitalPlusInterest?: number;
+  investorInterest?: number;
+  upfrontCommission?: number;
+  netToCompany?: number;
+  followUpCommission?: number;
+  totalCompanyPayment?: number;
+  platformRevenue?: number;
   sharePct: number;
   offerAllocationPct?: number;
   companyOwnershipPct?: number;
+  annualRatePct?: number;
+  ratePeriod?: "annual" | "total";
+  durationMonths?: number;
+  totalReturnPct?: number;
+  equityScenarios?: {
+    referenceChangePct: number;
+    upside: { changePct: number; estimatedValue: number; gainOrLoss: number };
+    downside: { changePct: number; estimatedValue: number; gainOrLoss: number };
+  };
   paymentPolicy?: {
     version: string;
     currency: "XOF";

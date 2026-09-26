@@ -37,6 +37,7 @@ import {
 } from "@/lib/payment-compliance";
 import { ensureInvestmentContract } from "@/lib/investment-contract";
 import { finalizeFundedOffer } from "@/lib/funding-lifecycle";
+import { buildEquityValueScenarios, totalReturnPct } from "@/lib/investment-simulation";
 
 type SubscriptionPaymentMethod = CollectionPaymentMethod | "wallet_balance";
 
@@ -183,12 +184,18 @@ export async function GET(
       offer.ratePeriod === "annual" ? "annual" : "total",
       offer.durationMonths || 0
     );
+    const investorInterest = Number(interest);
     return NextResponse.json({
       instrument: "debt",
+      investmentAmount: amount,
       sharePct,
       offerAllocationPct,
-      expectedRepayment: amount + Number(interest),
-      investorInterest: Number(interest),
+      expectedRepayment: amount + investorInterest,
+      investorInterest,
+      annualRatePct: offer.annualRate || 0,
+      ratePeriod: offer.ratePeriod === "annual" ? "annual" : "total",
+      durationMonths: offer.durationMonths || 0,
+      totalReturnPct: totalReturnPct(amount, investorInterest),
       projectionLabel: "Projection contractuelle, sous réserve de remboursement par l'entreprise",
       paymentPolicy: paymentPolicySummary(),
     });
@@ -196,9 +203,11 @@ export async function GET(
 
   return NextResponse.json({
     instrument: "equity",
+    investmentAmount: amount,
     sharePct,
     companyOwnershipPct: sharePct,
     offerAllocationPct,
+    equityScenarios: buildEquityValueScenarios(amount),
     note: "La valeur et la liquidité des titres ne sont pas garanties.",
     paymentPolicy: paymentPolicySummary(),
   });
