@@ -95,6 +95,7 @@ export function OfferDetail() {
   const [investmentGateOpen, setInvestmentGateOpen] = useState(false);
   const [investmentReadiness, setInvestmentReadiness] = useState<InvestmentReadiness>("checking");
   const [simulationRun, setSimulationRun] = useState(0);
+  const [simulationAmount, setSimulationAmount] = useState<number | null>(null);
 
   // Reset amount when offer changes
   useEffect(() => {
@@ -102,12 +103,13 @@ export function OfferDetail() {
     setAcceptAgreement(false);
     setAcceptRisks(false);
     setPaymentMethod("card");
+    setSimulationAmount(null);
   }, [minInv, offerId]);
 
   // Simulation fetch
   const simUrl =
-    offerId && amount > 0
-      ? `/api/offers/${offerId}/subscribe?amount=${amount}&run=${simulationRun}`
+    offerId && simulationAmount !== null && simulationAmount > 0
+      ? `/api/offers/${offerId}/subscribe?amount=${simulationAmount}&run=${simulationRun}`
       : null;
   const { data: simData, loading: simLoading, error: simError } = useFetch<SimulationResult>(simUrl);
 
@@ -147,6 +149,15 @@ export function OfferDetail() {
   const selectedPolicy = simData?.paymentPolicy?.methods.find((item) => item.method === paymentMethod);
   const selectedMethodLimit = paymentMethod === "wallet_balance" ? Number.MAX_SAFE_INTEGER : selectedPolicy?.perTransaction ?? (paymentMethod === "mobile_money" ? 1_000_000 : paymentMethod === "card" ? 10_000_000 : 50_000_000);
   const paymentLimitExceeded = amount > selectedMethodLimit;
+  const updateAmount = (nextAmount: number) => {
+    setAmount(nextAmount);
+    setSimulationAmount(null);
+  };
+  const runSimulation = () => {
+    if (!simulationAmountValid) return;
+    setSimulationAmount(amount);
+    setSimulationRun((current) => current + 1);
+  };
 
   const handleSubscribe = async () => {
     if (!offerId) return;
@@ -757,13 +768,13 @@ export function OfferDetail() {
                     min={minInv}
                     max={maxInv ?? undefined}
                     onChange={(e) =>
-                      setAmount(Number(e.target.value) || 0)
+                      updateAmount(Number(e.target.value) || 0)
                     }
                     className="tnum mt-1"
                   />
                   <SegmentedControl
                     value={String(amount)}
-                    onValueChange={(next) => setAmount(Number(next))}
+                    onValueChange={(next) => updateAmount(Number(next))}
                     ariaLabel={locale === "fr" ? "Montants rapides" : "Quick amounts"}
                     className="mt-2"
                     buttonClassName="px-2.5 text-xs"
@@ -781,7 +792,7 @@ export function OfferDetail() {
                     variant="outline"
                     className="mt-3 w-full rounded-xl border-[#541249]/20 text-[#541249]"
                     disabled={!simulationAmountValid || simLoading}
-                    onClick={() => setSimulationRun((current) => current + 1)}
+                    onClick={runSimulation}
                   >
                     {simLoading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Coins className="h-4 w-4" />}
                     {simLoading ? text.simulationLoading : text.runSimulation}
@@ -789,7 +800,7 @@ export function OfferDetail() {
                 </div>
 
                 {/* Results */}
-                <div className="rounded-md bg-secondary/60 p-3">
+                <div className="rounded-md bg-secondary/60 p-3" aria-live="polite">
                   {simLoading ? (
                     <div className="flex items-center justify-center gap-2 py-5 text-xs text-muted-foreground">
                       <LoaderCircle className="h-4 w-4 animate-spin" />
@@ -824,7 +835,7 @@ export function OfferDetail() {
                             <span className="tnum font-medium text-foreground">
                               {money(
                                 simData.investorInterest ??
-                                  (simData.expectedRepayment ?? simData.perInvestorRepayment ?? 0) - amount
+                                  (simData.expectedRepayment ?? simData.perInvestorRepayment ?? 0) - (simulationAmount ?? amount)
                               )}
                             </span>
                           </div>
