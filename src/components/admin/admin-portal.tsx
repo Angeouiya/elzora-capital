@@ -10,6 +10,7 @@ import { AdminOffers } from "@/components/admin/admin-offers";
 import { AdminFinance } from "@/components/admin/admin-finance";
 import { AdminUsers } from "@/components/admin/admin-users";
 import { AdminCommissions } from "@/components/admin/admin-commissions";
+import { AdminCompliance } from "@/components/admin/admin-compliance";
 
 export function AdminPortal() {
   const view = useAppStore((state) => state.view);
@@ -79,6 +80,7 @@ export function AdminPortal() {
     <AdminShell>
       {view === "admin_dashboard" ? <AdminDashboard /> : null}
       {view === "admin_analysis" ? <AdminAnalysis /> : null}
+      {view === "admin_compliance" ? <AdminCompliance /> : null}
       {view === "admin_offers" ? <AdminOffers /> : null}
       {view === "admin_finance" ? <AdminFinance /> : null}
       {view === "admin_users" ? <AdminUsers /> : null}

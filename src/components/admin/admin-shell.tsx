@@ -21,6 +21,7 @@ import {
   X,
   ShieldAlert,
   ShieldCheck,
+  ScanSearch,
   Eye,
   AlertTriangle,
 } from "lucide-react";
@@ -43,12 +44,12 @@ import {
 // ---------------------------------------------------------------------------
 const ROLE_MODULES: Record<string, PortalView[] | "all"> = {
   analyst: ["admin_dashboard", "admin_analysis"],
-  compliance: ["admin_dashboard", "admin_analysis", "admin_users"],
+  compliance: ["admin_dashboard", "admin_analysis", "admin_users", "admin_compliance"],
   finance: ["admin_dashboard", "admin_finance", "admin_commissions"],
   validator: ["admin_dashboard", "admin_offers", "admin_finance"],
   legal: ["admin_dashboard", "admin_offers", "admin_finance"],
   support: ["admin_dashboard", "admin_users"],
-  auditor: ["admin_dashboard", "admin_users", "admin_commissions"],
+  auditor: ["admin_dashboard", "admin_users", "admin_commissions", "admin_compliance"],
   superadmin: "all",
 };
 
@@ -77,6 +78,7 @@ const NAV: NavItem[] = [
   { label: "Pilotage", view: "admin_dashboard", icon: LayoutGrid },
   { label: "Utilisateurs", view: "admin_users", icon: Users },
   { label: "Analyse", view: "admin_analysis", icon: FileSearch },
+  { label: "Contrôles", view: "admin_compliance", icon: ScanSearch },
   { label: "Offres", view: "admin_offers", icon: BriefcaseBusiness },
   { label: "Finances", view: "admin_finance", icon: Wallet },
   { label: "Commissions", view: "admin_commissions", icon: Coins },
@@ -86,6 +88,7 @@ const VIEW_LABELS: Partial<Record<PortalView, string>> = {
   admin_dashboard: "Pilotage",
   admin_users: "Utilisateurs",
   admin_analysis: "Analyse",
+  admin_compliance: "Contrôles des paiements",
   admin_offers: "Offres",
   admin_finance: "Finances",
   admin_commissions: "Commissions",

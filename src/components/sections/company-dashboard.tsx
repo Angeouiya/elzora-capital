@@ -752,6 +752,20 @@ export function CompanyDashboard() {
         </div>
       </div>
 
+      <Card className="mb-6 border-[#541249]/15 bg-[#FBF7FA] p-4 sm:p-5">
+        <div className="flex items-start gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#541249] text-white"><Lock className="h-4 w-4" /></span>
+          <div>
+            <p className="text-sm font-bold text-foreground">{locale === "fr" ? "Des paiements encadrés du début à la fin" : "Payments protected from start to finish"}</p>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              {locale === "fr"
+                ? "Les versements passent par un partenaire autorisé ou un compte de collecte vérifié. L'identité, l'origine des fonds, les cumuls et les opérations rapprochées sont contrôlés. Une demande inhabituelle est examinée par deux personnes avant toute suite."
+                : "Payments go through an authorized partner or a verified collection account. Identity, source of funds, cumulative amounts and closely timed activity are checked. An unusual request is reviewed by two people before it proceeds."}
+            </p>
+          </div>
+        </div>
+      </Card>
+
       {selectedCompanyId && selectedCompany ? (
         <CompanyVerificationPanel
           key={selectedCompanyId}

@@ -124,7 +124,17 @@ export interface SimulationResult {
   companyOwnershipPct?: number;
   paymentPolicy?: {
     version: string;
-    mobileMoneyLimit: number;
-    methods: Array<"card" | "mobile_money">;
+    currency: "XOF";
+    reviewThreshold: number;
+    notice: string;
+    methods: Array<{
+      method: "card" | "mobile_money" | "bank_transfer";
+      perTransaction: number;
+      dailyTotal: number;
+      monthlyTotal: number;
+      dailyCount: number;
+      monthlyCount: number;
+      alwaysReviewed: boolean;
+    }>;
   };
 }

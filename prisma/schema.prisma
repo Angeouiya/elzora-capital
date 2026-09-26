@@ -503,7 +503,7 @@ model Investment {
   signatureHash        String?
   // Paiement
   paymentRef           String? // référence unique
-  paymentMethod        String? // card | mobile_money
+  paymentMethod        String? // card | mobile_money | bank_transfer
   paymentConfirmedAt   DateTime?
   paymentEventId       String?                    @unique // verrou d'idempotence du webhook
   // Délai de rétractation
@@ -521,6 +521,60 @@ model Investment {
 
   @@index([investorId])
   @@index([offerId])
+}
+
+model PaymentAttempt {
+  id            String   @id
+  userId        String
+  offerId       String
+  investmentId  String?  @unique
+  method        String
+  amount        BigInt
+  currency      String   @default("XOF")
+  country       String
+  decision      String
+  status        String
+  riskScore     Int      @default(0)
+  reasons       String   @default("[]")
+  policyVersion String
+  ipHash        String?
+  userAgent     String?
+  providerRef   String?
+  createdAt     DateTime
+  updatedAt     DateTime
+
+  @@index([userId, method, createdAt])
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+}
+
+model ComplianceCase {
+  id                String    @id
+  paymentAttemptId  String    @unique
+  userId            String
+  offerId           String
+  method            String
+  amount            BigInt
+  caseType           String    @default("payment_review")
+  severity           String
+  riskScore          Int
+  reasons            String
+  status             String    @default("open")
+  preparedBy         String?
+  reviewedBy         String?
+  decidedBy          String?
+  note               String?
+  decisionReason     String?
+  externalReportRef String?
+  reportedAt         DateTime?
+  approvalExpiresAt DateTime?
+  consumedAt         DateTime?
+  resolvedAt         DateTime?
+  createdAt          DateTime
+  updatedAt          DateTime
+
+  @@index([status, createdAt])
+  @@index([userId, offerId, method, amount])
 }
 
 model SubscriptionEvidence {

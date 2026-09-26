@@ -3,7 +3,7 @@ import { getUserSession, requireUser } from "@/lib/auth";
 import { getD1, isoNow, requestIp } from "@/lib/d1";
 import { computeInvestorInterest } from "@/lib/finance";
 import { LEGAL_VERSIONS } from "@/lib/legal";
-import { getPaymentCapabilities } from "@/lib/payment-capabilities";
+import { getBankTransferConfig, getPaymentCapabilities } from "@/lib/payment-capabilities";
 import { getCountry } from "@/lib/countries";
 import {
   createPayDunyaCheckout,
@@ -23,10 +23,18 @@ import {
 import { effectivePrivateMaximum } from "@/lib/private-offer-access";
 import {
   assessCollectionPayment,
-  DEFAULT_MOBILE_MONEY_LIMIT_XOF,
   PAYMENT_POLICY_VERSION,
+  paymentPolicySummary,
   type CollectionPaymentMethod,
 } from "@/lib/payment-policy";
+import {
+  consumeApprovedComplianceCase,
+  findApprovedComplianceCase,
+  hashPaymentIp,
+  loadPaymentUsage,
+  recordBlockedAttempt,
+  recordReviewCase,
+} from "@/lib/payment-compliance";
 
 interface OfferTermsRow extends SubscriptionOfferTerms {
   status: string;
@@ -46,6 +54,10 @@ interface InvestorRow {
   profileCompletedAt: string | null;
   profileExpiresAt: string | null;
   investableCapitalRange: string | null;
+  documentCountry: string | null;
+  sourceOfFunds: string | null;
+  politicallyExposed: number | null;
+  actingForSelf: number | null;
 }
 
 interface InvestmentRow extends Record<string, unknown> {
@@ -213,18 +225,7 @@ export async function POST(
   const paymentMethod = parsePaymentMethod(body.paymentMethod);
   if (!paymentMethod) {
     return NextResponse.json(
-      { error: "Choisissez la carte bancaire ou le Mobile Money.", code: "PAYMENT_METHOD_REQUIRED" },
-      { status: 422 }
-    );
-  }
-  const paymentAssessment = assessCollectionPayment({ amount, method: paymentMethod });
-  if (!paymentAssessment.ok) {
-    return NextResponse.json(
-      {
-        error: "Ce montant dépasse le plafond Mobile Money de la plateforme. Choisissez la carte bancaire ou réduisez le montant.",
-        code: paymentAssessment.code,
-        limit: paymentAssessment.limit,
-      },
+      { error: "Choisissez la carte bancaire, le Mobile Money ou le virement bancaire.", code: "PAYMENT_METHOD_REQUIRED" },
       { status: 422 }
     );
   }
@@ -252,9 +253,11 @@ export async function POST(
       .prepare(
         `SELECT u.firstName, u.lastName, u.email, u.phone, u.country, u.kycStatus,
                 ip.completedAt AS profileCompletedAt, ip.expiresAt AS profileExpiresAt,
-                ip.investableCapitalRange
+                ip.investableCapitalRange,
+                kp.documentCountry, kp.sourceOfFunds, kp.politicallyExposed, kp.actingForSelf
          FROM User u
          LEFT JOIN InvestorProfile ip ON ip.userId = u.id
+         LEFT JOIN KycProfile kp ON kp.userId = u.id
          WHERE u.id = ? LIMIT 1`
       )
       .bind(session.userId)
@@ -335,12 +338,14 @@ export async function POST(
         { status: 409 }
       );
     }
-    if (!existing.paymentRef && existing.paymentMethod !== paymentMethod) {
-      await database
-        .prepare(`UPDATE Investment SET paymentMethod = ?, updatedAt = ? WHERE id = ? AND paymentRef IS NULL`)
-        .bind(paymentMethod, isoNow(), existing.id)
-        .run();
-      existing.paymentMethod = paymentMethod;
+    if (existing.paymentMethod !== paymentMethod) {
+      return NextResponse.json(
+        {
+          error: "Un engagement existe déjà avec un autre moyen de paiement. Annulez-le depuis votre espace avant d'en choisir un nouveau.",
+          code: "PENDING_PAYMENT_METHOD_LOCKED",
+        },
+        { status: 409, headers: { "Cache-Control": "no-store" } }
+      );
     }
   }
 
@@ -397,23 +402,92 @@ export async function POST(
 
   if (existing) {
     try {
-      const signedInvestment = await ensureSubscriptionEvidence(
-        req,
-        existing,
-        offer,
-        locale
-      );
+      const signedInvestment = await ensureSubscriptionEvidence(req, existing, offer, locale);
       return paymentResponse(signedInvestment, offer, investor, true);
     } catch (error) {
-      console.error(
-        "subscription_evidence_upgrade_failed",
-        error instanceof Error ? error.message : "unknown_error"
-      );
+      console.error("subscription_evidence_upgrade_failed", error instanceof Error ? error.message : "unknown_error");
       return NextResponse.json(
         { error: "La validation électronique n'a pas pu être enregistrée." },
         { status: 503 }
       );
     }
+  }
+
+  const complianceNow = isoNow();
+  const ipHash = await hashPaymentIp(session.userId, requestIp(req));
+  const paymentUserAgent = req.headers.get("user-agent")?.slice(0, 512) || null;
+  const approvedCase = await findApprovedComplianceCase(database, {
+    userId: session.userId,
+    offerId: id,
+    method: paymentMethod,
+    amount,
+  }, complianceNow);
+
+  let paymentAssessment = assessCollectionPayment({ amount, method: paymentMethod });
+  if (!approvedCase) {
+    const usage = await loadPaymentUsage(database, session.userId, paymentMethod, complianceNow);
+    paymentAssessment = assessCollectionPayment({
+      amount,
+      method: paymentMethod,
+      usage,
+      risk: {
+        country: investor.country,
+        documentCountry: investor.documentCountry,
+        sourceOfFunds: investor.sourceOfFunds,
+        politicallyExposed: Boolean(investor.politicallyExposed),
+        actingForSelf: investor.actingForSelf === null ? undefined : Boolean(investor.actingForSelf),
+      },
+    });
+    if (paymentAssessment.decision === "block") {
+      await recordBlockedAttempt(database, {
+        userId: session.userId,
+        offerId: id,
+        method: paymentMethod,
+        amount,
+        country: investor.country,
+        assessment: paymentAssessment,
+        ipHash,
+        userAgent: paymentUserAgent,
+      });
+      return NextResponse.json(
+        {
+          error: paymentAssessment.reasons[0] || "Cette opération dépasse une limite de sécurité.",
+          code: paymentAssessment.code,
+          reasons: paymentAssessment.reasons,
+          policy: paymentAssessment.policy,
+        },
+        { status: 422, headers: { "Cache-Control": "no-store" } }
+      );
+    }
+    if (paymentAssessment.decision === "review") {
+      const caseId = await recordReviewCase(database, {
+        userId: session.userId,
+        offerId: id,
+        method: paymentMethod,
+        amount,
+        country: investor.country,
+        assessment: paymentAssessment,
+        ipHash,
+        userAgent: paymentUserAgent,
+      });
+      return NextResponse.json(
+        {
+          code: "PAYMENT_REVIEW_REQUIRED",
+          caseId,
+          message: "Votre demande est transmise à l'équipe pour vérification. Aucun montant n'a été débité.",
+          reasons: paymentAssessment.reasons,
+        },
+        { status: 202, headers: { "Cache-Control": "no-store" } }
+      );
+    }
+  } else {
+    if (!(await consumeApprovedComplianceCase(database, approvedCase.id, complianceNow))) {
+      return NextResponse.json(
+        { error: "L'autorisation doit être renouvelée avant de poursuivre.", code: "PAYMENT_REVIEW_REQUIRED" },
+        { status: 409, headers: { "Cache-Control": "no-store" } }
+      );
+    }
+    paymentAssessment = { ...paymentAssessment, decision: "allow", code: "PAYMENT_ALLOWED", reasons: [] };
   }
 
   const investmentId = crypto.randomUUID();
@@ -441,6 +515,7 @@ export async function POST(
   });
   const userAgent = req.headers.get("user-agent")?.slice(0, 512) || null;
   const ipAddress = requestIp(req);
+  const paymentAttemptId = crypto.randomUUID();
 
   try {
     const results = await database.batch([
@@ -568,6 +643,32 @@ export async function POST(
         ),
       database
         .prepare(
+          `INSERT INTO PaymentAttempt
+             (id, userId, offerId, investmentId, method, amount, currency, country,
+              decision, status, riskScore, reasons, policyVersion, ipHash, userAgent,
+              createdAt, updatedAt)
+           SELECT ?, ?, ?, ?, ?, ?, 'XOF', ?, 'allow', 'allowed', ?, ?, ?, ?, ?, ?, ?
+           WHERE EXISTS (SELECT 1 FROM Investment WHERE id = ?)`
+        )
+        .bind(
+          paymentAttemptId,
+          session.userId,
+          id,
+          investmentId,
+          paymentMethod,
+          amount,
+          investor.country,
+          paymentAssessment.riskScore,
+          JSON.stringify(paymentAssessment.reasons),
+          PAYMENT_POLICY_VERSION,
+          ipHash,
+          paymentUserAgent,
+          now,
+          now,
+          investmentId
+        ),
+      database
+        .prepare(
           `UPDATE Offer SET committedAmount = committedAmount + ?
            WHERE id = ? AND EXISTS (SELECT 1 FROM Investment WHERE id = ?)`
         )
@@ -670,6 +771,53 @@ async function paymentResponse(
   const capabilities = getPaymentCapabilities();
   const config = getPayDunyaConfig();
 
+  if (investment.paymentMethod === "bank_transfer") {
+    const bankTransfer = getBankTransferConfig();
+    if (bankTransfer) {
+      const now = isoNow();
+      await getD1()
+        .prepare(
+          `UPDATE PaymentAttempt SET status = 'provider_pending', updatedAt = ?
+           WHERE investmentId = ? AND status = 'allowed'`
+        )
+        .bind(now, investment.id)
+        .run();
+      return NextResponse.json(
+        {
+          investment: normalizeInvestment({ ...investment, status: "payment_pending" }),
+          idempotent,
+          payment: {
+            status: "bank_instructions_ready",
+            availableMethods: ["bank_transfer"],
+            provider: bankTransfer.bankName,
+            instructions: {
+              bankName: bankTransfer.bankName,
+              beneficiary: bankTransfer.beneficiary,
+              accountReference: bankTransfer.accountReference,
+              transferReference: investment.id,
+              amount: Number(investment.amount),
+              currency: "XOF",
+            },
+            message: "Utilisez exactement la référence indiquée. La souscription sera confirmée après rapprochement bancaire.",
+          },
+        },
+        { status: idempotent ? 200 : 201, headers: { "Cache-Control": "no-store" } }
+      );
+    }
+    return NextResponse.json(
+      {
+        investment: normalizeInvestment(investment),
+        idempotent,
+        payment: {
+          status: "awaiting_bank_setup",
+          availableMethods: [],
+          message: "Votre demande est autorisée. Les coordonnées bancaires seront affichées dès validation du compte de collecte.",
+        },
+      },
+      { status: idempotent ? 200 : 201, headers: { "Cache-Control": "no-store" } }
+    );
+  }
+
   if (capabilities.collectionsEnabled && config) {
     try {
       let paymentRef = investment.paymentRef;
@@ -709,6 +857,14 @@ async function paymentResponse(
         )
         .bind(checkout.token, now, investment.id)
         .run();
+
+        await getD1()
+          .prepare(
+            `UPDATE PaymentAttempt SET status = 'provider_pending', providerRef = ?, updatedAt = ?
+             WHERE investmentId = ? AND status = 'allowed'`
+          )
+          .bind(checkout.token, now, investment.id)
+          .run();
 
         const stored = await getD1()
         .prepare(`SELECT paymentRef FROM Investment WHERE id = ? LIMIT 1`)
@@ -902,13 +1058,5 @@ function parseMoney(value: unknown): number | null {
 }
 
 function parsePaymentMethod(value: unknown): CollectionPaymentMethod | null {
-  return value === "card" || value === "mobile_money" ? value : null;
-}
-
-function paymentPolicySummary() {
-  return {
-    version: PAYMENT_POLICY_VERSION,
-    mobileMoneyLimit: DEFAULT_MOBILE_MONEY_LIMIT_XOF,
-    methods: ["card", "mobile_money"] as CollectionPaymentMethod[],
-  };
+  return value === "card" || value === "mobile_money" || value === "bank_transfer" ? value : null;
 }

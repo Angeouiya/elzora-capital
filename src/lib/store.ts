@@ -31,6 +31,7 @@ export type PortalView =
   | "admin_dashboard"
   | "admin_offers"
   | "admin_analysis"
+  | "admin_compliance"
   | "admin_finance"
   | "admin_users"
   | "admin_commissions";

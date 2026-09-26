@@ -91,6 +91,14 @@ export async function POST(
       .bind(amount, investment.offerId, id, eventId),
     database
       .prepare(
+        `UPDATE PaymentAttempt SET status = 'cancelled', updatedAt = ?
+         WHERE investmentId = ? AND EXISTS (
+           SELECT 1 FROM Investment WHERE id = ? AND cancellationEventId = ? AND status = 'cancelled'
+         )`
+      )
+      .bind(now, id, id, eventId),
+    database
+      .prepare(
         `INSERT INTO AuditLog
            (id, actorType, actorId, action, entityType, entityId, metadata, ipAddress, createdAt)
          SELECT ?, 'user', ?, 'investment_cancelled_during_reflection',

@@ -379,6 +379,14 @@ async function confirmInvestment(req: NextRequest, investment: InvestmentPayment
       .bind(amount, amount, investment.offerId, investment.id, eventId),
     database
       .prepare(
+        `UPDATE PaymentAttempt SET status = 'confirmed', updatedAt = ?
+         WHERE investmentId = ? AND EXISTS (
+           SELECT 1 FROM Investment WHERE id = ? AND paymentEventId = ?
+         )`
+      )
+      .bind(now, investment.id, investment.id, eventId),
+    database
+      .prepare(
         `INSERT INTO LedgerEntry
          (id, idemKey, accountType, accountId, counterpartyType, counterpartyId,
           amount, currency, sourceType, sourceId, description, createdAt)
@@ -481,6 +489,14 @@ async function cancelInvestment(
          )`
       )
       .bind(amount, investment.offerId, investment.id, eventId),
+    database
+      .prepare(
+        `UPDATE PaymentAttempt SET status = ?, updatedAt = ?
+         WHERE investmentId = ? AND EXISTS (
+           SELECT 1 FROM Investment WHERE id = ? AND status = 'cancelled' AND paymentEventId = ?
+         )`
+      )
+      .bind(providerStatus === "failed" ? "failed" : "cancelled", now, investment.id, investment.id, eventId),
     database
       .prepare(
         `INSERT INTO AuditLog
