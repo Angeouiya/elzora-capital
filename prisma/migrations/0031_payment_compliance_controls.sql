@@ -73,35 +73,41 @@ CREATE INDEX "ComplianceCase_user_offer_idx" ON "ComplianceCase"("userId", "offe
 -- Les seuils ci-dessous sont des limites internes NEXORA. Un prestataire peut être plus restrictif.
 CREATE TRIGGER "PaymentAttempt_mobile_money_limits"
 BEFORE INSERT ON "PaymentAttempt"
-WHEN NEW."status" = 'allowed' AND NEW."method" = 'mobile_money'
+WHEN NEW."status" = 'allowed' AND NEW."method" = 'mobile_money' AND (
+  NEW."amount" > 1000000 OR
+  (SELECT COALESCE(SUM("amount"), 0) FROM "PaymentAttempt" WHERE "userId" = NEW."userId" AND "method" = NEW."method" AND "status" IN ('allowed','provider_pending','confirmed') AND datetime("createdAt") >= datetime(NEW."createdAt", '-24 hours')) + NEW."amount" > 2000000 OR
+  (SELECT COUNT(*) FROM "PaymentAttempt" WHERE "userId" = NEW."userId" AND "method" = NEW."method" AND "status" IN ('allowed','provider_pending','confirmed') AND datetime("createdAt") >= datetime(NEW."createdAt", '-24 hours')) >= 5 OR
+  (SELECT COALESCE(SUM("amount"), 0) FROM "PaymentAttempt" WHERE "userId" = NEW."userId" AND "method" = NEW."method" AND "status" IN ('allowed','provider_pending','confirmed') AND datetime("createdAt") >= datetime(NEW."createdAt", '-30 days')) + NEW."amount" > 10000000 OR
+  (SELECT COUNT(*) FROM "PaymentAttempt" WHERE "userId" = NEW."userId" AND "method" = NEW."method" AND "status" IN ('allowed','provider_pending','confirmed') AND datetime("createdAt") >= datetime(NEW."createdAt", '-30 days')) >= 20
+)
 BEGIN
-  SELECT CASE WHEN NEW."amount" > 1000000 THEN RAISE(ABORT, 'payment per-operation limit exceeded') END;
-  SELECT CASE WHEN (SELECT COALESCE(SUM("amount"), 0) FROM "PaymentAttempt" WHERE "userId" = NEW."userId" AND "method" = NEW."method" AND "status" IN ('allowed','provider_pending','confirmed') AND datetime("createdAt") >= datetime(NEW."createdAt", '-24 hours')) + NEW."amount" > 2000000 THEN RAISE(ABORT, 'payment daily total exceeded') END;
-  SELECT CASE WHEN (SELECT COUNT(*) FROM "PaymentAttempt" WHERE "userId" = NEW."userId" AND "method" = NEW."method" AND "status" IN ('allowed','provider_pending','confirmed') AND datetime("createdAt") >= datetime(NEW."createdAt", '-24 hours')) >= 5 THEN RAISE(ABORT, 'payment daily count exceeded') END;
-  SELECT CASE WHEN (SELECT COALESCE(SUM("amount"), 0) FROM "PaymentAttempt" WHERE "userId" = NEW."userId" AND "method" = NEW."method" AND "status" IN ('allowed','provider_pending','confirmed') AND datetime("createdAt") >= datetime(NEW."createdAt", '-30 days')) + NEW."amount" > 10000000 THEN RAISE(ABORT, 'payment monthly total exceeded') END;
-  SELECT CASE WHEN (SELECT COUNT(*) FROM "PaymentAttempt" WHERE "userId" = NEW."userId" AND "method" = NEW."method" AND "status" IN ('allowed','provider_pending','confirmed') AND datetime("createdAt") >= datetime(NEW."createdAt", '-30 days')) >= 20 THEN RAISE(ABORT, 'payment monthly count exceeded') END;
+  SELECT RAISE(ABORT, 'payment safety limit exceeded');
 END;
 
 CREATE TRIGGER "PaymentAttempt_card_limits"
 BEFORE INSERT ON "PaymentAttempt"
-WHEN NEW."status" = 'allowed' AND NEW."method" = 'card'
+WHEN NEW."status" = 'allowed' AND NEW."method" = 'card' AND (
+  NEW."amount" > 10000000 OR
+  (SELECT COALESCE(SUM("amount"), 0) FROM "PaymentAttempt" WHERE "userId" = NEW."userId" AND "method" = NEW."method" AND "status" IN ('allowed','provider_pending','confirmed') AND datetime("createdAt") >= datetime(NEW."createdAt", '-24 hours')) + NEW."amount" > 15000000 OR
+  (SELECT COUNT(*) FROM "PaymentAttempt" WHERE "userId" = NEW."userId" AND "method" = NEW."method" AND "status" IN ('allowed','provider_pending','confirmed') AND datetime("createdAt") >= datetime(NEW."createdAt", '-24 hours')) >= 5 OR
+  (SELECT COALESCE(SUM("amount"), 0) FROM "PaymentAttempt" WHERE "userId" = NEW."userId" AND "method" = NEW."method" AND "status" IN ('allowed','provider_pending','confirmed') AND datetime("createdAt") >= datetime(NEW."createdAt", '-30 days')) + NEW."amount" > 30000000 OR
+  (SELECT COUNT(*) FROM "PaymentAttempt" WHERE "userId" = NEW."userId" AND "method" = NEW."method" AND "status" IN ('allowed','provider_pending','confirmed') AND datetime("createdAt") >= datetime(NEW."createdAt", '-30 days')) >= 20
+)
 BEGIN
-  SELECT CASE WHEN NEW."amount" > 10000000 THEN RAISE(ABORT, 'payment per-operation limit exceeded') END;
-  SELECT CASE WHEN (SELECT COALESCE(SUM("amount"), 0) FROM "PaymentAttempt" WHERE "userId" = NEW."userId" AND "method" = NEW."method" AND "status" IN ('allowed','provider_pending','confirmed') AND datetime("createdAt") >= datetime(NEW."createdAt", '-24 hours')) + NEW."amount" > 15000000 THEN RAISE(ABORT, 'payment daily total exceeded') END;
-  SELECT CASE WHEN (SELECT COUNT(*) FROM "PaymentAttempt" WHERE "userId" = NEW."userId" AND "method" = NEW."method" AND "status" IN ('allowed','provider_pending','confirmed') AND datetime("createdAt") >= datetime(NEW."createdAt", '-24 hours')) >= 5 THEN RAISE(ABORT, 'payment daily count exceeded') END;
-  SELECT CASE WHEN (SELECT COALESCE(SUM("amount"), 0) FROM "PaymentAttempt" WHERE "userId" = NEW."userId" AND "method" = NEW."method" AND "status" IN ('allowed','provider_pending','confirmed') AND datetime("createdAt") >= datetime(NEW."createdAt", '-30 days')) + NEW."amount" > 30000000 THEN RAISE(ABORT, 'payment monthly total exceeded') END;
-  SELECT CASE WHEN (SELECT COUNT(*) FROM "PaymentAttempt" WHERE "userId" = NEW."userId" AND "method" = NEW."method" AND "status" IN ('allowed','provider_pending','confirmed') AND datetime("createdAt") >= datetime(NEW."createdAt", '-30 days')) >= 20 THEN RAISE(ABORT, 'payment monthly count exceeded') END;
+  SELECT RAISE(ABORT, 'payment safety limit exceeded');
 END;
 
 CREATE TRIGGER "PaymentAttempt_bank_transfer_limits"
 BEFORE INSERT ON "PaymentAttempt"
-WHEN NEW."status" = 'allowed' AND NEW."method" = 'bank_transfer'
+WHEN NEW."status" = 'allowed' AND NEW."method" = 'bank_transfer' AND (
+  NEW."amount" > 50000000 OR
+  (SELECT COALESCE(SUM("amount"), 0) FROM "PaymentAttempt" WHERE "userId" = NEW."userId" AND "method" = NEW."method" AND "status" IN ('allowed','provider_pending','confirmed') AND datetime("createdAt") >= datetime(NEW."createdAt", '-24 hours')) + NEW."amount" > 75000000 OR
+  (SELECT COUNT(*) FROM "PaymentAttempt" WHERE "userId" = NEW."userId" AND "method" = NEW."method" AND "status" IN ('allowed','provider_pending','confirmed') AND datetime("createdAt") >= datetime(NEW."createdAt", '-24 hours')) >= 3 OR
+  (SELECT COALESCE(SUM("amount"), 0) FROM "PaymentAttempt" WHERE "userId" = NEW."userId" AND "method" = NEW."method" AND "status" IN ('allowed','provider_pending','confirmed') AND datetime("createdAt") >= datetime(NEW."createdAt", '-30 days')) + NEW."amount" > 150000000 OR
+  (SELECT COUNT(*) FROM "PaymentAttempt" WHERE "userId" = NEW."userId" AND "method" = NEW."method" AND "status" IN ('allowed','provider_pending','confirmed') AND datetime("createdAt") >= datetime(NEW."createdAt", '-30 days')) >= 10
+)
 BEGIN
-  SELECT CASE WHEN NEW."amount" > 50000000 THEN RAISE(ABORT, 'payment per-operation limit exceeded') END;
-  SELECT CASE WHEN (SELECT COALESCE(SUM("amount"), 0) FROM "PaymentAttempt" WHERE "userId" = NEW."userId" AND "method" = NEW."method" AND "status" IN ('allowed','provider_pending','confirmed') AND datetime("createdAt") >= datetime(NEW."createdAt", '-24 hours')) + NEW."amount" > 75000000 THEN RAISE(ABORT, 'payment daily total exceeded') END;
-  SELECT CASE WHEN (SELECT COUNT(*) FROM "PaymentAttempt" WHERE "userId" = NEW."userId" AND "method" = NEW."method" AND "status" IN ('allowed','provider_pending','confirmed') AND datetime("createdAt") >= datetime(NEW."createdAt", '-24 hours')) >= 3 THEN RAISE(ABORT, 'payment daily count exceeded') END;
-  SELECT CASE WHEN (SELECT COALESCE(SUM("amount"), 0) FROM "PaymentAttempt" WHERE "userId" = NEW."userId" AND "method" = NEW."method" AND "status" IN ('allowed','provider_pending','confirmed') AND datetime("createdAt") >= datetime(NEW."createdAt", '-30 days')) + NEW."amount" > 150000000 THEN RAISE(ABORT, 'payment monthly total exceeded') END;
-  SELECT CASE WHEN (SELECT COUNT(*) FROM "PaymentAttempt" WHERE "userId" = NEW."userId" AND "method" = NEW."method" AND "status" IN ('allowed','provider_pending','confirmed') AND datetime("createdAt") >= datetime(NEW."createdAt", '-30 days')) >= 10 THEN RAISE(ABORT, 'payment monthly count exceeded') END;
+  SELECT RAISE(ABORT, 'payment safety limit exceeded');
 END;
 
 PRAGMA optimize;
