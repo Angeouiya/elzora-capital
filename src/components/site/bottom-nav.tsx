@@ -23,6 +23,16 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
@@ -35,13 +45,14 @@ export function BottomNav() {
   const { view, setView, userEmail, logout, locale } = useAppStore();
   const [accountOpen, setAccountOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const labels = locale === "fr"
     ? { home: "Accueil", explore: "Explorer", wallet: "Portefeuille", company: "Entreprise", account: "Compte", signOut: "Déconnexion", signingOut: "Déconnexion…", myWallet: "Mon portefeuille", myCompany: "Ma société", manageAccount: "Profil et sécurité", signedOut: "Déconnecté", signedOutText: "Vous avez été déconnecté de votre espace.", navigation: "Navigation principale mobile" }
     : { home: "Home", explore: "Explore", wallet: "Portfolio", company: "Company", account: "Account", signOut: "Sign out", signingOut: "Signing out…", myWallet: "My portfolio", myCompany: "My company", manageAccount: "Profile and security", signedOut: "Signed out", signedOutText: "You have been signed out of your workspace.", navigation: "Main mobile navigation" };
   const items: NavItem[] = [
     { icon: LayoutGrid, label: labels.home, view: "home" },
     { icon: Search, label: labels.explore, view: "explore" },
-    { icon: WalletCards, label: labels.wallet, view: "investor_dashboard", activeViews: ["investor_dashboard", "investor_payments"] },
+    { icon: WalletCards, label: labels.wallet, view: "investor_payments", activeViews: ["investor_dashboard", "investor_payments"] },
     { icon: BriefcaseBusiness, label: labels.company, view: "company_dashboard" },
     { icon: CircleUserRound, label: labels.account, view: "company_dashboard" },
   ];
@@ -198,7 +209,7 @@ export function BottomNav() {
 
           <SheetFooter className="mt-4">
             <Button
-              onClick={handleLogout}
+              onClick={() => setLogoutConfirmOpen(true)}
               disabled={signingOut}
               variant="outline"
               className="w-full text-nexora-danger"
@@ -209,6 +220,23 @@ export function BottomNav() {
           </SheetFooter>
         </SheetContent>
       </Sheet>
+      <AlertDialog open={logoutConfirmOpen} onOpenChange={setLogoutConfirmOpen}>
+        <AlertDialogContent className="max-w-md rounded-[1.6rem]">
+          <AlertDialogHeader>
+            <div className="mx-auto mb-2 grid h-12 w-12 place-items-center rounded-2xl bg-[#f4e8f2] text-[#541249]"><LogOut className="h-5 w-5" /></div>
+            <AlertDialogTitle className="text-center">{locale === "fr" ? "Voulez-vous vous déconnecter ?" : "Do you want to sign out?"}</AlertDialogTitle>
+            <AlertDialogDescription className="text-center leading-6">
+              {locale === "fr" ? "Votre session sera fermée sur cet appareil. Vos portefeuilles, investissements et documents resteront enregistrés." : "Your session will close on this device. Your wallets, investments and documents will remain saved."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{locale === "fr" ? "Rester connecté" : "Stay signed in"}</AlertDialogCancel>
+            <AlertDialogAction className="bg-[#541249] text-white hover:bg-[#380c31]" onClick={() => { setLogoutConfirmOpen(false); void handleLogout(); }}>
+              {locale === "fr" ? "Oui, me déconnecter" : "Yes, sign out"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

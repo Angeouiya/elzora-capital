@@ -149,6 +149,8 @@ interface InvestorDashboardData {
   portfolio: {
     totalInvested: number;
     availableBalance: number;
+    reserveBalance: number;
+    totalWalletBalance: number;
     receivedTotal: number;
     pendingPayments: number;
     activeDeals: number;
@@ -477,6 +479,7 @@ export function InvestorDashboard() {
   const totalInvested = portfolio?.totalInvested ?? 0;
   const receivedTotal = portfolio?.receivedTotal ?? 0;
   const availableBalance = portfolio?.availableBalance ?? 0;
+  const reserveBalance = portfolio?.reserveBalance ?? 0;
 
   const pendingCount = investments.filter(
     (i) => ["pending_payment", "payment_pending"].includes(i.status)
@@ -559,7 +562,7 @@ export function InvestorDashboard() {
           </div>
           <div className="private-metric">
             <div className="flex items-center justify-between gap-3 text-white/58">
-              <span className="text-[11px] font-medium">{en ? "Available" : "Disponible"}</span>
+              <span className="text-[11px] font-medium">{en ? "Investment wallet" : "Portefeuille d’investissement"}</span>
               <ArrowDownToLine className="h-4 w-4 shrink-0" />
             </div>
             <p className="tnum mt-2 text-xl font-black tracking-[-.035em] text-white sm:text-2xl">{money(availableBalance)}</p>
@@ -586,6 +589,24 @@ export function InvestorDashboard() {
             >
               <ReceiptText className="h-3.5 w-3.5" />
               {en ? "View movements" : "Voir les mouvements"}
+            </button>
+          </div>
+          <div className="private-metric">
+            <div className="flex items-center justify-between gap-3 text-white/58">
+              <span className="text-[11px] font-medium">{en ? "Reserve wallet" : "Portefeuille de réserve"}</span>
+              <ShieldCheck className="h-4 w-4 shrink-0" />
+            </div>
+            <p className="tnum mt-2 text-xl font-black tracking-[-.035em] text-white sm:text-2xl">{money(reserveBalance)}</p>
+            <p className="mt-1 text-[10px] leading-4 text-white/52">
+              {en ? "Available and kept separate from investments" : "Disponible et séparé des investissements"}
+            </p>
+            <button
+              type="button"
+              className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-white/76 transition-colors hover:text-white"
+              onClick={() => setView("investor_payments")}
+            >
+              <ArrowRight className="h-3.5 w-3.5" />
+              {en ? "Manage both wallets" : "Gérer les deux portefeuilles"}
             </button>
           </div>
         </div>

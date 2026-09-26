@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   const database = getD1();
   const payout = await database
     .prepare(
-      `SELECT id, investorId, amount, netAmount, status, partnerRef
+      `SELECT id, investorId, amount, netAmount, status, partnerRef, walletType
        FROM Payout WHERE partnerRef = ? LIMIT 1`
     )
     .bind(token)

@@ -16,6 +16,7 @@ import {
   type EquityDividendSettlement,
 } from "@/lib/equity-dividend-settlement";
 import { ensureInvestmentContract } from "@/lib/investment-contract";
+import { parseWalletType, walletAccountType } from "@/lib/wallets";
 
 interface InvestmentPaymentRow extends Record<string, unknown> {
   id: string;
@@ -27,6 +28,15 @@ interface InvestmentPaymentRow extends Record<string, unknown> {
   signedAt: string | null;
   signatureHash: string | null;
   evidencePresent: number;
+}
+
+interface WalletDepositRow extends Record<string, unknown> {
+  id: string;
+  investorId: string;
+  walletType: string;
+  amount: number;
+  status: string;
+  paymentRef: string | null;
 }
 
 export async function POST(req: NextRequest) {
@@ -69,7 +79,140 @@ export async function POST(req: NextRequest) {
   if (flow === "equity_dividend") {
     return handleEquityDividendWebhook(req, confirmed, token, totalAmount);
   }
+  if (flow === "wallet_deposit") {
+    return handleWalletDepositWebhook(req, confirmed, token, totalAmount);
+  }
   return NextResponse.json({ error: "Transaction non reconnue" }, { status: 400 });
+}
+
+async function handleWalletDepositWebhook(
+  req: NextRequest,
+  confirmed: PayDunyaTransaction,
+  token: string,
+  totalAmount: number
+) {
+  const customData = confirmed.custom_data;
+  const depositId = stringValue(customData?.depositId);
+  const requestedWallet = parseWalletType(customData?.walletType);
+  if (!depositId || !requestedWallet) {
+    return NextResponse.json({ error: "Transaction incohérente" }, { status: 400 });
+  }
+
+  const database = getD1();
+  const deposit = await database
+    .prepare(
+      `SELECT id, investorId, walletType, amount, status, paymentRef
+       FROM WalletDeposit WHERE id = ? LIMIT 1`
+    )
+    .bind(depositId)
+    .first<WalletDepositRow>();
+  if (
+    !deposit ||
+    deposit.paymentRef !== token ||
+    deposit.walletType !== requestedWallet ||
+    stringValue(customData?.investorId) !== deposit.investorId ||
+    Number(deposit.amount) !== totalAmount
+  ) {
+    return NextResponse.json({ error: "Transaction non reconnue" }, { status: 400 });
+  }
+
+  const status = confirmed.status?.toLowerCase();
+  if (status === "completed") {
+    if (deposit.status === "confirmed") {
+      return NextResponse.json({ received: true, idempotent: true });
+    }
+    if (deposit.status !== "provider_pending") {
+      return NextResponse.json({ error: "Transaction à rapprocher" }, { status: 409 });
+    }
+    const eventId = crypto.randomUUID();
+    const now = isoNow();
+    const walletAccount = walletAccountType(requestedWallet);
+    await database.batch([
+      database
+        .prepare(
+          `UPDATE WalletDeposit
+           SET status = 'confirmed', providerEventId = ?, confirmedAt = ?, updatedAt = ?
+           WHERE id = ? AND status = 'provider_pending' AND paymentRef = ?`
+        )
+        .bind(eventId, now, now, deposit.id, token),
+      database
+        .prepare(
+          `INSERT INTO LedgerEntry
+           (id, idemKey, accountType, accountId, counterpartyType, counterpartyId,
+            amount, currency, sourceType, sourceId, description, createdAt)
+           SELECT ?, ?, 'investor_external', ?, ?, ?, ?, 'XOF', 'wallet_deposit', ?, ?, ?
+           WHERE EXISTS (SELECT 1 FROM WalletDeposit WHERE id = ? AND providerEventId = ?)`
+        )
+        .bind(
+          crypto.randomUUID(), `wallet-deposit:${deposit.id}:external`, deposit.investorId,
+          walletAccount, deposit.investorId, -totalAmount, deposit.id,
+          "Dépôt confirmé par le prestataire", now, deposit.id, eventId
+        ),
+      database
+        .prepare(
+          `INSERT INTO LedgerEntry
+           (id, idemKey, accountType, accountId, counterpartyType, counterpartyId,
+            amount, currency, sourceType, sourceId, description, createdAt)
+           SELECT ?, ?, ?, ?, 'investor_external', ?, ?, 'XOF', 'wallet_deposit', ?, ?, ?
+           WHERE EXISTS (SELECT 1 FROM WalletDeposit WHERE id = ? AND providerEventId = ?)`
+        )
+        .bind(
+          crypto.randomUUID(), `wallet-deposit:${deposit.id}:wallet`, walletAccount,
+          deposit.investorId, deposit.investorId, totalAmount, deposit.id,
+          requestedWallet === "investment" ? "Dépôt sur le portefeuille d’investissement" : "Dépôt sur le portefeuille de réserve",
+          now, deposit.id, eventId
+        ),
+      database
+        .prepare(
+          `INSERT INTO AuditLog
+           (id, actorType, actorId, action, entityType, entityId, metadata, ipAddress, createdAt)
+           SELECT ?, 'system', 'paydunya', 'wallet.deposit_confirmed', 'WalletDeposit', ?, ?, ?, ?
+           WHERE EXISTS (SELECT 1 FROM WalletDeposit WHERE id = ? AND providerEventId = ?)`
+        )
+        .bind(
+          crypto.randomUUID(), deposit.id,
+          JSON.stringify({ walletType: requestedWallet, amount: totalAmount, paymentRef: token }),
+          requestIp(req), now, deposit.id, eventId
+        ),
+      database
+        .prepare(
+          `INSERT INTO Notification
+           (id, userId, type, title, message, read, actionUrl, createdAt)
+           SELECT ?, ?, 'payment', 'Dépôt confirmé', ?, 0, 'investor_payments', ?
+           WHERE EXISTS (SELECT 1 FROM WalletDeposit WHERE id = ? AND providerEventId = ?)`
+        )
+        .bind(
+          crypto.randomUUID(), deposit.investorId,
+          `${totalAmount.toLocaleString("fr-FR")} FCFA sont disponibles sur votre ${requestedWallet === "investment" ? "portefeuille d’investissement" : "portefeuille de réserve"}.`,
+          now, deposit.id, eventId
+        ),
+    ]);
+    return NextResponse.json({ received: true, status: "confirmed" });
+  }
+
+  if (status === "failed" || status === "cancelled") {
+    if (deposit.status === "failed" || deposit.status === "cancelled") {
+      return NextResponse.json({ received: true, status: deposit.status, idempotent: true });
+    }
+    const now = isoNow();
+    await database.batch([
+      database
+        .prepare(
+          `UPDATE WalletDeposit SET status = ?, failureReason = ?, updatedAt = ?
+           WHERE id = ? AND status = 'provider_pending'`
+        )
+        .bind(status, status, now, deposit.id),
+      database
+        .prepare(
+          `INSERT INTO AuditLog
+           (id, actorType, actorId, action, entityType, entityId, metadata, ipAddress, createdAt)
+           VALUES (?, 'system', 'paydunya', 'wallet.deposit_failed', 'WalletDeposit', ?, ?, ?, ?)`
+        )
+        .bind(crypto.randomUUID(), deposit.id, JSON.stringify({ status, paymentRef: token }), requestIp(req), now),
+    ]);
+    return NextResponse.json({ received: true, status });
+  }
+  return NextResponse.json({ received: true, status: status || "pending" });
 }
 
 async function handleInvestmentWebhook(

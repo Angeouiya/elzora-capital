@@ -35,6 +35,10 @@ import {
   recordBlockedAttempt,
   recordReviewCase,
 } from "@/lib/payment-compliance";
+import { ensureInvestmentContract } from "@/lib/investment-contract";
+import { finalizeFundedOffer } from "@/lib/funding-lifecycle";
+
+type SubscriptionPaymentMethod = CollectionPaymentMethod | "wallet_balance";
 
 interface OfferTermsRow extends SubscriptionOfferTerms {
   status: string;
@@ -79,7 +83,7 @@ interface InvestmentRow extends Record<string, unknown> {
   createdAt: string;
   updatedAt: string;
   paymentRef: string | null;
-  paymentMethod: CollectionPaymentMethod | null;
+  paymentMethod: SubscriptionPaymentMethod | null;
 }
 
 async function findOffer(id: string, userId?: string | null): Promise<OfferTermsRow | null> {
@@ -225,7 +229,7 @@ export async function POST(
   const paymentMethod = parsePaymentMethod(body.paymentMethod);
   if (!paymentMethod) {
     return NextResponse.json(
-      { error: "Choisissez la carte bancaire, le Mobile Money ou le virement bancaire.", code: "PAYMENT_METHOD_REQUIRED" },
+      { error: "Choisissez votre portefeuille, la carte bancaire, le Mobile Money ou le virement bancaire.", code: "PAYMENT_METHOD_REQUIRED" },
       { status: 422 }
     );
   }
@@ -416,78 +420,86 @@ export async function POST(
   const complianceNow = isoNow();
   const ipHash = await hashPaymentIp(session.userId, requestIp(req));
   const paymentUserAgent = req.headers.get("user-agent")?.slice(0, 512) || null;
-  const approvedCase = await findApprovedComplianceCase(database, {
-    userId: session.userId,
-    offerId: id,
-    method: paymentMethod,
-    amount,
-  }, complianceNow);
-
-  let paymentAssessment = assessCollectionPayment({ amount, method: paymentMethod });
-  if (!approvedCase) {
-    const usage = await loadPaymentUsage(database, session.userId, paymentMethod, complianceNow);
-    paymentAssessment = assessCollectionPayment({
-      amount,
-      method: paymentMethod,
-      usage,
-      risk: {
-        country: investor.country,
-        documentCountry: investor.documentCountry,
-        sourceOfFunds: investor.sourceOfFunds,
-        politicallyExposed: Boolean(investor.politicallyExposed),
-        actingForSelf: investor.actingForSelf === null ? undefined : Boolean(investor.actingForSelf),
-      },
-    });
-    if (paymentAssessment.decision === "block") {
-      await recordBlockedAttempt(database, {
-        userId: session.userId,
-        offerId: id,
-        method: paymentMethod,
-        amount,
-        country: investor.country,
-        assessment: paymentAssessment,
-        ipHash,
-        userAgent: paymentUserAgent,
-      });
+  let paymentAssessment = assessCollectionPayment({ amount: 1, method: "card" });
+  if (paymentMethod === "wallet_balance") {
+    const wallet = await database
+      .prepare(
+        `SELECT COALESCE(SUM(amount), 0) AS balance
+         FROM LedgerEntry WHERE accountType = 'investor_wallet' AND accountId = ?`
+      )
+      .bind(session.userId)
+      .first<{ balance: number }>();
+    if (Number(wallet?.balance || 0) < amount) {
       return NextResponse.json(
         {
-          error: paymentAssessment.reasons[0] || "Cette opération dépasse une limite de sécurité.",
-          code: paymentAssessment.code,
-          reasons: paymentAssessment.reasons,
-          policy: paymentAssessment.policy,
+          error: "Le solde de votre portefeuille d’investissement est insuffisant.",
+          code: "WALLET_BALANCE_INSUFFICIENT",
         },
-        { status: 422, headers: { "Cache-Control": "no-store" } }
-      );
-    }
-    if (paymentAssessment.decision === "review") {
-      const caseId = await recordReviewCase(database, {
-        userId: session.userId,
-        offerId: id,
-        method: paymentMethod,
-        amount,
-        country: investor.country,
-        assessment: paymentAssessment,
-        ipHash,
-        userAgent: paymentUserAgent,
-      });
-      return NextResponse.json(
-        {
-          code: "PAYMENT_REVIEW_REQUIRED",
-          caseId,
-          message: "Votre demande est transmise à l'équipe pour vérification. Aucun montant n'a été débité.",
-          reasons: paymentAssessment.reasons,
-        },
-        { status: 202, headers: { "Cache-Control": "no-store" } }
-      );
-    }
-  } else {
-    if (!(await consumeApprovedComplianceCase(database, approvedCase.id, complianceNow))) {
-      return NextResponse.json(
-        { error: "L'autorisation doit être renouvelée avant de poursuivre.", code: "PAYMENT_REVIEW_REQUIRED" },
         { status: 409, headers: { "Cache-Control": "no-store" } }
       );
     }
-    paymentAssessment = { ...paymentAssessment, decision: "allow", code: "PAYMENT_ALLOWED", reasons: [] };
+    paymentAssessment = { ...paymentAssessment, decision: "allow", code: "PAYMENT_ALLOWED", riskScore: 0, reasons: [] };
+  } else {
+    const approvedCase = await findApprovedComplianceCase(database, {
+      userId: session.userId,
+      offerId: id,
+      method: paymentMethod,
+      amount,
+    }, complianceNow);
+    paymentAssessment = assessCollectionPayment({ amount, method: paymentMethod });
+    if (!approvedCase) {
+      const usage = await loadPaymentUsage(database, session.userId, paymentMethod, complianceNow);
+      paymentAssessment = assessCollectionPayment({
+        amount,
+        method: paymentMethod,
+        usage,
+        risk: {
+          country: investor.country,
+          documentCountry: investor.documentCountry,
+          sourceOfFunds: investor.sourceOfFunds,
+          politicallyExposed: Boolean(investor.politicallyExposed),
+          actingForSelf: investor.actingForSelf === null ? undefined : Boolean(investor.actingForSelf),
+        },
+      });
+      if (paymentAssessment.decision === "block") {
+        await recordBlockedAttempt(database, {
+          userId: session.userId, offerId: id, method: paymentMethod, amount,
+          country: investor.country, assessment: paymentAssessment, ipHash, userAgent: paymentUserAgent,
+        });
+        return NextResponse.json(
+          {
+            error: paymentAssessment.reasons[0] || "Cette opération dépasse une limite de sécurité.",
+            code: paymentAssessment.code,
+            reasons: paymentAssessment.reasons,
+            policy: paymentAssessment.policy,
+          },
+          { status: 422, headers: { "Cache-Control": "no-store" } }
+        );
+      }
+      if (paymentAssessment.decision === "review") {
+        const caseId = await recordReviewCase(database, {
+          userId: session.userId, offerId: id, method: paymentMethod, amount,
+          country: investor.country, assessment: paymentAssessment, ipHash, userAgent: paymentUserAgent,
+        });
+        return NextResponse.json(
+          {
+            code: "PAYMENT_REVIEW_REQUIRED",
+            caseId,
+            message: "Votre demande est transmise à l'équipe pour vérification. Aucun montant n'a été débité.",
+            reasons: paymentAssessment.reasons,
+          },
+          { status: 202, headers: { "Cache-Control": "no-store" } }
+        );
+      }
+    } else {
+      if (!(await consumeApprovedComplianceCase(database, approvedCase.id, complianceNow))) {
+        return NextResponse.json(
+          { error: "L'autorisation doit être renouvelée avant de poursuivre.", code: "PAYMENT_REVIEW_REQUIRED" },
+          { status: 409, headers: { "Cache-Control": "no-store" } }
+        );
+      }
+      paymentAssessment = { ...paymentAssessment, decision: "allow", code: "PAYMENT_ALLOWED", reasons: [] };
+    }
   }
 
   const investmentId = crypto.randomUUID();
@@ -648,7 +660,8 @@ export async function POST(
               decision, status, riskScore, reasons, policyVersion, ipHash, userAgent,
               createdAt, updatedAt)
            SELECT ?, ?, ?, ?, ?, ?, 'XOF', ?, 'allow', 'allowed', ?, ?, ?, ?, ?, ?, ?
-           WHERE EXISTS (SELECT 1 FROM Investment WHERE id = ?)`
+           WHERE ? <> 'wallet_balance'
+             AND EXISTS (SELECT 1 FROM Investment WHERE id = ?)`
         )
         .bind(
           paymentAttemptId,
@@ -665,6 +678,7 @@ export async function POST(
           paymentUserAgent,
           now,
           now,
+          paymentMethod,
           investmentId
         ),
       database
@@ -766,6 +780,10 @@ async function paymentResponse(
       { error: "La preuve de souscription doit être validée avant le paiement." },
       { status: 409, headers: { "Cache-Control": "no-store" } }
     );
+  }
+
+  if (investment.paymentMethod === "wallet_balance") {
+    return settleInvestmentFromWallet(investment, offer, idempotent);
   }
 
   const capabilities = getPaymentCapabilities();
@@ -931,6 +949,113 @@ async function paymentResponse(
   );
 }
 
+async function settleInvestmentFromWallet(
+  investment: InvestmentRow,
+  offer: OfferTermsRow,
+  idempotent: boolean
+) {
+  const database = getD1();
+  const now = isoNow();
+  const eventId = crypto.randomUUID();
+  const amount = Number(investment.amount);
+  const results = await database.batch([
+    database
+      .prepare(
+        `UPDATE Investment
+         SET status = 'confirmed', paymentConfirmedAt = ?, paymentEventId = ?, updatedAt = ?
+         WHERE id = ? AND status IN ('pending_payment', 'payment_pending')
+           AND signedAt IS NOT NULL AND signatureHash IS NOT NULL
+           AND EXISTS (
+             SELECT 1 FROM SubscriptionEvidence
+             WHERE investmentId = Investment.id AND signedPayloadHash = Investment.signatureHash
+           )
+           AND (SELECT COALESCE(SUM(amount), 0) FROM LedgerEntry
+                WHERE accountType = 'investor_wallet' AND accountId = ?) >= ?`
+      )
+      .bind(now, eventId, now, investment.id, investment.investorId, amount),
+    database
+      .prepare(
+        `UPDATE Offer
+         SET committedAmount = MAX(0, committedAmount - ?),
+             raisedAmount = raisedAmount + ?, backersCount = backersCount + 1
+         WHERE id = ? AND EXISTS (
+           SELECT 1 FROM Investment WHERE id = ? AND paymentEventId = ?
+         )`
+      )
+      .bind(amount, amount, investment.offerId, investment.id, eventId),
+    database
+      .prepare(
+        `INSERT INTO LedgerEntry
+         (id, idemKey, accountType, accountId, counterpartyType, counterpartyId,
+          amount, currency, sourceType, sourceId, description, createdAt)
+         SELECT ?, ?, 'investor_wallet', ?, 'escrow', ?, ?, 'XOF',
+                'investment', ?, 'Paiement depuis le portefeuille d’investissement', ?
+         WHERE EXISTS (SELECT 1 FROM Investment WHERE id = ? AND paymentEventId = ?)`
+      )
+      .bind(
+        crypto.randomUUID(), `investment:${investment.id}:wallet`, investment.investorId,
+        investment.offerId, -amount, investment.id, now, investment.id, eventId
+      ),
+    database
+      .prepare(
+        `INSERT INTO LedgerEntry
+         (id, idemKey, accountType, accountId, counterpartyType, counterpartyId,
+          amount, currency, sourceType, sourceId, description, createdAt)
+         SELECT ?, ?, 'escrow', ?, 'investor_wallet', ?, ?, 'XOF',
+                'investment', ?, 'Fonds de souscription reçus en séquestre', ?
+         WHERE EXISTS (SELECT 1 FROM Investment WHERE id = ? AND paymentEventId = ?)`
+      )
+      .bind(
+        crypto.randomUUID(), `investment:${investment.id}:escrow`, investment.offerId,
+        investment.investorId, amount, investment.id, now, investment.id, eventId
+      ),
+    database
+      .prepare(
+        `INSERT INTO AuditLog
+         (id, actorType, actorId, action, entityType, entityId, metadata, createdAt)
+         SELECT ?, 'user', ?, 'investment_wallet_payment_confirmed', 'investment', ?, ?, ?
+         WHERE EXISTS (SELECT 1 FROM Investment WHERE id = ? AND paymentEventId = ?)`
+      )
+      .bind(
+        crypto.randomUUID(), investment.investorId, investment.id,
+        JSON.stringify({ offerId: investment.offerId, amount, sourceWallet: "investment" }),
+        now, investment.id, eventId
+      ),
+    database
+      .prepare(
+        `INSERT INTO Notification
+         (id, userId, type, title, message, read, actionUrl, createdAt)
+         SELECT ?, ?, 'payment', 'Investissement payé', ?, 0, 'investor_dashboard', ?
+         WHERE EXISTS (SELECT 1 FROM Investment WHERE id = ? AND paymentEventId = ?)`
+      )
+      .bind(
+        crypto.randomUUID(), investment.investorId,
+        `${amount.toLocaleString("fr-FR")} FCFA ont été prélevés sur votre portefeuille d’investissement pour « ${offer.title} ».`,
+        now, investment.id, eventId
+      ),
+  ]);
+
+  if (Number(results[0].meta.changes || 0) !== 1) {
+    return NextResponse.json(
+      { error: "Le solde de votre portefeuille d’investissement est insuffisant.", code: "WALLET_BALANCE_INSUFFICIENT" },
+      { status: 409, headers: { "Cache-Control": "no-store" } }
+    );
+  }
+  await ensureInvestmentContract(database, investment.id);
+  await finalizeFundedOffer(investment.offerId);
+  return NextResponse.json(
+    {
+      investment: normalizeInvestment({ ...investment, status: "confirmed", paymentConfirmedAt: now }),
+      idempotent,
+      payment: {
+        status: "wallet_confirmed",
+        message: "Le paiement a été prélevé sur votre portefeuille d’investissement.",
+      },
+    },
+    { status: idempotent ? 200 : 201, headers: { "Cache-Control": "no-store" } }
+  );
+}
+
 async function ensureSubscriptionEvidence(
   req: NextRequest,
   investment: InvestmentRow,
@@ -1057,6 +1182,6 @@ function parseMoney(value: unknown): number | null {
   return Number.isSafeInteger(amount) ? amount : null;
 }
 
-function parsePaymentMethod(value: unknown): CollectionPaymentMethod | null {
-  return value === "card" || value === "mobile_money" || value === "bank_transfer" ? value : null;
+function parsePaymentMethod(value: unknown): SubscriptionPaymentMethod | null {
+  return value === "card" || value === "mobile_money" || value === "bank_transfer" || value === "wallet_balance" ? value : null;
 }

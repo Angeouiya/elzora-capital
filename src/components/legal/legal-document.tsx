@@ -31,7 +31,7 @@ const COPY = {
   fr: {
     back: "Retour à la plateforme",
     nav: { terms: "Conditions", privacy: "Confidentialité", compliance: "Cadre réglementaire" },
-    updated: "Version du 24 septembre 2026",
+    updated: "Révision de travail du 26 septembre 2026",
     notice: "Document de travail pré-lancement",
     noticeText: "La plateforme n’affirme pas disposer d’un agrément. L’ouverture d’une offre réelle reste conditionnée à sa qualification juridique, aux validations requises et à la contractualisation avec des prestataires autorisés.",
     terms: {
@@ -43,7 +43,7 @@ const COPY = {
         { title: "2. Sélection des dossiers", body: "Une analyse réduit l’asymétrie d’information mais ne constitue ni une garantie, ni un conseil personnalisé, ni une promesse de rendement.", bullets: ["Examen de l’entreprise, de ses dirigeants et de son financement", "Conditions finales figées dans une version publiée", "Rejet ou demande de complément possible à tout moment avant publication"] },
         { title: "3. Souscription et paiement", body: "Une intention de souscrire ne devient un investissement confirmé qu’après acceptation des documents, signature, réception irrévocable du paiement et contrôles applicables.", bullets: ["Règlement en francs CFA par carte ou Mobile Money auprès d’un partenaire autorisé", "Aucun numéro de carte n’est conservé par la plateforme", "Annulation, échec ou remboursement visible dans le portefeuille"] },
         { title: "4. Dette, actions et droits", body: "Une dette donne droit aux paiements contractuels sous réserve de la capacité de remboursement. Une action confère les droits prévus par les statuts, le pacte et la décision sociale concernée.", bullets: ["Aucune liquidité, revente rapide ou distribution de dividende n’est garantie", "Chaque dividende exige une décision sociale, une date de référence et les contrôles applicables", "Les montants nets sont répartis selon les titres inscrits et la retenue fiscale déclarée", "Les titres restent inscrits et administrés selon les actes sociaux applicables"] },
-        { title: "5. Portefeuille et versements", body: "Le portefeuille est un registre des créances et mouvements dus à l’utilisateur ; il ne doit pas être présenté comme un compte bancaire. Les fonds doivent rester chez les partenaires financiers habilités jusqu’à leur affectation.", bullets: ["Grand livre à partie double et réconciliation", "Versement uniquement vers un bénéficiaire vérifié", "Blocage possible en cas d’anomalie, fraude ou obligation réglementaire"] },
+        { title: "5. Portefeuilles et versements", body: "Les portefeuilles sont des registres de créances et de mouvements dus à l’utilisateur ; ils ne sont pas des comptes bancaires. Le portefeuille d’investissement sert aux souscriptions et reçoit les revenus. Le portefeuille de réserve permet d’isoler une somme avant son retrait ou sa réaffectation.", bullets: ["Dépôt et retrait soumis à vérification et exécutés par un prestataire autorisé", "Transfert interne traçable entre portefeuille d’investissement et portefeuille de réserve", "Grand livre à partie double, réconciliation et blocage possible en cas d’anomalie ou d’obligation réglementaire"] },
         { title: "6. Réclamations et responsabilité", body: "L’utilisateur doit signaler rapidement toute erreur. La plateforme répond de ses obligations de service, sans couvrir les pertes économiques propres à l’entreprise financée ni les événements hors de son contrôle raisonnable.", bullets: ["Réclamation documentée à contact@nexora.capital", "Conservation des preuves et journaux d’opération", "Droit applicable précisé dans les documents contractuels définitifs"] },
       ] as Section[],
     },
@@ -80,7 +80,7 @@ const COPY = {
   en: {
     back: "Back to the platform",
     nav: { terms: "Terms", privacy: "Privacy", compliance: "Regulatory framework" },
-    updated: "Version dated 24 September 2026",
+    updated: "Working revision dated 26 September 2026",
     notice: "Pre-launch working document",
     noticeText: "The platform does not claim to be licensed. Opening a live offer remains subject to legal classification, required regulatory clearances and contracts with authorized providers.",
     terms: {
@@ -92,7 +92,7 @@ const COPY = {
         { title: "2. Application selection", body: "Review reduces information asymmetry but is not a guarantee, personalized advice or a promise of return.", bullets: ["Review of the company, management and financing", "Final terms frozen in a published version", "Rejection or additional information request possible before publication"] },
         { title: "3. Subscription and payment", body: "An intention becomes a confirmed investment only after document acceptance, signature, irrevocable payment receipt and applicable checks.", bullets: ["Payment in CFA francs by card or Mobile Money through an authorized partner", "The platform never stores card numbers", "Cancellations, failures and refunds appear in the portfolio"] },
         { title: "4. Debt, equity and rights", body: "Debt grants contractual payment rights subject to repayment capacity. Equity grants rights defined by the articles, shareholders’ agreement and relevant corporate resolution.", bullets: ["No guaranteed liquidity, quick resale or dividend distribution", "Each dividend requires a corporate resolution, a record date and applicable reviews", "Net amounts are allocated from registered holdings and the declared withholding", "Securities are administered under the applicable corporate instruments"] },
-        { title: "5. Portfolio and payouts", body: "The portfolio is a record of claims and movements due to the user; it is not a bank account. Funds must remain with authorized financial partners until allocated.", bullets: ["Double-entry ledger and reconciliation", "Payouts only to verified beneficiaries", "Holds permitted for anomalies, fraud or regulatory duties"] },
+        { title: "5. Wallets and payouts", body: "The wallets are records of claims and movements due to the user; they are not bank accounts. The investment wallet funds subscriptions and receives returns. The reserve wallet isolates an amount before withdrawal or reallocation.", bullets: ["Deposits and withdrawals require verification and execution by an authorized provider", "Traceable internal transfers between the investment and reserve wallets", "Double-entry ledger, reconciliation and holds for anomalies or regulatory duties"] },
         { title: "6. Complaints and liability", body: "Users must promptly report errors. The platform remains responsible for its service obligations, but does not cover the financed company’s economic losses or events beyond reasonable control.", bullets: ["Documented complaint to contact@nexora.capital", "Preservation of evidence and transaction logs", "Governing law stated in final contractual documents"] },
       ] as Section[],
     },
@@ -210,6 +210,9 @@ function OfficialSources({ locale }: { locale: "fr" | "en" }) {
     { icon: Globe2, label: "AMF‑UMOA", detail: locale === "fr" ? "Note sectorielle sur le financement participatif" : "Sector note on crowdfunding", href: REGULATORY_SOURCES.amfCrowdfunding },
     { icon: Banknote, label: "BCEAO", detail: locale === "fr" ? "FinTech et cadre de supervision" : "FinTech and supervisory framework", href: REGULATORY_SOURCES.bceaoFintech },
     { icon: WalletCards, label: "BCEAO", detail: locale === "fr" ? "Instruction relative aux services de paiement" : "Payment services instruction", href: REGULATORY_SOURCES.bceaoPayments },
+    { icon: UserCheck, label: "BCEAO", detail: locale === "fr" ? "Identification et connaissance de la clientèle" : "Customer identification and due diligence", href: REGULATORY_SOURCES.bceaoKyc },
+    { icon: ShieldAlert, label: "BCEAO", detail: locale === "fr" ? "Loi uniforme LBC-FT-FP" : "Uniform AML/CFT/CPF law", href: REGULATORY_SOURCES.bceaoAml },
+    { icon: FileCheck2, label: "BCEAO", detail: locale === "fr" ? "Établissements de paiement agréés en 2026" : "Licensed payment institutions in 2026", href: REGULATORY_SOURCES.bceaoAuthorizedProviders },
     { icon: Scale, label: "OHADA", detail: locale === "fr" ? "Droit des sociétés commerciales" : "Company law", href: REGULATORY_SOURCES.ohadaCompanies },
     { icon: Fingerprint, label: "AMF‑UMOA", detail: locale === "fr" ? "Instruction LCB‑FT révisée" : "Revised AML/CFT instruction", href: REGULATORY_SOURCES.amfAml },
   ];

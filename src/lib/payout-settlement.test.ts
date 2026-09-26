@@ -66,6 +66,7 @@ test("successful payout closes the pending account exactly once", async () => {
   const payout: PayoutSettlementRow = {
     id: "payout_success", investorId: "user_1", amount: 50_000,
     netAmount: 50_000, status: "ordered", partnerRef: "token_1",
+    walletType: "investment",
   };
   const request = new Request("https://example.com/api/payouts/paydunya/webhook");
   await settlePayout(request, payout, { status: "success", fees: 800 }, testD1(sqlite));
@@ -83,6 +84,7 @@ test("failed payout releases the reserved wallet balance", async () => {
   const payout: PayoutSettlementRow = {
     id: "payout_failed", investorId: "user_1", amount: 50_000,
     netAmount: 50_000, status: "ordered", partnerRef: "token_1",
+    walletType: "investment",
   };
   await settlePayout(
     new Request("https://example.com/api/payouts/paydunya/webhook"),

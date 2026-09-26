@@ -22,8 +22,19 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { formatDisplayMoney } from "@/lib/display-money";
 import type { DisplayCurrency, Locale } from "@/lib/store";
+import type { InvestorWalletType } from "@/lib/wallets";
 
 interface PayoutContext {
   availableBalance: number;
@@ -44,12 +55,14 @@ export function PayoutDialog({
   locale,
   displayCurrency,
   onCompleted,
+  walletType = "investment",
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   locale: Locale;
   displayCurrency: DisplayCurrency;
   onCompleted: () => void;
+  walletType?: InvestorWalletType;
 }) {
   const en = locale === "en";
   const [context, setContext] = useState<PayoutContext | null>(null);
@@ -57,11 +70,12 @@ export function PayoutDialog({
   const [amount, setAmount] = useState("");
   const [withdrawMode, setWithdrawMode] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     const controller = new AbortController();
-    fetch("/api/investor/payouts", { cache: "no-store", signal: controller.signal })
+    fetch(`/api/investor/payouts?walletType=${walletType}`, { cache: "no-store", signal: controller.signal })
       .then(async (response) => {
         const payload = (await response.json()) as PayoutContext & { error?: string };
         if (!response.ok) throw new Error(en ? "Unable to load your available balance." : "Impossible de charger votre solde disponible.");
@@ -78,7 +92,7 @@ export function PayoutDialog({
         setError(fetchError instanceof Error ? fetchError.message : en ? "Transfer unavailable." : "Versement indisponible.");
       });
     return () => controller.abort();
-  }, [open, en]);
+  }, [open, en, walletType]);
 
   const numericAmount = Number(amount);
   const openPayout = useMemo(
@@ -104,7 +118,7 @@ export function PayoutDialog({
       const response = await fetch("/api/investor/payouts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: numericAmount, withdrawMode }),
+        body: JSON.stringify({ amount: numericAmount, withdrawMode, walletType }),
       });
       const payload = (await response.json()) as {
         error?: string;
@@ -139,14 +153,15 @@ export function PayoutDialog({
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{en ? "Receive via Mobile Money" : "Recevoir par Mobile Money"}</DialogTitle>
+          <DialogTitle>{en ? "Withdraw via Mobile Money" : "Retirer par Mobile Money"}</DialogTitle>
           <DialogDescription>
             {en
-              ? "Transfer your available returns to the number registered on your account."
-              : "Transférez vos revenus disponibles vers le numéro enregistré sur votre compte."}
+              ? `Withdraw from your ${walletType === "reserve" ? "reserve" : "investment"} wallet to the number registered on your account.`
+              : `Retirez depuis votre portefeuille ${walletType === "reserve" ? "de réserve" : "d’investissement"} vers le numéro enregistré sur votre compte.`}
           </DialogDescription>
         </DialogHeader>
 
@@ -181,6 +196,13 @@ export function PayoutDialog({
                 <p className="font-semibold">{en ? "A payout is already in progress" : "Un versement est déjà en cours"}</p>
                 <p className="mt-1 text-xs opacity-85">
                   {en ? "You will be notified as soon as it is completed." : "Vous serez informé dès qu’il sera terminé."}
+                </p>
+              </div>
+            ) : !context.payoutsEnabled ? (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+                <p className="font-semibold">{en ? "Withdrawals are being activated" : "Les retraits sont en cours d’activation"}</p>
+                <p className="mt-1 text-xs leading-5 opacity-85">
+                  {en ? "The button will become active as soon as the approved payment partner is connected." : "Le bouton deviendra actif dès que le partenaire de paiement autorisé sera connecté."}
                 </p>
               </div>
             ) : (
@@ -228,7 +250,7 @@ export function PayoutDialog({
             {en ? "Close" : "Fermer"}
           </Button>
           {!openPayout && context && (
-            <Button className="btn-nexora" disabled={!valid || submitting} onClick={() => void submit()}>
+            <Button className="btn-nexora" disabled={!valid || submitting} onClick={() => setConfirmOpen(true)}>
               {submitting ? (
                 <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
               ) : (
@@ -240,6 +262,29 @@ export function PayoutDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+      <AlertDialogContent className="max-w-md rounded-[1.6rem]">
+        <AlertDialogHeader>
+          <div className="mx-auto mb-2 grid h-12 w-12 place-items-center rounded-2xl bg-[#f4e8f2] text-[#541249]"><ArrowDownToLine className="h-5 w-5" /></div>
+          <AlertDialogTitle className="text-center">{en ? "Confirm this withdrawal?" : "Confirmer ce retrait ?"}</AlertDialogTitle>
+          <AlertDialogDescription className="text-center leading-6">
+            {en
+              ? `${money(numericAmount)} will be reserved from your ${walletType === "reserve" ? "reserve" : "investment"} wallet, then sent to ${context?.payoutPhoneMasked || "your registered number"}.`
+              : `${money(numericAmount)} seront réservés sur votre portefeuille ${walletType === "reserve" ? "de réserve" : "d’investissement"}, puis envoyés vers ${context?.payoutPhoneMasked || "votre numéro enregistré"}.`}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-center text-xs leading-5 text-amber-950">
+          {en ? "The amount remains protected while the payment partner confirms the transfer." : "Le montant reste protégé pendant la confirmation du transfert par le partenaire de paiement."}
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel>{en ? "Cancel" : "Annuler"}</AlertDialogCancel>
+          <AlertDialogAction className="btn-nexora" onClick={() => { setConfirmOpen(false); void submit(); }}>
+            {en ? "Yes, withdraw" : "Oui, retirer"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
 

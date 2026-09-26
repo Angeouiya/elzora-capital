@@ -23,6 +23,16 @@ import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Menu, X, Wallet, BriefcaseBusiness, LogOut, ChevronDown, Languages } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const COPY = {
   fr: {
@@ -94,6 +104,7 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
   } = useAppStore();
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const copy = COPY[locale];
   const currencyLabel = displayCurrency === "XOF" ? "F CFA" : displayCurrency;
 
@@ -264,7 +275,7 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onClick={handleLogout}
+                  onSelect={(event) => { event.preventDefault(); setLogoutConfirmOpen(true); }}
                   disabled={signingOut}
                   className="cursor-pointer text-nexora-danger"
                 >
@@ -365,6 +376,23 @@ export function Header({ sessionPending = false }: { sessionPending?: boolean })
           </nav>
         </SheetContent>
       ) : null}
+      <AlertDialog open={logoutConfirmOpen} onOpenChange={setLogoutConfirmOpen}>
+        <AlertDialogContent className="max-w-md rounded-[1.6rem]">
+          <AlertDialogHeader>
+            <div className="mx-auto mb-2 grid h-12 w-12 place-items-center rounded-2xl bg-[#f4e8f2] text-[#541249]"><LogOut className="h-5 w-5" /></div>
+            <AlertDialogTitle className="text-center">{locale === "fr" ? "Voulez-vous vous déconnecter ?" : "Do you want to sign out?"}</AlertDialogTitle>
+            <AlertDialogDescription className="text-center leading-6">
+              {locale === "fr" ? "Votre session sera fermée sur cet appareil. Vos portefeuilles, investissements et documents resteront enregistrés." : "Your session will close on this device. Your wallets, investments and documents will remain saved."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{locale === "fr" ? "Rester connecté" : "Stay signed in"}</AlertDialogCancel>
+            <AlertDialogAction className="bg-[#541249] text-white hover:bg-[#380c31]" onClick={() => { setLogoutConfirmOpen(false); void handleLogout(); }}>
+              {locale === "fr" ? "Oui, me déconnecter" : "Yes, sign out"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Sheet>
   );
 }

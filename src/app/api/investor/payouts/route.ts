@@ -17,6 +17,7 @@ import {
   markPayoutUncertain,
   resolvePayDunyaPayoutStatus,
 } from "@/lib/payout-provider-resolution";
+import { parseWalletType, walletAccountType } from "@/lib/wallets";
 
 interface PayoutRow extends Record<string, unknown> {
   id: string;
@@ -30,6 +31,7 @@ interface PayoutRow extends Record<string, unknown> {
   withdrawMode: string | null;
   beneficiaryAccount: string;
   failureReason: string | null;
+  walletType: string;
 }
 
 interface PayoutUserRow extends Record<string, unknown> {
@@ -48,18 +50,20 @@ export async function GET(req: Request) {
 
   const database = getD1();
   const capabilities = getPaymentCapabilities();
+  const walletType = parseWalletType(new URL(req.url).searchParams.get("walletType")) || "investment";
+  const sourceWallet = walletAccountType(walletType);
   const [balance, payouts, user] = await Promise.all([
     database
       .prepare(
         `SELECT COALESCE(SUM(amount), 0) AS balance
          FROM LedgerEntry
-         WHERE accountType = 'investor_wallet' AND accountId = ?`
+         WHERE accountType = ? AND accountId = ?`
       )
-      .bind(session.userId)
+      .bind(sourceWallet, session.userId)
       .first<{ balance: number }>(),
     database
       .prepare(
-        `SELECT id, amount, fees, netAmount, status, withdrawMode,
+        `SELECT id, amount, fees, netAmount, status, withdrawMode, walletType,
                 beneficiaryAccount, partnerRef, failureReason, createdAt, completedAt
          FROM Payout WHERE investorId = ?
          ORDER BY createdAt DESC LIMIT 30`
@@ -80,6 +84,7 @@ export async function GET(req: Request) {
     {
       payouts: payouts.results,
       availableBalance: Number(balance?.balance || 0),
+      walletType,
       payoutsEnabled: capabilities.payoutsEnabled,
       providerName: capabilities.providerName,
       payoutMethods: capabilities.payoutMethods,
@@ -123,6 +128,8 @@ export async function POST(req: NextRequest) {
 
   const amount = Number(body.amount);
   const withdrawMode = String(body.withdrawMode || "").trim();
+  const walletType = parseWalletType(body.walletType) || "investment";
+  const sourceWallet = walletAccountType(walletType);
   if (!Number.isSafeInteger(amount) || amount <= 0) {
     return NextResponse.json(
       { error: "Le montant doit être un entier strictement positif." },
@@ -140,14 +147,14 @@ export async function POST(req: NextRequest) {
       .prepare(
         `SELECT COALESCE(SUM(amount), 0) AS balance
          FROM LedgerEntry
-         WHERE accountType = 'investor_wallet' AND accountId = ?`
+         WHERE accountType = ? AND accountId = ?`
       )
-      .bind(session.userId)
+      .bind(sourceWallet, session.userId)
       .first<{ balance: number }>(),
     database
       .prepare(
         `SELECT id, investorId, amount, netAmount, status, partnerRef,
-                withdrawMode, beneficiaryAccount
+                withdrawMode, beneficiaryAccount, walletType
          FROM Payout
          WHERE investorId = ? AND status IN ('pending', 'ordered', 'uncertain')
          ORDER BY createdAt DESC LIMIT 1`
@@ -187,7 +194,8 @@ export async function POST(req: NextRequest) {
   if (openPayout) {
     if (
       Number(openPayout.amount) !== amount ||
-      openPayout.withdrawMode !== withdrawMode
+      openPayout.withdrawMode !== withdrawMode ||
+      openPayout.walletType !== walletType
     ) {
       return NextResponse.json(
         {
@@ -227,6 +235,7 @@ export async function POST(req: NextRequest) {
     netAmount: amount,
     status: "pending",
     partnerRef: null,
+    walletType,
     withdrawMode,
     beneficiaryAccount: maskedPhone,
   };
@@ -237,9 +246,9 @@ export async function POST(req: NextRequest) {
         .prepare(
           `INSERT INTO Payout
            (id, investorType, investorId, amount, fees, netAmount, status,
-            beneficiaryAccount, withdrawMode, partnerRef, providerEventId,
+            beneficiaryAccount, withdrawMode, partnerRef, providerEventId, walletType,
             failureReason, createdAt, completedAt)
-           VALUES (?, 'individual', ?, ?, 0, ?, 'pending', ?, ?, NULL, NULL, NULL, ?, NULL)`
+           VALUES (?, 'individual', ?, ?, 0, ?, 'pending', ?, ?, NULL, NULL, ?, NULL, ?, NULL)`
         )
         .bind(
           payoutId,
@@ -248,6 +257,7 @@ export async function POST(req: NextRequest) {
           amount,
           maskedPhone,
           withdrawMode,
+          walletType,
           now
         ),
       database
@@ -255,12 +265,13 @@ export async function POST(req: NextRequest) {
           `INSERT INTO LedgerEntry
            (id, idemKey, accountType, accountId, counterpartyType, counterpartyId,
             amount, currency, sourceType, sourceId, description, createdAt)
-           VALUES (?, ?, 'investor_wallet', ?, 'investor_withdrawal_pending', ?,
+           VALUES (?, ?, ?, ?, 'investor_withdrawal_pending', ?,
                    ?, 'XOF', 'payout', ?, 'Réservation pour versement', ?)`
         )
         .bind(
           crypto.randomUUID(),
           `payout:${payoutId}:wallet`,
+          sourceWallet,
           session.userId,
           payoutId,
           -amount,
@@ -272,13 +283,14 @@ export async function POST(req: NextRequest) {
           `INSERT INTO LedgerEntry
            (id, idemKey, accountType, accountId, counterpartyType, counterpartyId,
             amount, currency, sourceType, sourceId, description, createdAt)
-           VALUES (?, ?, 'investor_withdrawal_pending', ?, 'investor_wallet', ?,
+           VALUES (?, ?, 'investor_withdrawal_pending', ?, ?, ?,
                    ?, 'XOF', 'payout', ?, 'Versement en attente du prestataire', ?)`
         )
         .bind(
           crypto.randomUUID(),
           `payout:${payoutId}:pending`,
           payoutId,
+          sourceWallet,
           session.userId,
           amount,
           payoutId,
@@ -294,7 +306,7 @@ export async function POST(req: NextRequest) {
           crypto.randomUUID(),
           session.userId,
           payoutId,
-          JSON.stringify({ amount, provider: "paydunya", withdrawMode }),
+          JSON.stringify({ amount, provider: "paydunya", withdrawMode, walletType }),
           requestIp(req),
           now
         ),
@@ -405,11 +417,13 @@ function publicPayout(payout: {
   amount: number;
   status: string;
   withdrawMode?: string | null;
+  walletType?: string;
 }) {
   return {
     id: payout.id,
     amount: Number(payout.amount),
     status: payout.status,
     withdrawMode: payout.withdrawMode || null,
+    walletType: parseWalletType(payout.walletType) || "investment",
   };
 }

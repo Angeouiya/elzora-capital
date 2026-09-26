@@ -139,12 +139,14 @@ export async function GET(req: Request) {
       .all<InvestmentDashboardRow>(),
     database
       .prepare(
-        `SELECT COALESCE(SUM(amount), 0) AS balance
+        `SELECT
+           COALESCE(SUM(CASE WHEN accountType = 'investor_wallet' THEN amount ELSE 0 END), 0) AS investmentBalance,
+           COALESCE(SUM(CASE WHEN accountType = 'investor_reserve_wallet' THEN amount ELSE 0 END), 0) AS reserveBalance
          FROM LedgerEntry
-         WHERE accountType = 'investor_wallet' AND accountId = ?`
+         WHERE accountId = ? AND accountType IN ('investor_wallet', 'investor_reserve_wallet')`
       )
       .bind(session.userId)
-      .first<{ balance: number }>(),
+      .first<{ investmentBalance: number; reserveBalance: number }>(),
     database
       .prepare(
         `SELECT id, type, title, message, read, actionUrl, createdAt
@@ -159,7 +161,8 @@ export async function GET(req: Request) {
     return NextResponse.json({ user: null, investments: [], portfolio: null, notifications: [] });
   }
 
-  const availableBalance = Number(balanceRow?.balance || 0);
+  const availableBalance = Number(balanceRow?.investmentBalance || 0);
+  const reserveBalance = Number(balanceRow?.reserveBalance || 0);
   let receivedTotal = 0;
   let totalInvested = 0;
   let pendingPayments = 0;
@@ -293,6 +296,8 @@ export async function GET(req: Request) {
       portfolio: {
         totalInvested,
         availableBalance,
+        reserveBalance,
+        totalWalletBalance: availableBalance + reserveBalance,
         receivedTotal,
         pendingPayments,
         activeDeals,

@@ -5,8 +5,10 @@ import {
   ArrowDownToLine,
   ArrowLeft,
   ArrowUpFromLine,
+  ArrowRightLeft,
   Clock3,
   Coins,
+  Plus,
   Loader2,
   ReceiptText,
   ShieldCheck,
@@ -15,8 +17,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PayoutDialog } from "@/components/investor/payout-dialog";
+import { WalletActionDialog } from "@/components/investor/wallet-action-dialog";
 import { formatDisplayMoney } from "@/lib/display-money";
 import { useAppStore } from "@/lib/store";
+import type { CollectionPaymentMethod } from "@/lib/payment-policy";
+import type { InvestorWalletType } from "@/lib/wallets";
 
 interface WalletEntry {
   id: string;
@@ -26,15 +31,20 @@ interface WalletEntry {
   reference: string;
   createdAt: string;
   balanceAfter: number;
+  walletType: InvestorWalletType;
 }
 
 interface WalletPayload {
   summary: {
     availableBalance: number;
+    investmentBalance: number;
+    reserveBalance: number;
     totalReceived: number;
     totalPaidOut: number;
     pendingPayout: number;
     payoutsEnabled: boolean;
+    depositsEnabled: boolean;
+    depositMethods: CollectionPaymentMethod[];
   };
   entries: WalletEntry[];
   nextCursor: string | null;
@@ -42,9 +52,9 @@ interface WalletPayload {
 
 const COPY = {
   fr: {
-    kicker: "Mon portefeuille",
-    title: "Chaque mouvement, clairement retracé.",
-    intro: "Suivez les remboursements, dividendes et versements enregistrés sur votre portefeuille.",
+    kicker: "Mes portefeuilles",
+    title: "Deux soldes. Une maîtrise totale.",
+    intro: "Investissez depuis votre portefeuille principal et mettez vos gains à l’abri dans votre réserve.",
     back: "Retour au portefeuille",
     available: "Disponible",
     received: "Reçu sur le portefeuille",
@@ -71,11 +81,18 @@ const COPY = {
     loadError: "Impossible de charger les mouvements du portefeuille.",
     retry: "Réessayer",
     signIn: "Se connecter",
+    investmentWallet: "Portefeuille d’investissement",
+    investmentHelp: "Pour payer vos parts et recevoir vos gains.",
+    reserveWallet: "Portefeuille de réserve",
+    reserveHelp: "Pour isoler un montant disponible sans l’engager.",
+    deposit: "Déposer",
+    withdraw: "Retirer",
+    transfer: "Déplacer",
   },
   en: {
-    kicker: "My portfolio",
-    title: "Every movement, clearly recorded.",
-    intro: "Track repayments, dividends and payouts recorded in your portfolio.",
+    kicker: "My wallets",
+    title: "Two balances. Full control.",
+    intro: "Invest from your main wallet and move returns into your reserve when you want them set aside.",
     back: "Back to portfolio",
     available: "Available",
     received: "Received in portfolio",
@@ -102,6 +119,13 @@ const COPY = {
     loadError: "Unable to load portfolio movements.",
     retry: "Try again",
     signIn: "Sign in",
+    investmentWallet: "Investment wallet",
+    investmentHelp: "Pay for shares and receive your returns.",
+    reserveWallet: "Reserve wallet",
+    reserveHelp: "Keep an available amount separate from investments.",
+    deposit: "Add money",
+    withdraw: "Withdraw",
+    transfer: "Move",
   },
 } as const;
 
@@ -113,6 +137,9 @@ export function WalletHistory() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<"AUTH" | string | null>(null);
   const [payoutOpen, setPayoutOpen] = useState(false);
+  const [depositOpen, setDepositOpen] = useState(false);
+  const [transferOpen, setTransferOpen] = useState(false);
+  const [activeWallet, setActiveWallet] = useState<InvestorWalletType>("investment");
   const money = (value: number) => formatDisplayMoney(value, displayCurrency, locale);
 
   const load = useCallback(async (cursor?: string) => {
@@ -180,16 +207,9 @@ export function WalletHistory() {
               <h1 className="mt-2 text-3xl font-bold tracking-[-.045em] sm:text-4xl">{copy.title}</h1>
               <p className="mt-3 max-w-xl text-base leading-7 text-white/70">{copy.intro}</p>
             </div>
-            {data.summary.availableBalance > 0 && data.summary.payoutsEnabled ? (
-              <Button className="h-11 rounded-full !bg-none !bg-white px-5 !text-[#541249] hover:!bg-[#f8edf5]" onClick={() => setPayoutOpen(true)}>
-                <ArrowDownToLine className="h-4 w-4" />
-                {copy.request}
-              </Button>
-            ) : data.summary.availableBalance > 0 ? (
-              <span className="w-fit rounded-full border border-white/12 bg-white/[.08] px-4 py-2.5 text-xs font-semibold text-white/72">
-                {copy.activation}
-              </span>
-            ) : null}
+            <span className="w-fit rounded-full border border-white/12 bg-white/[.08] px-4 py-2.5 text-xs font-semibold text-white/72">
+              {money(data.summary.availableBalance)} {locale === "fr" ? "au total" : "in total"}
+            </span>
           </div>
         </div>
 
@@ -204,6 +224,30 @@ export function WalletHistory() {
           />
         </div>
       </header>
+
+      <div className="grid gap-3 lg:grid-cols-2">
+        {(["investment", "reserve"] as InvestorWalletType[]).map((wallet) => {
+          const isInvestment = wallet === "investment";
+          const balance = isInvestment ? data.summary.investmentBalance : data.summary.reserveBalance;
+          return (
+            <article key={wallet} className={`overflow-hidden rounded-[1.5rem] border p-5 shadow-[0_16px_42px_rgba(56,12,49,.055)] sm:p-6 ${isInvestment ? "border-[#541249]/14 bg-[linear-gradient(145deg,#fff_0%,#f8edf5_100%)]" : "border-[#541249]/10 bg-white"}`}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-xs font-bold uppercase tracking-[.12em] text-[#6c195e]">{isInvestment ? copy.investmentWallet : copy.reserveWallet}</p>
+                  <p className="tnum mt-2 text-2xl font-black tracking-[-.04em] text-foreground sm:text-3xl">{money(balance)}</p>
+                  <p className="mt-2 text-xs leading-5 text-muted-foreground">{isInvestment ? copy.investmentHelp : copy.reserveHelp}</p>
+                </div>
+                <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${isInvestment ? "bg-[#541249] text-white" : "bg-[#f4e7f1] text-[#541249]"}`}><WalletCards className="h-5 w-5" /></span>
+              </div>
+              <div className="mt-5 grid grid-cols-3 gap-2">
+                <Button size="sm" className="btn-nexora min-w-0 px-2" onClick={() => { setActiveWallet(wallet); setDepositOpen(true); }}><Plus className="h-4 w-4" />{copy.deposit}</Button>
+                <Button size="sm" variant="outline" className="min-w-0 px-2" disabled={balance <= 0} onClick={() => { setActiveWallet(wallet); setTransferOpen(true); }}><ArrowRightLeft className="h-4 w-4" />{copy.transfer}</Button>
+                <Button size="sm" variant="outline" className="min-w-0 px-2" disabled={balance <= 0} onClick={() => { setActiveWallet(wallet); setPayoutOpen(true); }}><ArrowDownToLine className="h-4 w-4" />{copy.withdraw}</Button>
+              </div>
+            </article>
+          );
+        })}
+      </div>
 
       <div className="flex flex-col gap-4 rounded-[1.5rem] border border-[#541249]/10 bg-white p-5 shadow-[0_16px_42px_rgba(56,12,49,.055)] sm:flex-row sm:items-center sm:justify-between sm:p-6">
         <div className="flex min-w-0 items-start gap-3">
@@ -261,6 +305,31 @@ export function WalletHistory() {
         locale={locale}
         displayCurrency={displayCurrency}
         onCompleted={() => void load()}
+        walletType={activeWallet}
+      />
+      <WalletActionDialog
+        open={depositOpen}
+        onOpenChange={setDepositOpen}
+        action="deposit"
+        walletType={activeWallet}
+        balance={activeWallet === "investment" ? data.summary.investmentBalance : data.summary.reserveBalance}
+        depositsEnabled={data.summary.depositsEnabled}
+        depositMethods={data.summary.depositMethods}
+        locale={locale}
+        displayCurrency={displayCurrency}
+        onCompleted={() => void load()}
+      />
+      <WalletActionDialog
+        open={transferOpen}
+        onOpenChange={setTransferOpen}
+        action="transfer"
+        walletType={activeWallet}
+        balance={activeWallet === "investment" ? data.summary.investmentBalance : data.summary.reserveBalance}
+        depositsEnabled={data.summary.depositsEnabled}
+        depositMethods={data.summary.depositMethods}
+        locale={locale}
+        displayCurrency={displayCurrency}
+        onCompleted={() => void load()}
       />
     </section>
   );
@@ -310,7 +379,12 @@ function WalletEntryRow({
           {credit ? <ArrowDownToLine className="h-4 w-4" /> : <ArrowUpFromLine className="h-4 w-4" />}
         </span>
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-foreground">{label}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-sm font-semibold text-foreground">{label}</p>
+            <span className="rounded-full bg-[#f4e8f2] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[.08em] text-[#6c195e]">
+              {entry.walletType === "reserve" ? (locale === "fr" ? "Réserve" : "Reserve") : (locale === "fr" ? "Investissement" : "Investment")}
+            </span>
+          </div>
           <p className="mt-1 text-xs text-muted-foreground">{date}</p>
           {entry.reference ? <p className="mt-0.5 text-xs text-muted-foreground">{copy.reference} {entry.reference}</p> : null}
         </div>

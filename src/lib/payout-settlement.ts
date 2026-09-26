@@ -1,4 +1,5 @@
 import { getD1, isoNow, requestIp } from "@/lib/d1";
+import { parseWalletType, walletAccountType } from "@/lib/wallets";
 
 export interface PayoutSettlementRow extends Record<string, unknown> {
   id: string;
@@ -7,6 +8,7 @@ export interface PayoutSettlementRow extends Record<string, unknown> {
   netAmount: number;
   status: string;
   partnerRef: string | null;
+  walletType: string;
 }
 
 export async function settlePayout(
@@ -29,6 +31,7 @@ export async function settlePayout(
     : 0;
   const success = outcome.status === "success";
   const finalStatus = success ? "completed" : "failed";
+  const sourceWallet = walletAccountType(parseWalletType(payout.walletType) || "investment");
 
   const statements = [
     database
@@ -61,7 +64,7 @@ export async function settlePayout(
         crypto.randomUUID(),
         success ? `payout:${payout.id}:pending-complete` : `payout:${payout.id}:pending-release`,
         payout.id,
-        success ? "investor_external" : "investor_wallet",
+        success ? "investor_external" : sourceWallet,
         payout.investorId,
         -amount,
         payout.id,
@@ -84,7 +87,7 @@ export async function settlePayout(
       .bind(
         crypto.randomUUID(),
         success ? `payout:${payout.id}:external` : `payout:${payout.id}:wallet-release`,
-        success ? "investor_external" : "investor_wallet",
+        success ? "investor_external" : sourceWallet,
         payout.investorId,
         payout.id,
         amount,
@@ -133,7 +136,7 @@ export async function settlePayout(
         success ? "Versement effectué" : "Versement non abouti",
         success
           ? `${amount.toLocaleString("fr-FR")} FCFA ont été versés sur votre compte Mobile Money.`
-          : "Le montant réservé est de nouveau disponible dans votre portefeuille.",
+          : `Le montant réservé est de nouveau disponible dans votre portefeuille ${payout.walletType === "reserve" ? "de réserve" : "d’investissement"}.`,
         now,
         payout.id,
         eventId

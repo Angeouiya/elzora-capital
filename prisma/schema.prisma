@@ -788,6 +788,7 @@ model Payout {
   netAmount          BigInt
   status             String    @default("pending")
   // pending, ordered, completed, failed, uncertain
+  walletType         String    @default("investment")
   beneficiaryAccount String // compte vérifié
   withdrawMode       String?
   partnerRef         String?
@@ -795,6 +796,39 @@ model Payout {
   failureReason      String?
   createdAt          DateTime  @default(now())
   completedAt        DateTime?
+}
+
+model WalletDeposit {
+  id              String    @id @default(cuid())
+  investorId      String
+  walletType      String
+  method          String
+  amount          BigInt
+  currency        String    @default("XOF")
+  status          String    @default("pending")
+  paymentRef      String?   @unique
+  providerEventId String?   @unique
+  failureReason   String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  confirmedAt     DateTime?
+
+  @@index([investorId, status, createdAt])
+  @@index([investorId, method, createdAt])
+}
+
+model WalletTransfer {
+  id          String   @id @default(cuid())
+  requestKey  String   @unique
+  investorId  String
+  fromWallet  String
+  toWallet    String
+  amount      BigInt
+  currency    String   @default("XOF")
+  status      String   @default("completed")
+  createdAt   DateTime @default(now())
+
+  @@index([investorId, createdAt])
 }
 
 // ---------------------------------------------------------------------------

@@ -17,6 +17,7 @@ bun.lock.disabled
 
 # next.js
 /.next/
+/.next-stale-*/
 /.open-next/
 /out/
 
