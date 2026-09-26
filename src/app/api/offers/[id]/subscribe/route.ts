@@ -21,6 +21,12 @@ import {
   isInvestorProfileCurrent,
 } from "@/lib/investor-profile";
 import { effectivePrivateMaximum } from "@/lib/private-offer-access";
+import {
+  assessCollectionPayment,
+  DEFAULT_MOBILE_MONEY_LIMIT_XOF,
+  PAYMENT_POLICY_VERSION,
+  type CollectionPaymentMethod,
+} from "@/lib/payment-policy";
 
 interface OfferTermsRow extends SubscriptionOfferTerms {
   status: string;
@@ -61,6 +67,7 @@ interface InvestmentRow extends Record<string, unknown> {
   createdAt: string;
   updatedAt: string;
   paymentRef: string | null;
+  paymentMethod: CollectionPaymentMethod | null;
 }
 
 async function findOffer(id: string, userId?: string | null): Promise<OfferTermsRow | null> {
@@ -167,6 +174,7 @@ export async function GET(
       expectedRepayment: amount + Number(interest),
       investorInterest: Number(interest),
       projectionLabel: "Projection contractuelle, sous réserve de remboursement par l'entreprise",
+      paymentPolicy: paymentPolicySummary(),
     });
   }
 
@@ -176,6 +184,7 @@ export async function GET(
     companyOwnershipPct: sharePct,
     offerAllocationPct,
     note: "La valeur et la liquidité des titres ne sont pas garanties.",
+    paymentPolicy: paymentPolicySummary(),
   });
 }
 
@@ -200,6 +209,24 @@ export async function POST(
   const amount = parseMoney(body.amount);
   if (amount === null || amount <= 0) {
     return NextResponse.json({ error: "Montant invalide" }, { status: 400 });
+  }
+  const paymentMethod = parsePaymentMethod(body.paymentMethod);
+  if (!paymentMethod) {
+    return NextResponse.json(
+      { error: "Choisissez la carte bancaire ou le Mobile Money.", code: "PAYMENT_METHOD_REQUIRED" },
+      { status: 422 }
+    );
+  }
+  const paymentAssessment = assessCollectionPayment({ amount, method: paymentMethod });
+  if (!paymentAssessment.ok) {
+    return NextResponse.json(
+      {
+        error: "Ce montant dépasse le plafond Mobile Money de la plateforme. Choisissez la carte bancaire ou réduisez le montant.",
+        code: paymentAssessment.code,
+        limit: paymentAssessment.limit,
+      },
+      { status: 422 }
+    );
   }
   if (
     body.acceptTerms !== true ||
@@ -308,6 +335,13 @@ export async function POST(
         { status: 409 }
       );
     }
+    if (!existing.paymentRef && existing.paymentMethod !== paymentMethod) {
+      await database
+        .prepare(`UPDATE Investment SET paymentMethod = ?, updatedAt = ? WHERE id = ? AND paymentRef IS NULL`)
+        .bind(paymentMethod, isoNow(), existing.id)
+        .run();
+      existing.paymentMethod = paymentMethod;
+    }
   }
 
   const [capitalRow, offerCapitalRow] = await Promise.all([
@@ -414,9 +448,9 @@ export async function POST(
         .prepare(
           `INSERT INTO Investment
              (id, offerId, projectId, investorType, investorId, investorName, investorEmail,
-              amount, sharePct, status, signedAt, signatureHash,
+              amount, sharePct, status, signedAt, signatureHash, paymentMethod,
               reflectionEndsAt, refundableUntil, createdAt, updatedAt)
-           SELECT ?, o.id, o.projectId, 'individual', ?, ?, ?, ?, ?, 'pending_payment', ?, ?, ?, ?, ?, ?
+           SELECT ?, o.id, o.projectId, 'individual', ?, ?, ?, ?, ?, 'pending_payment', ?, ?, ?, ?, ?, ?, ?
            FROM Offer o
            WHERE o.id = ?
              AND o.status = 'open'
@@ -489,6 +523,7 @@ export async function POST(
           sharePct,
           now,
           evidence.signedPayloadHash,
+          paymentMethod,
           reflectionEndsAt,
           reflectionEndsAt,
           now,
@@ -556,6 +591,8 @@ export async function POST(
             agreementHash: evidence.agreementHash,
             signatureMethod: "authenticated_clickwrap",
             paymentStatus: "awaiting_provider",
+            paymentMethod,
+            paymentPolicyVersion: PAYMENT_POLICY_VERSION,
             reflectionPeriodDays,
           }),
           ipAddress,
@@ -655,6 +692,8 @@ async function paymentResponse(
           flow: "investment",
           investmentId: investment.id,
           offerId: investment.offerId,
+          paymentMethod: investment.paymentMethod || "card",
+          paymentPolicyVersion: PAYMENT_POLICY_VERSION,
         },
         callbackUrl: `${origin}/api/payments/paydunya/webhook`,
         returnUrl: `${origin}/?payment=return`,
@@ -860,4 +899,16 @@ function normalizeInvestment(row: InvestmentRow) {
 function parseMoney(value: unknown): number | null {
   const amount = typeof value === "number" ? value : Number(String(value ?? ""));
   return Number.isSafeInteger(amount) ? amount : null;
+}
+
+function parsePaymentMethod(value: unknown): CollectionPaymentMethod | null {
+  return value === "card" || value === "mobile_money" ? value : null;
+}
+
+function paymentPolicySummary() {
+  return {
+    version: PAYMENT_POLICY_VERSION,
+    mobileMoneyLimit: DEFAULT_MOBILE_MONEY_LIMIT_XOF,
+    methods: ["card", "mobile_money"] as CollectionPaymentMethod[],
+  };
 }

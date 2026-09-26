@@ -45,6 +45,8 @@ interface AnalysisProjectRow extends Record<string, unknown> {
   cashBalance: number | null;
   existingDebt: number | null;
   annualOperatingExpenses: number | null;
+  financialForecasts: string | null;
+  forecastAssumptions: string | null;
   useOfFunds: string | null;
   milestones: string | null;
   repaymentSource: string | null;
@@ -146,6 +148,7 @@ export async function GET(req: Request) {
                 p.managementTeam, p.employeeCount, p.financialYear,
                 p.annualRevenue, p.previousRevenue, p.netIncome,
                 p.cashBalance, p.existingDebt, p.annualOperatingExpenses,
+                p.financialForecasts, p.forecastAssumptions,
                 p.useOfFunds, p.milestones, p.repaymentSource,
                 p.guaranteeDescription, p.shareholderStructure,
                 p.risksIdentified, p.impactObjectives,
@@ -239,6 +242,8 @@ export async function GET(req: Request) {
       cashBalance: row.cashBalance == null ? null : Number(row.cashBalance),
       existingDebt: row.existingDebt == null ? null : Number(row.existingDebt),
       annualOperatingExpenses: row.annualOperatingExpenses == null ? null : Number(row.annualOperatingExpenses),
+      financialForecasts: jsonValue(row.financialForecasts, []),
+      forecastAssumptions: row.forecastAssumptions,
       useOfFunds: jsonValue(row.useOfFunds, []),
       milestones: jsonValue(row.milestones, []),
       repaymentSource: row.repaymentSource,

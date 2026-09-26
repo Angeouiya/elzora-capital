@@ -84,6 +84,11 @@ export function canActorTransition(
   const key = `${from}→${to}`;
   const allowed = TRANSITION_ROLES[key];
   if (!allowed) return false;
+  // Company consent and automated lifecycle steps are deliberately exclusive:
+  // an administrator must never impersonate the company or the system.
+  if (allowed.includes("company") || allowed.includes("system")) {
+    return allowed.includes(actorRole);
+  }
   return allowed.includes(actorRole) || actorRole === "superadmin";
 }
 

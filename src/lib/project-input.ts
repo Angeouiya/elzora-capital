@@ -17,6 +17,14 @@ export interface ProjectMilestone {
   outcome: string;
 }
 
+export interface ProjectFinancialForecast {
+  year: number;
+  revenue: number;
+  operatingExpenses: number;
+  netIncome: number;
+  cashFlow: number;
+}
+
 export interface ProjectDocumentChecklist {
   registrationDocument: boolean;
   financialStatements: boolean;
@@ -63,6 +71,8 @@ export interface ProjectInput {
   cashBalance: number | null;
   existingDebt: number | null;
   annualOperatingExpenses: number | null;
+  financialForecasts: string | null;
+  forecastAssumptions: string | null;
   useOfFunds: string | null;
   milestones: string | null;
   guaranteeDescription: string | null;
@@ -84,6 +94,7 @@ export const PROJECT_INPUT_COLUMNS = [
   "businessModel", "marketOverview", "competitiveAdvantage", "traction", "managementTeam",
   "employeeCount", "financialYear", "annualRevenue", "previousRevenue", "netIncome",
   "cashBalance", "existingDebt", "annualOperatingExpenses", "useOfFunds", "milestones",
+  "financialForecasts", "forecastAssumptions",
   "guaranteeDescription", "shareholderStructure", "impactObjectives", "documentChecklist",
   "declarationAccepted",
 ] as const;
@@ -98,7 +109,8 @@ export function projectInputValues(input: ProjectInput): unknown[] {
     input.businessModel, input.marketOverview, input.competitiveAdvantage, input.traction,
     input.managementTeam, input.employeeCount, input.financialYear, input.annualRevenue,
     input.previousRevenue, input.netIncome, input.cashBalance, input.existingDebt,
-    input.annualOperatingExpenses, input.useOfFunds, input.milestones, input.guaranteeDescription,
+    input.annualOperatingExpenses, input.useOfFunds, input.milestones, input.financialForecasts,
+    input.forecastAssumptions, input.guaranteeDescription,
     input.shareholderStructure, input.impactObjectives, input.documentChecklist,
     input.declarationAccepted ? 1 : 0,
   ];
@@ -109,6 +121,7 @@ export function parseProjectInput(body: Record<string, unknown>, complete: boole
   const managementTeam = teamMembers(body.managementTeam);
   const useOfFunds = fundItems(body.useOfFunds);
   const milestones = milestoneItems(body.milestones);
+  const financialForecasts = forecastItems(body.financialForecasts);
   const documents = documentChecklist(body.documentChecklist);
   const value: ProjectInput = {
     companyId: clean(body.companyId, 80),
@@ -149,6 +162,8 @@ export function parseProjectInput(body: Record<string, unknown>, complete: boole
     cashBalance: money(body.cashBalance),
     existingDebt: money(body.existingDebt),
     annualOperatingExpenses: money(body.annualOperatingExpenses),
+    financialForecasts: financialForecasts.length ? JSON.stringify(financialForecasts) : null,
+    forecastAssumptions: clean(body.forecastAssumptions, 4000) || null,
     useOfFunds: useOfFunds.length ? JSON.stringify(useOfFunds) : null,
     milestones: milestones.length ? JSON.stringify(milestones) : null,
     guaranteeDescription: clean(body.guaranteeDescription, 2500) || null,
@@ -203,6 +218,26 @@ export function parseProjectInput(body: Record<string, unknown>, complete: boole
     value.annualOperatingExpenses === null
   ) {
     return { ok: false, error: "Tous les chiffres financiers sont requis, même lorsqu'ils sont à zéro" };
+  }
+  if (
+    financialForecasts.length < 3 ||
+    financialForecasts.some(
+      (forecast) =>
+        forecast.year < currentYear ||
+        forecast.year > currentYear + 6 ||
+        forecast.revenue < 0 ||
+        forecast.operatingExpenses < 0 ||
+        !Number.isSafeInteger(forecast.netIncome) ||
+        !Number.isSafeInteger(forecast.cashFlow)
+    )
+  ) {
+    return { ok: false, error: "Complétez trois années de prévisions financières détaillées" };
+  }
+  if (new Set(financialForecasts.map((forecast) => forecast.year)).size !== financialForecasts.length) {
+    return { ok: false, error: "Chaque année de prévision doit être unique" };
+  }
+  if (!value.forecastAssumptions || value.forecastAssumptions.length < 40) {
+    return { ok: false, error: "Expliquez les hypothèses principales de vos prévisions" };
   }
   if (value.fundingGoal <= 0) return { ok: false, error: "Montant recherché invalide" };
   if (value.companyContribution < 0 || value.companyContribution > value.fundingGoal) {
@@ -338,6 +373,26 @@ function milestoneItems(value: unknown): ProjectMilestone[] {
       outcome: clean(item.outcome, 500),
     }))
     .filter((item) => !!item.title || !!item.targetDate || !!item.outcome);
+}
+
+function forecastItems(value: unknown): ProjectFinancialForecast[] {
+  return objectList(value)
+    .slice(0, 5)
+    .map((item) => ({
+      year: optionalInteger(item.year) ?? 0,
+      revenue: money(item.revenue) ?? -1,
+      operatingExpenses: money(item.operatingExpenses) ?? -1,
+      netIncome: signedMoney(item.netIncome) ?? Number.NaN,
+      cashFlow: signedMoney(item.cashFlow) ?? Number.NaN,
+    }))
+    .filter(
+      (item) =>
+        item.year > 0 ||
+        item.revenue >= 0 ||
+        item.operatingExpenses >= 0 ||
+        Number.isFinite(item.netIncome) ||
+        Number.isFinite(item.cashFlow)
+    );
 }
 
 function documentChecklist(value: unknown): ProjectDocumentChecklist {

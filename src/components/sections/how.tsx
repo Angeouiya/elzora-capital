@@ -34,12 +34,12 @@ const COPY = {
     ],
     companySteps: [
       ["Déposer", "Créez le compte entreprise et soumettez le dossier financier et juridique."],
-      ["Analyse équipe", "L’équipe NEXORA instruit le dossier, demande les compléments et structure le financement."],
-      ["Publication", "Une fois validée, l’offre est publiée par NEXORA. L’entreprise ne publie jamais directement."],
+      ["Analyse financière", "L’équipe analyse, vérifie et harmonise le dossier, puis prépare les conditions finales."],
+      ["Accord et publication", "L’entreprise accepte la version finale. Après le dernier contrôle, NEXORA publie l’offre."],
       ["Financement", "Les fonds sont décaissés après contrôle. L’entreprise respecte ensuite l’échéancier contractuel."],
     ],
     roleTitle: "Notre rôle",
-    roleText: "NEXORA Capital analyse et prépare chaque offre publiée. Le dossier est instruit, structuré financièrement, puis soumis à validation. Cette instruction améliore la qualité de l’information sans constituer un conseil en investissement ni une garantie de remboursement.",
+    roleText: "NEXORA Capital analyse, vérifie et harmonise chaque demande. La version finale est soumise à l’accord explicite de l’entreprise avant le dernier contrôle et la publication. Cette instruction améliore la qualité de l’information sans constituer un conseil en investissement ni une garantie de remboursement.",
     pricing: "Tarification",
     pricingItems: [
       ["Commission initiale", "6 %", "du capital financé, prélevée à la levée", "Entreprise"],
@@ -64,12 +64,12 @@ const COPY = {
     ],
     companySteps: [
       ["Apply", "Create a company account and submit the financial and legal application."],
-      ["Team review", "The NEXORA team reviews the file, requests additions and structures the financing."],
-      ["Publication", "Once approved, the offer is published by NEXORA. Companies never publish directly."],
+      ["Financial review", "The team analyses, verifies and harmonises the application, then prepares the final terms."],
+      ["Agreement and publication", "The company accepts the final version. NEXORA publishes it after the last review."],
       ["Funding", "Funds are released after controls. The company then follows the contractual schedule."],
     ],
     roleTitle: "Our role",
-    roleText: "NEXORA Capital reviews and prepares every published offer. Each application is assessed, financially structured and submitted for approval. This process improves information quality without constituting investment advice or a repayment guarantee.",
+    roleText: "NEXORA Capital analyses, verifies and harmonises every application. The final version is submitted for the company’s explicit agreement before the last review and publication. This process improves information quality without constituting investment advice or a repayment guarantee.",
     pricing: "Pricing",
     pricingItems: [
       ["Initial commission", "6%", "of funded capital, charged at closing", "Company"],

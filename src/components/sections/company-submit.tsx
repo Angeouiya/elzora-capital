@@ -97,6 +97,15 @@ interface MilestoneState {
   outcome: string;
 }
 
+interface FinancialForecastState {
+  id: string;
+  year: string;
+  revenue: string;
+  operatingExpenses: string;
+  netIncome: string;
+  cashFlow: string;
+}
+
 interface DocumentChecklistState {
   registrationDocument: boolean;
   financialStatements: boolean;
@@ -131,6 +140,8 @@ interface FormState {
   cashBalance: string;
   existingDebt: string;
   annualOperatingExpenses: string;
+  financialForecasts: FinancialForecastState[];
+  forecastAssumptions: string;
   instrumentType: InstrumentType;
   fundingGoal: string;
   companyContribution: string;
@@ -154,7 +165,7 @@ interface FormState {
   declarationAccepted: boolean;
 }
 
-interface ProjectRecord extends Partial<Omit<FormState, "managementTeam" | "useOfFunds" | "milestones" | "documentChecklist">> {
+interface ProjectRecord extends Partial<Omit<FormState, "managementTeam" | "useOfFunds" | "milestones" | "financialForecasts" | "documentChecklist">> {
   id: string;
   status: string;
   updatedAt: string;
@@ -162,6 +173,7 @@ interface ProjectRecord extends Partial<Omit<FormState, "managementTeam" | "useO
   managementTeam?: Array<Omit<TeamMemberState, "id">>;
   useOfFunds?: Array<{ label: string; amount: number }>;
   milestones?: Array<Omit<MilestoneState, "id">>;
+  financialForecasts?: Array<Omit<FinancialForecastState, "id">>;
   documentChecklist?: Partial<DocumentChecklistState>;
 }
 
@@ -251,6 +263,15 @@ const COPY = {
     cash: "Trésorerie disponible",
     debtOutstanding: "Dettes financières en cours",
     figuresNote: "Saisissez 0 lorsqu’un montant est nul. Le résultat net peut être négatif.",
+    forecastsTitle: "Prévisions financières sur trois ans",
+    forecastsHelp: "Présentez une trajectoire réaliste. L’équipe financière vérifiera la cohérence avec vos comptes, votre marché et l’utilisation des fonds.",
+    forecastYear: "Année",
+    forecastRevenue: "Chiffre d’affaires",
+    forecastExpenses: "Dépenses d’exploitation",
+    forecastIncome: "Résultat net",
+    forecastCashFlow: "Trésorerie générée",
+    forecastAssumptions: "Hypothèses des prévisions",
+    forecastAssumptionsPlaceholder: "Volumes vendus, prix, marge, nouveaux clients, montée en charge, saisonnalité et principaux coûts.",
     instrument: "Mode de financement",
     debt: "Financement remboursable",
     debtDesc: "Le capital et la rémunération sont remboursés selon un calendrier.",
@@ -272,6 +293,13 @@ const COPY = {
     valuation: "Valeur de l’entreprise avant investissement",
     rateWarning: "Vérifiez la période de rémunération",
     rateExplanation: "Un taux sur toute la durée et un taux annuel ne produisent pas le même montant.",
+    simulateTerms: "Simuler ces conditions",
+    simulationTitle: "Résultat de la simulation",
+    companyReceives: "Montant net estimé pour l’entreprise",
+    companyRepays: "Total estimé à rembourser",
+    investorReturn: "Rémunération estimée des investisseurs",
+    platformFees: "Frais et accompagnement estimés",
+    equityPostMoney: "Valeur estimée après financement",
     purpose: "Objectif précis du financement",
     purposePlaceholder: "Expliquez ce qui sera financé et le changement attendu pour l’entreprise.",
     useTitle: "Utilisation des fonds",
@@ -335,6 +363,8 @@ const COPY = {
     plan: "Plan d’utilisation",
     ready: "Dossier prêt à transmettre",
     readyText: "Notre équipe vérifiera les informations et pourra demander des compléments avant toute publication.",
+    reviewJourney: "Après l’envoi",
+    reviewJourneyText: "L’équipe financière analyse et vérifie le dossier, harmonise la présentation et les conditions, puis vous soumet la version finale. Aucune offre n’est publiée sans votre accord explicite et le dernier contrôle de conformité.",
     verificationRequired: "La vérification de l’entreprise doit être terminée avant l’envoi. Le brouillon reste disponible.",
     previous: "Précédent",
     save: "Enregistrer le brouillon",
@@ -419,6 +449,15 @@ const COPY = {
     cash: "Available cash",
     debtOutstanding: "Outstanding financial debt",
     figuresNote: "Enter 0 when an amount is zero. Net income may be negative.",
+    forecastsTitle: "Three-year financial forecast",
+    forecastsHelp: "Provide a realistic trajectory. The finance team will check consistency with your accounts, market and use of funds.",
+    forecastYear: "Year",
+    forecastRevenue: "Revenue",
+    forecastExpenses: "Operating expenses",
+    forecastIncome: "Net income",
+    forecastCashFlow: "Cash generated",
+    forecastAssumptions: "Forecast assumptions",
+    forecastAssumptionsPlaceholder: "Sales volumes, pricing, margin, new customers, ramp-up, seasonality and major costs.",
     instrument: "Funding method",
     debt: "Repayable funding",
     debtDesc: "Principal and return are repaid on a schedule.",
@@ -440,6 +479,13 @@ const COPY = {
     valuation: "Company value before investment",
     rateWarning: "Check the return period",
     rateExplanation: "A full-term rate and an annual rate do not produce the same amount.",
+    simulateTerms: "Simulate these terms",
+    simulationTitle: "Simulation result",
+    companyReceives: "Estimated net amount received by the company",
+    companyRepays: "Estimated total repayment",
+    investorReturn: "Estimated investor return",
+    platformFees: "Estimated fees and support",
+    equityPostMoney: "Estimated post-money value",
     purpose: "Precise funding purpose",
     purposePlaceholder: "Explain what will be funded and the expected change for the company.",
     useTitle: "Use of funds",
@@ -503,6 +549,8 @@ const COPY = {
     plan: "Use plan",
     ready: "Application ready to submit",
     readyText: "Our team will verify the information and may request additions before publication.",
+    reviewJourney: "What happens next",
+    reviewJourneyText: "The finance team reviews and verifies the application, harmonises the presentation and terms, then submits the final version to you. No offer is published without your explicit approval and a final compliance check.",
     verificationRequired: "Company verification must be completed before submission. Your draft remains available.",
     previous: "Previous",
     save: "Save draft",
@@ -596,6 +644,18 @@ function emptyMilestone(): MilestoneState {
   return { id: rowId("milestone"), title: "", targetDate: "", outcome: "" };
 }
 
+function initialForecasts(): FinancialForecastState[] {
+  const year = new Date().getUTCFullYear();
+  return [1, 2, 3].map((offset) => ({
+    id: rowId("forecast"),
+    year: String(year + offset),
+    revenue: "",
+    operatingExpenses: "",
+    netIncome: "",
+    cashFlow: "",
+  }));
+}
+
 function initialForm(): FormState {
   return {
     companyId: "",
@@ -619,6 +679,8 @@ function initialForm(): FormState {
     cashBalance: "",
     existingDebt: "",
     annualOperatingExpenses: "",
+    financialForecasts: initialForecasts(),
+    forecastAssumptions: "",
     instrumentType: "debt",
     fundingGoal: "",
     companyContribution: "",
@@ -669,6 +731,7 @@ export function CompanySubmit() {
   const [removingDocument, setRemovingDocument] = useState<string | null>(null);
   const [bulkCategory, setBulkCategory] = useState("other");
   const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
+  const [showTermsSimulation, setShowTermsSimulation] = useState(false);
 
   const loadWorkspace = useCallback(async () => {
     setLoading(true);
@@ -824,7 +887,20 @@ export function CompanySubmit() {
         form.existingDebt,
         form.annualOperatingExpenses,
       ];
-      return teamComplete && financialFields.every((value) => value !== "" && Number.isFinite(Number(value)));
+      const forecastsComplete =
+        form.financialForecasts.length >= 3 &&
+        form.financialForecasts.every(
+          (forecast) =>
+            forecast.year !== "" &&
+            forecast.revenue !== "" &&
+            forecast.operatingExpenses !== "" &&
+            forecast.netIncome !== "" &&
+            forecast.cashFlow !== "" &&
+            [forecast.year, forecast.revenue, forecast.operatingExpenses, forecast.netIncome, forecast.cashFlow]
+              .every((value) => Number.isFinite(Number(value)))
+        ) &&
+        form.forecastAssumptions.trim().length >= 40;
+      return teamComplete && forecastsComplete && financialFields.every((value) => value !== "" && Number.isFinite(Number(value)));
     }
     if (candidate === 5) {
       const goal = Number(form.fundingGoal);
@@ -894,6 +970,16 @@ export function CompanySubmit() {
     existingDebt: form.existingDebt === "" ? null : Number(form.existingDebt),
     annualOperatingExpenses:
       form.annualOperatingExpenses === "" ? null : Number(form.annualOperatingExpenses),
+    financialForecasts: form.financialForecasts.map(
+      ({ year, revenue, operatingExpenses, netIncome, cashFlow }) => ({
+        year: Number(year),
+        revenue: Number(revenue),
+        operatingExpenses: Number(operatingExpenses),
+        netIncome: Number(netIncome),
+        cashFlow: Number(cashFlow),
+      })
+    ),
+    forecastAssumptions: form.forecastAssumptions,
     instrumentType: form.instrumentType,
     fundingGoal: Math.trunc(Number(form.fundingGoal) || 0),
     companyContribution: Math.trunc(Number(form.companyContribution) || 0),
@@ -955,6 +1041,19 @@ export function CompanySubmit() {
       cashBalance: textValue(project.cashBalance),
       existingDebt: textValue(project.existingDebt),
       annualOperatingExpenses: textValue(project.annualOperatingExpenses),
+      financialForecasts:
+        project.financialForecasts && project.financialForecasts.length
+          ? project.financialForecasts.map((forecast) => ({
+              ...forecast,
+              year: textValue(forecast.year),
+              revenue: textValue(forecast.revenue),
+              operatingExpenses: textValue(forecast.operatingExpenses),
+              netIncome: textValue(forecast.netIncome),
+              cashFlow: textValue(forecast.cashFlow),
+              id: rowId("forecast"),
+            }))
+          : initialForecasts(),
+      forecastAssumptions: textValue(project.forecastAssumptions),
       instrumentType: project.instrumentType === "equity" ? "equity" : "debt",
       fundingGoal: textValue(project.fundingGoal),
       companyContribution: textValue(project.companyContribution),
@@ -1214,6 +1313,11 @@ export function CompanySubmit() {
   };
   const updateMilestone = (id: string, field: keyof Omit<MilestoneState, "id">, value: string) => {
     set("milestones", form.milestones.map((item) => (item.id === id ? { ...item, [field]: value } : item)));
+  };
+  const updateForecast = (id: string, field: keyof Omit<FinancialForecastState, "id">, value: string) => {
+    set("financialForecasts", form.financialForecasts.map((forecast) =>
+      forecast.id === id ? { ...forecast, [field]: value } : forecast
+    ));
   };
   const progress = (step / STEPS.length) * 100;
   const currentStep = STEPS[step - 1];
@@ -1622,6 +1726,46 @@ export function CompanySubmit() {
                     <NumberField label={copy.debtOutstanding} value={form.existingDebt} onChange={(value) => set("existingDebt", value)} />
                   </div>
                 </div>
+
+                <div className="border-t border-[#541249]/8 pt-6">
+                  <div className="mb-4 flex items-start gap-3">
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[#f4e7f1] text-[#541249]">
+                      <ChartNoAxesCombined className="h-5 w-5" />
+                    </span>
+                    <div>
+                      <h3 className="text-base font-semibold text-foreground">{copy.forecastsTitle}</h3>
+                      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{copy.forecastsHelp}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    {form.financialForecasts.map((forecast, index) => (
+                      <div key={forecast.id} className="rounded-2xl border border-[#541249]/10 bg-[#fcfafb] p-4">
+                        <div className="mb-3 flex items-center justify-between">
+                          <span className="text-sm font-semibold text-[#541249]">
+                            {locale === "fr" ? `Prévision ${index + 1}` : `Forecast ${index + 1}`}
+                          </span>
+                          <span className="text-xs text-muted-foreground">{forecast.year || "—"}</span>
+                        </div>
+                        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+                          <NumberField label={copy.forecastYear} value={forecast.year} onChange={(value) => updateForecast(forecast.id, "year", value)} min={String(new Date().getUTCFullYear())} max={String(new Date().getUTCFullYear() + 6)} />
+                          <NumberField label={copy.forecastRevenue} value={forecast.revenue} onChange={(value) => updateForecast(forecast.id, "revenue", value)} />
+                          <NumberField label={copy.forecastExpenses} value={forecast.operatingExpenses} onChange={(value) => updateForecast(forecast.id, "operatingExpenses", value)} />
+                          <NumberField label={copy.forecastIncome} value={forecast.netIncome} onChange={(value) => updateForecast(forecast.id, "netIncome", value)} allowNegative />
+                          <NumberField label={copy.forecastCashFlow} value={forecast.cashFlow} onChange={(value) => updateForecast(forecast.id, "cashFlow", value)} allowNegative />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-4">
+                    <TextAreaField
+                      label={copy.forecastAssumptions}
+                      value={form.forecastAssumptions}
+                      onChange={(value) => set("forecastAssumptions", value)}
+                      placeholder={copy.forecastAssumptionsPlaceholder}
+                      rows={4}
+                    />
+                  </div>
+                </div>
               </div>
             )}
 
@@ -1680,6 +1824,46 @@ export function CompanySubmit() {
                     <NumberField label={copy.valuation} value={form.valuationPre} onChange={(value) => set("valuationPre", value)} />
                   </div>
                 )}
+                <div className="rounded-2xl border border-[#541249]/12 bg-[linear-gradient(145deg,#fff,#f8eff6)] p-4 sm:p-5">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h3 className="text-base font-semibold text-foreground">{copy.simulationTitle}</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {locale === "fr"
+                          ? "Testez les conditions avant de transmettre le dossier à l’équipe financière."
+                          : "Test the proposed terms before sending the application to the finance team."}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      className="btn-nexora shrink-0 rounded-full"
+                      disabled={form.instrumentType === "debt" ? !debtSimulation : !(Number(form.fundingGoal) > 0 && Number(form.valuationPre) > 0)}
+                      onClick={() => setShowTermsSimulation(true)}
+                    >
+                      <ChartNoAxesCombined className="mr-2 h-4 w-4" />
+                      {copy.simulateTerms}
+                    </Button>
+                  </div>
+                  {showTermsSimulation && (
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      {form.instrumentType === "debt" && debtSimulation ? (
+                        <>
+                          <ReviewMetric label={copy.companyReceives} value={money(debtSimulation.netToCompany)} />
+                          <ReviewMetric label={copy.companyRepays} value={money(debtSimulation.totalCompanyPayment)} />
+                          <ReviewMetric label={copy.investorReturn} value={money(debtSimulation.investorInterest)} />
+                          <ReviewMetric label={copy.platformFees} value={money(debtSimulation.upfrontCommission + debtSimulation.followUpCommission)} />
+                        </>
+                      ) : (
+                        <>
+                          <ReviewMetric label={copy.companyReceives} value={money(Math.max(0, Math.round(Number(form.fundingGoal) * 0.94)))} />
+                          <ReviewMetric label={copy.equityPostMoney} value={money(Number(form.valuationPre) + Number(form.fundingGoal))} />
+                          <ReviewMetric label={copy.equityOffered} value={`${Number(form.equityOfferedPct || 0).toLocaleString(locale === "fr" ? "fr-FR" : "en-GB")} %`} />
+                          <ReviewMetric label={copy.platformFees} value={money(Math.round(Number(form.fundingGoal) * 0.06))} />
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -1995,8 +2179,8 @@ export function CompanySubmit() {
                 <div className="flex items-start gap-3 rounded-2xl bg-[#260820] p-5 text-white">
                   <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#d6a5cd]" />
                   <div>
-                    <p className="text-sm font-semibold">{copy.ready}</p>
-                    <p className="mt-1 text-sm leading-relaxed text-white/65">{copy.readyText}</p>
+                    <p className="text-sm font-semibold">{copy.reviewJourney}</p>
+                    <p className="mt-1 text-sm leading-relaxed text-white/70">{copy.reviewJourneyText}</p>
                   </div>
                 </div>
 
@@ -2172,6 +2356,15 @@ function ReviewCard({ title, lines }: { title: string; lines: string[] }) {
           {line || "—"}
         </p>
       ))}
+    </div>
+  );
+}
+
+function ReviewMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-[#541249]/10 bg-white p-3.5">
+      <p className="text-xs leading-relaxed text-muted-foreground">{label}</p>
+      <p className="tnum mt-1 text-base font-bold text-[#541249]">{value}</p>
     </div>
   );
 }

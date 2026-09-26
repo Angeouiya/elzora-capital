@@ -3,6 +3,11 @@ import { requireUser } from "@/lib/auth";
 import { getD1, isoNow, requestIp } from "@/lib/d1";
 import { getKycBucket, safeFileName, sha256Hex } from "@/lib/kyc";
 import {
+  d1ProjectFileKey,
+  isD1ProjectFile,
+  projectFileChunkStatements,
+} from "@/lib/project-file-storage";
+import {
   PROJECT_MAX_DOCUMENTS,
   PROJECT_MAX_GALLERY_IMAGES,
   PROJECT_DOCUMENT_KINDS,
@@ -148,14 +153,6 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     );
   }
 
-  const bucket = getKycBucket();
-  if (!bucket) {
-    return NextResponse.json(
-      { error: "L'espace sécurisé des pièces est en cours d'activation." },
-      { status: 503, headers: noStore }
-    );
-  }
-
   const buffer = await fileValue.arrayBuffer();
   if (!hasValidProjectFileMagic(new Uint8Array(buffer.slice(0, 16)), fileValue.type)) {
     return NextResponse.json(
@@ -165,16 +162,21 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
   }
   const documentId = crypto.randomUUID();
   const fileName = safeFileName(fileValue.name);
-  const storageKey = `projects/${projectId}/${documentId}-${fileName}`;
+  const bucket = getKycBucket();
+  const storageKey = bucket
+    ? `projects/${projectId}/${documentId}-${fileName}`
+    : d1ProjectFileKey(documentId);
   const checksum = await sha256Hex(buffer);
   const fileUrl = `/api/projects/documents/${documentId}`;
   const now = isoNow();
 
   try {
-    await bucket.put(storageKey, buffer, {
-      httpMetadata: { contentType: fileValue.type },
-      customMetadata: { projectId, kind, checksum },
-    });
+    if (bucket) {
+      await bucket.put(storageKey, buffer, {
+        httpMetadata: { contentType: fileValue.type },
+        customMetadata: { projectId, kind, checksum },
+      });
+    }
     const statements: D1PreparedStatement[] = [];
     if (replaceExisting) {
       statements.push(
@@ -217,6 +219,9 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
           now
         )
     );
+    if (!bucket) {
+      statements.push(...projectFileChunkStatements(database, documentId, buffer));
+    }
     if (kind === "cover") {
       statements.push(
         database.prepare(`UPDATE Project SET imageUrl = ?, updatedAt = ? WHERE id = ?`).bind(fileUrl, now, projectId)
@@ -224,15 +229,21 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     }
     await database.batch(statements);
   } catch (error) {
-    await bucket.delete(storageKey).catch(() => undefined);
+    if (bucket) await bucket.delete(storageKey).catch(() => undefined);
     console.error("project_document_upload_failed", error);
     return NextResponse.json({ error: "Le fichier n'a pas pu être enregistré" }, { status: 500, headers: noStore });
   }
 
   await Promise.all(
     previous.results
-      .filter((document) => document.storageKey && document.storageKey !== storageKey)
-      .map((document) => bucket.delete(document.storageKey!).catch(() => undefined))
+      .filter(
+        (document) =>
+          bucket &&
+          document.storageKey &&
+          !isD1ProjectFile(document.storageKey) &&
+          document.storageKey !== storageKey
+      )
+      .map((document) => bucket!.delete(document.storageKey!).catch(() => undefined))
   );
 
   return NextResponse.json(

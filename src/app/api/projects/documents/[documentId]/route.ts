@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin, requireUser } from "@/lib/auth";
 import { getD1, isoNow, requestIp } from "@/lib/d1";
 import { getKycBucket } from "@/lib/kyc";
+import { isD1ProjectFile, readD1ProjectFile } from "@/lib/project-file-storage";
 import {
   canManageProjectDocuments,
   canVisitorAccessProjectDocument,
@@ -106,9 +107,17 @@ export async function GET(req: Request, context: { params: Promise<{ documentId:
   }
 
   const bucket = getKycBucket();
-  if (!bucket) return NextResponse.json({ error: "Espace documentaire indisponible" }, { status: 503 });
-  const object = await bucket.get(document.storageKey);
-  if (!object) return NextResponse.json({ error: "Fichier introuvable" }, { status: 404 });
+  let body: BodyInit;
+  if (isD1ProjectFile(document.storageKey)) {
+    const stored = await readD1ProjectFile(database, document.id);
+    if (!stored) return NextResponse.json({ error: "Fichier introuvable" }, { status: 404 });
+    body = stored.buffer.slice(stored.byteOffset, stored.byteOffset + stored.byteLength) as ArrayBuffer;
+  } else {
+    if (!bucket) return NextResponse.json({ error: "Espace documentaire indisponible" }, { status: 503 });
+    const object = await bucket.get(document.storageKey);
+    if (!object) return NextResponse.json({ error: "Fichier introuvable" }, { status: 404 });
+    body = object.body;
+  }
 
   if (!publicDistribution || downloadRequested) {
     const now = isoNow();
@@ -138,7 +147,7 @@ export async function GET(req: Request, context: { params: Promise<{ documentId:
     "application/vnd.ms-excel",
   ].includes(document.contentType);
   const disposition = downloadRequested || officeDocument ? "attachment" : "inline";
-  return new Response(object.body, {
+  return new Response(body, {
     headers: {
       "Content-Type": document.contentType,
       "Content-Disposition": `${disposition}; filename="${document.fileName.replace(/[\r\n\"]/g, "-")}"`,
@@ -170,8 +179,10 @@ export async function DELETE(req: Request, context: { params: Promise<{ document
     return NextResponse.json({ error: "Ce dossier n'est plus modifiable" }, { status: 409 });
   }
   const bucket = getKycBucket();
-  if (!bucket) return NextResponse.json({ error: "Espace documentaire indisponible" }, { status: 503 });
-  if (document.storageKey) await bucket.delete(document.storageKey);
+  if (document.storageKey && !isD1ProjectFile(document.storageKey)) {
+    if (!bucket) return NextResponse.json({ error: "Espace documentaire indisponible" }, { status: 503 });
+    await bucket.delete(document.storageKey);
+  }
   const now = isoNow();
   const statements: D1PreparedStatement[] = [
     database.prepare(`DELETE FROM ProjectDocument WHERE id = ?`).bind(document.id),

@@ -289,6 +289,7 @@ function mapProject(row: ProjectRow) {
     managementTeam: jsonValue(row.managementTeam, []),
     useOfFunds: jsonValue(row.useOfFunds, []),
     milestones: jsonValue(row.milestones, []),
+    financialForecasts: jsonValue(row.financialForecasts, []),
     documentChecklist: jsonValue(row.documentChecklist, {}),
     declarationAccepted: row.declarationAccepted === 1 || row.declarationAccepted === "1",
     company: {

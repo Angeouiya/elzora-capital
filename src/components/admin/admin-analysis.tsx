@@ -101,6 +101,14 @@ interface ProjectRow {
   cashBalance: number | null;
   existingDebt: number | null;
   annualOperatingExpenses: number | null;
+  financialForecasts: Array<{
+    year: number;
+    revenue: number;
+    operatingExpenses: number;
+    netIncome: number;
+    cashFlow: number;
+  }>;
+  forecastAssumptions: string | null;
   useOfFunds: Array<{ label: string; amount: number }>;
   milestones: Array<{ title: string; targetDate: string; outcome: string }>;
   repaymentSource: string | null;
@@ -664,6 +672,31 @@ export function AdminAnalysis() {
                                 <AdminMetric label="Dépenses annuelles" value={p.annualOperatingExpenses} />
                                 <AdminMetric label="Trésorerie" value={p.cashBalance} />
                                 <AdminMetric label="Dettes en cours" value={p.existingDebt} />
+                              </div>
+                            </div>
+
+                            <div>
+                              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                Prévisions financières de l’entreprise
+                              </p>
+                              <div className="mt-2 space-y-2">
+                                {(p.financialForecasts || []).map((forecast) => (
+                                  <div key={forecast.year} className="rounded-xl border border-border/60 bg-secondary/25 p-3">
+                                    <div className="mb-2 flex items-center justify-between gap-3">
+                                      <strong className="text-sm text-[#541249]">Exercice {forecast.year}</strong>
+                                      <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Prévision</span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+                                      <AdminMetric label="Chiffre d’affaires" value={forecast.revenue} />
+                                      <AdminMetric label="Dépenses" value={forecast.operatingExpenses} />
+                                      <AdminMetric label="Résultat net" value={forecast.netIncome} />
+                                      <AdminMetric label="Flux de trésorerie" value={forecast.cashFlow} />
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="mt-3">
+                                <AdminTextBlock title="Hypothèses de prévision" text={p.forecastAssumptions} />
                               </div>
                             </div>
 

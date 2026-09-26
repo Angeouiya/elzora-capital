@@ -122,4 +122,9 @@ export interface SimulationResult {
   sharePct: number;
   offerAllocationPct?: number;
   companyOwnershipPct?: number;
+  paymentPolicy?: {
+    version: string;
+    mobileMoneyLimit: number;
+    methods: Array<"card" | "mobile_money">;
+  };
 }

@@ -54,6 +54,7 @@ model User {
   legalAcceptances     LegalAcceptance[]
   subscriptionEvidence SubscriptionEvidence[]
   portfolioStatements  PortfolioStatement[]
+  offerConfirmations   ProjectOfferConfirmation[]
 }
 
 model PortfolioStatement {
@@ -196,6 +197,7 @@ model Company {
   equityDividends EquityDividend[]
   verificationProfile CompanyVerificationProfile?
   beneficialOwners    CompanyBeneficialOwner[]
+  offerConfirmations  ProjectOfferConfirmation[]
 }
 
 model CompanyVerificationProfile {
@@ -322,6 +324,8 @@ model Project {
   cashBalance         BigInt?
   existingDebt        BigInt?
   annualOperatingExpenses BigInt?
+  financialForecasts  String? // JSON: projections annuelles détaillées
+  forecastAssumptions String? // hypothèses structurantes des prévisions
   useOfFunds          String? // JSON: postes chiffrés
   milestones          String? // JSON: étapes et dates cibles
   guaranteeDescription String?
@@ -355,6 +359,7 @@ model Project {
   equityIssuance   EquityIssuance?
   equityDividends  EquityDividend[]
   regulatoryReview RegulatoryReview?
+  offerConfirmation ProjectOfferConfirmation?
 }
 
 model ProjectDocument {
@@ -370,6 +375,36 @@ model ProjectDocument {
   checksum   String?
   isPublic   Boolean  @default(false)
   uploadedAt DateTime @default(now())
+  chunks     ProjectDocumentChunk[]
+}
+
+model ProjectDocumentChunk {
+  id         String          @id @default(cuid())
+  documentId String
+  document   ProjectDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  sequence   Int
+  data       Bytes
+
+  @@unique([documentId, sequence])
+  @@index([documentId])
+}
+
+model ProjectOfferConfirmation {
+  id            String   @id @default(cuid())
+  projectId     String   @unique
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  companyId     String
+  company       Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  confirmedBy   String
+  confirmer     User     @relation(fields: [confirmedBy], references: [id], onDelete: Restrict)
+  termsSnapshot String
+  termsHash     String   @unique
+  confirmedAt   DateTime
+  ipAddress     String?
+  userAgent     String?
+  createdAt     DateTime @default(now())
+
+  @@index([companyId, confirmedAt])
 }
 
 model ProjectEvent {
@@ -468,6 +503,7 @@ model Investment {
   signatureHash        String?
   // Paiement
   paymentRef           String? // référence unique
+  paymentMethod        String? // card | mobile_money
   paymentConfirmedAt   DateTime?
   paymentEventId       String?                    @unique // verrou d'idempotence du webhook
   // Délai de rétractation

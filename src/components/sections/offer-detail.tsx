@@ -32,6 +32,9 @@ import {
   FileType2,
   Eye,
   Download,
+  CreditCard,
+  Smartphone,
+  LoaderCircle,
 } from "lucide-react";
 import type { OfferDTO, SimulationResult } from "@/lib/types";
 
@@ -52,10 +55,10 @@ export function OfferDetail() {
     formatDisplayMoney(value, displayCurrency, locale, compact);
   const text = locale === "fr" ? {
     missing: "Offre introuvable.", back: "Retour aux offres", low: "Montant insuffisant", login: "Connexion requise", loginText: "Connectez-vous pour enregistrer votre engagement.", failed: "Souscription échouée", saved: "Souscription enregistrée", savedText: "Votre engagement est réservé. Les instructions de paiement seront affichées dans votre espace.", paymentReady: "Ouverture du paiement sécurisé…", error: "Erreur", unknown: "Erreur inconnue",
-    equity: "Part de l’entreprise", debt: "Avec remboursement", conditions: "L’essentiel", overview: "Aperçu", details: "Le projet", subscribeNav: "Souscrire", invest: "Investir", demo: "Démonstration", simulate: "Simuler", demoText: "Cette opportunité est un exemple de présentation. Vous pouvez tester les montants, mais aucun versement ne sera demandé.", goal: "Objectif", raised: "Déjà réuni", offered: "Part proposée", return: "Gain prévu", duration: "Durée", long: "Long terme", months: "mois", of: "sur", investors: "investisseurs", from: "Dès", cap: "Maximum", close: "Clôture prévue", project: "Présentation du projet", gallery: "Le projet en images", documents: "Documents à consulter", documentsHelp: "Ces documents sont librement consultables et téléchargeables, sans créer de compte.", view: "Consulter", download: "Télécharger", company: "Entreprise", verified: "Entreprise vérifiée", legalForm: "Forme juridique", country: "Pays", activity: "Activité", founded: "Fondée en", budget: "Utilisation des fonds", allocation: "Répartition prévue", source: "Origine des futurs paiements", exit: " / de la revente", risks: "Risques à connaître", simulator: "Choisir mon investissement", amount: "Montant à investir", minimum: "Minimum", maximum: "maximum", share: "Votre part de", expected: "Montant prévu à terme", interest: "Gain estimé inclus", projected: "Estimation non garantie, soumise aux risques du projet.", enter: "Saisissez un montant pour voir l’estimation", secure: "Une souscription personnelle et protégée", secureText: "Les informations déjà vérifiées dans votre compte seront utilisées pour préparer votre souscription.", consentTitle: "Avant de continuer", acceptAgreement: "Je confirme le montant et j’accepte le bulletin de souscription.", acceptRisk: "J’ai lu les risques et j’accepte la possibilité de perdre tout ou partie du capital investi.", readTerms: "Lire les conditions", readRisk: "Lire les risques", consentRequired: "Confirmez le bulletin et la lecture des risques avant de continuer.", submitting: "Validation en cours…", submit: "Continuer vers le paiement", payment: "Vous pourrez payer par carte ou Mobile Money. Une confirmation vous sera toujours demandée avant le débit.", riskText: "L’investissement présente un risque de perte en capital. Les performances passées ne préjugent pas des performances futures.",
+    equity: "Part de l’entreprise", debt: "Avec remboursement", conditions: "L’essentiel", overview: "Aperçu", details: "Le projet", subscribeNav: "Souscrire", invest: "Investir", demo: "Démonstration", simulate: "Simuler", runSimulation: "Simuler ce montant", simulationLoading: "Calcul en cours…", simulationError: "L’estimation est momentanément indisponible.", demoText: "Cette opportunité est un exemple de présentation. Vous pouvez tester les montants, mais aucun versement ne sera demandé.", goal: "Objectif", raised: "Déjà réuni", offered: "Part proposée", return: "Gain prévu", duration: "Durée", long: "Long terme", months: "mois", of: "sur", investors: "investisseurs", from: "Dès", cap: "Maximum", close: "Clôture prévue", project: "Présentation du projet", gallery: "Le projet en images", documents: "Documents à consulter", documentsHelp: "Ces documents sont librement consultables et téléchargeables, sans créer de compte.", view: "Consulter", download: "Télécharger", company: "Entreprise", verified: "Entreprise vérifiée", legalForm: "Forme juridique", country: "Pays", activity: "Activité", founded: "Fondée en", budget: "Utilisation des fonds", allocation: "Répartition prévue", source: "Origine des futurs paiements", exit: " / de la revente", risks: "Risques à connaître", simulator: "Choisir mon investissement", amount: "Montant à investir", minimum: "Minimum", maximum: "maximum", share: "Votre part de", expected: "Montant prévu à terme", interest: "Gain estimé inclus", projected: "Estimation non garantie, soumise aux risques du projet.", enter: "Saisissez un montant pour voir l’estimation", paymentChoice: "Mode de paiement souhaité", card: "Carte bancaire", mobileMoney: "Mobile Money", mobileLimit: "Mobile Money est plafonné à", mobileExceeded: "Ce montant dépasse le plafond Mobile Money. Choisissez la carte bancaire ou réduisez le montant.", secure: "Une souscription personnelle et protégée", secureText: "Les informations déjà vérifiées dans votre compte seront utilisées pour préparer votre souscription.", consentTitle: "Avant de continuer", acceptAgreement: "Je confirme le montant et j’accepte le bulletin de souscription.", acceptRisk: "J’ai lu les risques et j’accepte la possibilité de perdre tout ou partie du capital investi.", readTerms: "Lire les conditions", readRisk: "Lire les risques", consentRequired: "Confirmez le bulletin et la lecture des risques avant de continuer.", submitting: "Validation en cours…", submit: "Continuer vers le paiement", payment: "Les paiements sont soumis aux contrôles d’identité, d’origine des fonds et de suivi des opérations. Une confirmation est toujours demandée avant le débit.", riskText: "L’investissement présente un risque de perte en capital. Les performances passées ne préjugent pas des performances futures.",
   } : {
     missing: "Offer not found.", back: "Back to opportunities", low: "Amount too low", login: "Sign-in required", loginText: "Sign in to save your commitment.", failed: "Subscription failed", saved: "Subscription saved", savedText: "Your commitment is reserved. Payment instructions will appear in your account.", paymentReady: "Opening secure payment…", error: "Error", unknown: "Unknown error",
-    equity: "Company ownership", debt: "With repayment", conditions: "Key information", overview: "Overview", details: "The project", subscribeNav: "Subscribe", invest: "Invest", demo: "Demo", simulate: "Simulate", demoText: "This opportunity is a presentation example. You can try different amounts, but no payment will be requested.", goal: "Target", raised: "Already raised", offered: "Ownership offered", return: "Expected return", duration: "Duration", long: "Long term", months: "months", of: "of", investors: "investors", from: "From", cap: "Maximum", close: "Expected closing", project: "Project overview", gallery: "The project in pictures", documents: "Documents to review", documentsHelp: "These documents can be viewed and downloaded freely, without creating an account.", view: "View", download: "Download", company: "Company", verified: "Verified company", legalForm: "Legal form", country: "Country", activity: "Activity", founded: "Founded", budget: "Use of funds", allocation: "Planned allocation", source: "Source of future payments", exit: " / resale", risks: "Risks to know", simulator: "Choose my investment", amount: "Amount to invest", minimum: "Minimum", maximum: "maximum", share: "Your share of", expected: "Expected amount at term", interest: "Estimated gain included", projected: "Estimate only, not guaranteed and subject to project risks.", enter: "Enter an amount to view the estimate", secure: "A personal, protected subscription", secureText: "Information already verified in your account will be used to prepare your subscription.", consentTitle: "Before continuing", acceptAgreement: "I confirm the amount and accept the subscription form.", acceptRisk: "I have read the risks and accept that I may lose some or all of the capital invested.", readTerms: "Read the terms", readRisk: "Read the risks", consentRequired: "Confirm the form and that you have read the risks before continuing.", submitting: "Approving…", submit: "Continue to payment", payment: "You can pay by card or Mobile Money. You will always be asked to confirm before any debit.", riskText: "Investing involves a risk of capital loss. Past performance does not predict future performance.",
+    equity: "Company ownership", debt: "With repayment", conditions: "Key information", overview: "Overview", details: "The project", subscribeNav: "Subscribe", invest: "Invest", demo: "Demo", simulate: "Simulate", runSimulation: "Simulate this amount", simulationLoading: "Calculating…", simulationError: "The estimate is temporarily unavailable.", demoText: "This opportunity is a presentation example. You can try different amounts, but no payment will be requested.", goal: "Target", raised: "Already raised", offered: "Ownership offered", return: "Expected return", duration: "Duration", long: "Long term", months: "months", of: "of", investors: "investors", from: "From", cap: "Maximum", close: "Expected closing", project: "Project overview", gallery: "The project in pictures", documents: "Documents to review", documentsHelp: "These documents can be viewed and downloaded freely, without creating an account.", view: "View", download: "Download", company: "Company", verified: "Verified company", legalForm: "Legal form", country: "Country", activity: "Activity", founded: "Founded", budget: "Use of funds", allocation: "Planned allocation", source: "Source of future payments", exit: " / resale", risks: "Risks to know", simulator: "Choose my investment", amount: "Amount to invest", minimum: "Minimum", maximum: "maximum", share: "Your share of", expected: "Expected amount at term", interest: "Estimated gain included", projected: "Estimate only, not guaranteed and subject to project risks.", enter: "Enter an amount to view the estimate", paymentChoice: "Preferred payment method", card: "Bank card", mobileMoney: "Mobile Money", mobileLimit: "Mobile Money is capped at", mobileExceeded: "This amount exceeds the Mobile Money cap. Choose bank card or reduce the amount.", secure: "A personal, protected subscription", secureText: "Information already verified in your account will be used to prepare your subscription.", consentTitle: "Before continuing", acceptAgreement: "I confirm the amount and accept the subscription form.", acceptRisk: "I have read the risks and accept that I may lose some or all of the capital invested.", readTerms: "Read the terms", readRisk: "Read the risks", consentRequired: "Confirm the form and that you have read the risks before continuing.", submitting: "Approving…", submit: "Continue to payment", payment: "Payments are subject to identity, source-of-funds and transaction-monitoring checks. You will always be asked to confirm before any debit.", riskText: "Investing involves a risk of capital loss. Past performance does not predict future performance.",
   };
 
   const { data, loading } = useFetch<{ offer: OfferDTO }>(
@@ -72,20 +75,23 @@ export function OfferDetail() {
   const [submitting, setSubmitting] = useState(false);
   const [acceptAgreement, setAcceptAgreement] = useState(false);
   const [acceptRisks, setAcceptRisks] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<"card" | "mobile_money">("card");
+  const [simulationRun, setSimulationRun] = useState(0);
 
   // Reset amount when offer changes
   useEffect(() => {
     if (minInv > 0) setAmount(minInv);
     setAcceptAgreement(false);
     setAcceptRisks(false);
+    setPaymentMethod("card");
   }, [minInv, offerId]);
 
   // Simulation fetch
   const simUrl =
     offerId && amount > 0
-      ? `/api/offers/${offerId}/subscribe?amount=${amount}`
+      ? `/api/offers/${offerId}/subscribe?amount=${amount}&run=${simulationRun}`
       : null;
-  const { data: simData } = useFetch<SimulationResult>(simUrl);
+  const { data: simData, loading: simLoading, error: simError } = useFetch<SimulationResult>(simUrl);
 
   if (loading) {
     return (
@@ -119,6 +125,9 @@ export function OfferDetail() {
 
   const pct = progressPct(offer.raisedAmount, offer.fundingGoal);
   const quickAmounts = [minInv, minInv * 2, minInv * 5, maxInv ?? minInv * 10];
+  const simulationAmountValid = amount >= minInv && (maxInv === null || amount <= maxInv);
+  const mobileMoneyLimit = simData?.paymentPolicy?.mobileMoneyLimit ?? 1_000_000;
+  const mobileMoneyExceeded = paymentMethod === "mobile_money" && amount > mobileMoneyLimit;
 
   const handleSubscribe = async () => {
     if (!offerId) return;
@@ -146,6 +155,7 @@ export function OfferDetail() {
           signatureIntent: true,
           agreementVersion: LEGAL_VERSIONS.subscription,
           locale,
+          paymentMethod,
         }),
       });
       const json = (await res.json()) as {
@@ -187,6 +197,14 @@ export function OfferDetail() {
           description: en
             ? "Choose a lower amount or update your answers from your personal space."
             : "Choisissez un montant plus faible ou actualisez vos réponses depuis votre espace personnel.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (json.code === "MOBILE_MONEY_LIMIT_EXCEEDED") {
+        toast({
+          title: en ? "Mobile Money limit" : "Plafond Mobile Money",
+          description: text.mobileExceeded,
           variant: "destructive",
         });
         return;
@@ -660,11 +678,28 @@ export function OfferDetail() {
                     {text.minimum} {money(minInv, true)}
                     {maxInv ? ` · ${text.maximum} ${money(maxInv, true)}` : ""}
                   </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="mt-3 w-full rounded-xl border-[#541249]/20 text-[#541249]"
+                    disabled={!simulationAmountValid || simLoading}
+                    onClick={() => setSimulationRun((current) => current + 1)}
+                  >
+                    {simLoading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Coins className="h-4 w-4" />}
+                    {simLoading ? text.simulationLoading : text.runSimulation}
+                  </Button>
                 </div>
 
                 {/* Results */}
                 <div className="rounded-md bg-secondary/60 p-3">
-                  {simData ? (
+                  {simLoading ? (
+                    <div className="flex items-center justify-center gap-2 py-5 text-xs text-muted-foreground">
+                      <LoaderCircle className="h-4 w-4 animate-spin" />
+                      {text.simulationLoading}
+                    </div>
+                  ) : simError ? (
+                    <p className="text-center text-xs text-nexora-danger">{text.simulationError}</p>
+                  ) : simData ? (
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">
@@ -721,6 +756,34 @@ export function OfferDetail() {
                     <p className="mt-1">{text.demoText}</p>
                   </div>
                 ) : <>
+                <div>
+                  <Label className="text-xs">{text.paymentChoice}</Label>
+                  <SegmentedControl
+                    value={paymentMethod}
+                    onValueChange={setPaymentMethod}
+                    ariaLabel={text.paymentChoice}
+                    className="mt-2"
+                    options={[
+                      {
+                        value: "card",
+                        label: <><CreditCard className="h-4 w-4" />{text.card}</>,
+                      },
+                      {
+                        value: "mobile_money",
+                        label: <><Smartphone className="h-4 w-4" />{text.mobileMoney}</>,
+                      },
+                    ]}
+                  />
+                  <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+                    {text.mobileLimit} {money(mobileMoneyLimit)}.
+                  </p>
+                  {mobileMoneyExceeded ? (
+                    <div className="mt-2 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-[11px] leading-relaxed text-amber-900">
+                      <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
+                      <span>{text.mobileExceeded}</span>
+                    </div>
+                  ) : null}
+                </div>
                 <div className="rounded-md border border-border/70 bg-background p-3">
                   <p className="text-xs font-semibold text-foreground">
                     {text.secure}
@@ -766,7 +829,7 @@ export function OfferDetail() {
 
                 <Button
                   onClick={handleSubscribe}
-                  disabled={submitting || !acceptAgreement || !acceptRisks}
+                  disabled={submitting || !acceptAgreement || !acceptRisks || mobileMoneyExceeded}
                   className="btn-nexora w-full"
                 >
                   {submitting ? text.submitting : text.submit}

@@ -47,6 +47,8 @@ import {
   Lock,
   BadgeDollarSign,
   LogIn,
+  FileSignature,
+  LoaderCircle,
 } from "lucide-react";
 
 // 15 statuts du modèle Project (prisma/schema.prisma)
@@ -84,12 +86,12 @@ const COPY = {
   fr: {
     workspace: "Espace entreprise", signInIntro: "Connectez-vous pour accéder à l’espace entreprise : vos dossiers, vos financements et le règlement de vos échéances.", signIn: "Se connecter", create: "Créer un compte entreprise", loadError: "Impossible de charger votre espace entreprise", retry: "Réessayer", select: "Sélectionnez une société", personal: "Compte personnel",
     nextDue: "Prochaine échéance", due: "Échéance", noDue: "Aucune échéance", afterFunding: "Sera créée après financement complet", activeFiles: "Dossiers actifs", totalFiles: "dossier(s) au total", fundedCapital: "Capital financé", raised: "Collecté auprès des investisseurs", newFile: "Nouveau dossier", myFiles: "Mes dossiers", noFiles: "Aucun dossier pour cette société", firstFile: "Soumettez un premier dossier de financement.", submitFile: "Soumettre un dossier", debt: "Dette", equity: "Capital", target: "Objectif", submitted: "Soumis le", fundraising: "Collecte", investors: "souscripteurs", investor: "souscripteur", closing: "Clôture",
-    financing: "Mes financements", privacy: "Les informations personnelles des investisseurs restent confidentielles. Vos remboursements sont regroupés et peuvent être réglés par carte ou Mobile Money.", noFinancing: "Aucun financement actif. Vos prochains paiements apparaîtront ici une fois votre offre financée.", bullet: "Un paiement à la fin", amortized: "Paiements progressifs", months: "mois", principal: "Montant financé", interest: "Intérêts", followUp: "Accompagnement", totalDue: "Total à régler", bulletNote: "Paiement unique à effectuer à la fin de la période de", paid: "Paiement terminé", verifying: "Paiement en cours de confirmation", pay: "Effectuer le paiement", paying: "Ouverture du paiement…", paymentError: "Paiement indisponible", soon: "Paiement bientôt disponible", provider: "Le paiement par carte et Mobile Money sera bientôt disponible.", paymentAfterFunding: "Le paiement apparaîtra lorsque l’offre sera entièrement financée.", noPayment: "Aucun paiement prévu pour ce dossier.", offerNotFunded: "L’offre n’est pas encore entièrement financée. Le paiement apparaîtra ensuite automatiquement.", paymentUnavailable: "Le paiement n’est pas encore disponible. Contactez notre équipe.",
+    financing: "Mes financements", privacy: "Les informations personnelles des investisseurs restent confidentielles. Vos remboursements sont regroupés et peuvent être réglés par carte ou Mobile Money.", noFinancing: "Aucun financement actif. Vos prochains paiements apparaîtront ici une fois votre offre financée.", reviewProcess: "Validation des conditions finales", reviewProcessText: "L’équipe financière a analysé, vérifié et harmonisé votre demande. Un signataire de l’entreprise doit accepter ces conditions avant le dernier contrôle et la publication.", confirmOffer: "Confirmer l’accord de l’entreprise", confirmingOffer: "Enregistrement de l’accord…", offerConfirmed: "Accord de l’entreprise enregistré", offerConfirmedText: "L’équipe termine le contrôle avant publication.", signerRequired: "Un membre disposant du mandat de signature doit confirmer.", confirmationError: "L’accord n’a pas pu être enregistré.", bullet: "Un paiement à la fin", amortized: "Paiements progressifs", months: "mois", principal: "Montant financé", interest: "Intérêts", followUp: "Accompagnement", totalDue: "Total à régler", bulletNote: "Paiement unique à effectuer à la fin de la période de", paid: "Paiement terminé", verifying: "Paiement en cours de confirmation", pay: "Effectuer le paiement", paying: "Ouverture du paiement…", paymentError: "Paiement indisponible", soon: "Paiement bientôt disponible", provider: "Le paiement par carte et Mobile Money sera bientôt disponible.", paymentAfterFunding: "Le paiement apparaîtra lorsque l’offre sera entièrement financée.", noPayment: "Aucun paiement prévu pour ce dossier.", offerNotFunded: "L’offre n’est pas encore entièrement financée. Le paiement apparaîtra ensuite automatiquement.", paymentUnavailable: "Le paiement n’est pas encore disponible. Contactez notre équipe.",
   },
   en: {
     workspace: "Company workspace", signInIntro: "Sign in to manage your applications, financing and repayments.", signIn: "Sign in", create: "Create a company account", loadError: "Unable to load your company workspace", retry: "Try again", select: "Select a company", personal: "Personal account",
     nextDue: "Next payment", due: "Payment", noDue: "No payment due", afterFunding: "Created once funding is complete", activeFiles: "Active applications", totalFiles: "application(s) in total", fundedCapital: "Capital funded", raised: "Raised from investors", newFile: "New application", myFiles: "My applications", noFiles: "No application for this company", firstFile: "Submit your first financing application.", submitFile: "Submit an application", debt: "Debt", equity: "Equity", target: "Target", submitted: "Submitted on", fundraising: "Fundraising", investors: "investors", investor: "investor", closing: "Closes",
-    financing: "My financing", privacy: "Investors’ personal information remains private. Your repayments are grouped and can be paid by card or Mobile Money.", noFinancing: "No active financing. Your next payments will appear here once your offer is funded.", bullet: "One payment at the end", amortized: "Progressive payments", months: "months", principal: "Amount funded", interest: "Interest", followUp: "Support", totalDue: "Total payable", bulletNote: "One payment due at the end of the", paid: "Payment completed", verifying: "Payment confirmation in progress", pay: "Make payment", paying: "Opening payment…", paymentError: "Payment unavailable", soon: "Payment coming soon", provider: "Card and Mobile Money payment will be available soon.", paymentAfterFunding: "The payment will appear once the offer is fully funded.", noPayment: "No payment is planned for this application.", offerNotFunded: "The offer is not fully funded yet. The payment will appear automatically afterwards.", paymentUnavailable: "The payment is not available yet. Contact our team.",
+    financing: "My financing", privacy: "Investors’ personal information remains private. Your repayments are grouped and can be paid by card or Mobile Money.", noFinancing: "No active financing. Your next payments will appear here once your offer is funded.", reviewProcess: "Final terms approval", reviewProcessText: "The finance team has analysed, verified and harmonised your application. An authorised company signatory must accept these terms before the final review and publication.", confirmOffer: "Confirm the company’s agreement", confirmingOffer: "Recording agreement…", offerConfirmed: "Company agreement recorded", offerConfirmedText: "The team is completing the final review before publication.", signerRequired: "A member with signing authority must confirm.", confirmationError: "The agreement could not be recorded.", bullet: "One payment at the end", amortized: "Progressive payments", months: "months", principal: "Amount funded", interest: "Interest", followUp: "Support", totalDue: "Total payable", bulletNote: "One payment due at the end of the", paid: "Payment completed", verifying: "Payment confirmation in progress", pay: "Make payment", paying: "Opening payment…", paymentError: "Payment unavailable", soon: "Payment coming soon", provider: "Card and Mobile Money payment will be available soon.", paymentAfterFunding: "The payment will appear once the offer is fully funded.", noPayment: "No payment is planned for this application.", offerNotFunded: "The offer is not fully funded yet. The payment will appear automatically afterwards.", paymentUnavailable: "The payment is not available yet. Contact our team.",
   },
 } as const;
 
@@ -374,6 +376,30 @@ export function CompanyDashboard() {
   const [dividends, setDividends] = useState<CompanyDividend[]>([]);
   const [dividendForms, setDividendForms] = useState<Record<string, DividendFormState>>({});
   const [dividendAction, setDividendAction] = useState<string | null>(null);
+  const [confirmingProjectId, setConfirmingProjectId] = useState<string | null>(null);
+
+  const confirmFinalOffer = async (projectId: string) => {
+    setConfirmingProjectId(projectId);
+    try {
+      const response = await fetch(`/api/company/projects/${projectId}/offer-confirmation`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ acceptFinalTerms: true }),
+      });
+      const payload = (await response.json()) as { error?: string };
+      if (!response.ok) throw new Error(payload.error || copy.confirmationError);
+      toast({ title: copy.offerConfirmed, description: copy.offerConfirmedText });
+      setReloadKey((value) => value + 1);
+    } catch (error) {
+      toast({
+        title: copy.confirmationError,
+        description: error instanceof Error ? error.message : copy.confirmationError,
+        variant: "destructive",
+      });
+    } finally {
+      setConfirmingProjectId(null);
+    }
+  };
 
   const handlePayment = async (paymentId: string) => {
     setPayingId(paymentId);
@@ -614,6 +640,7 @@ export function CompanyDashboard() {
     (m) => m.company.id === selectedCompanyId
   );
   const selectedCompany = selectedMembership?.company;
+  const canConfirmOffer = new Set(["sign", "manage"]).has(selectedMembership?.mandate || "");
   const companyProjects = selectedCompanyId
     ? projects.filter((p) => p.company?.id === selectedCompanyId)
     : projects;
@@ -811,6 +838,45 @@ export function CompanyDashboard() {
                       </p>
                     </div>
                   </div>
+
+                  {p.status === "offer_prepared" ? (
+                    <div className="mt-3 rounded-2xl border border-[#541249]/15 bg-[linear-gradient(135deg,#fbf6fa_0%,#f2e3ef_100%)] p-4">
+                      <div className="flex items-start gap-3">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#541249] text-white shadow-[0_8px_18px_rgba(84,18,73,.2)]">
+                          <FileSignature className="h-4 w-4" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-[#380c31]">{copy.reviewProcess}</p>
+                          <p className="mt-1 text-xs leading-relaxed text-[#541249]/75">{copy.reviewProcessText}</p>
+                          {canConfirmOffer ? (
+                            <Button
+                              type="button"
+                              size="sm"
+                              className="btn-nexora mt-3 w-full sm:w-auto"
+                              disabled={confirmingProjectId === p.id}
+                              onClick={() => void confirmFinalOffer(p.id)}
+                            >
+                              {confirmingProjectId === p.id ? (
+                                <LoaderCircle className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <FileSignature className="h-4 w-4" />
+                              )}
+                              {confirmingProjectId === p.id ? copy.confirmingOffer : copy.confirmOffer}
+                            </Button>
+                          ) : (
+                            <p className="mt-2 text-[11px] font-medium text-[#541249]">{copy.signerRequired}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {p.status === "offer_confirmed" ? (
+                    <div className="mt-3 flex items-start gap-2 rounded-xl border border-[#541249]/12 bg-[#fbf7fa] p-3 text-xs text-[#541249]">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+                      <p><strong>{copy.offerConfirmed}.</strong> {copy.offerConfirmedText}</p>
+                    </div>
+                  ) : null}
 
                   {/* Funding progress if published */}
                   {hasOffer && (

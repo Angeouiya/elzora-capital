@@ -43,6 +43,13 @@ function completeDebtProject() {
     cashBalance: 5_000_000,
     existingDebt: 2_000_000,
     annualOperatingExpenses: 70_000_000,
+    financialForecasts: [
+      { year: 2026, revenue: 104_000_000, operatingExpenses: 84_000_000, netIncome: 10_000_000, cashFlow: 8_000_000 },
+      { year: 2027, revenue: 128_000_000, operatingExpenses: 101_000_000, netIncome: 14_000_000, cashFlow: 12_000_000 },
+      { year: 2028, revenue: 151_000_000, operatingExpenses: 117_000_000, netIncome: 19_000_000, cashFlow: 16_000_000 },
+    ],
+    forecastAssumptions:
+      "Croissance portée par trois nouveaux points de vente, une marge stable et une montée en charge progressive.",
     fundingPurpose:
       "Financer le stock initial, l'aménagement des points de vente et les équipements de livraison.",
     useOfFunds: [
@@ -138,5 +145,15 @@ test("requires ownership information for an equity application", () => {
   assert.deepEqual(result, {
     ok: false,
     error: "Décrivez la répartition actuelle du capital",
+  });
+});
+
+test("requires three detailed forecast years and their assumptions", () => {
+  const body = completeDebtProject();
+  body.financialForecasts = body.financialForecasts.slice(0, 2);
+  const result = parseProjectInput(body, true);
+  assert.deepEqual(result, {
+    ok: false,
+    error: "Complétez trois années de prévisions financières détaillées",
   });
 });
