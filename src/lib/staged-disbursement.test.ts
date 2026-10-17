@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { canPrepareStage, parseStagePlan, stageCommission, stageFinancials } from "./staged-disbursement";
+import { canPrepareStage, canReviewStageEvidence, canSubmitStageEvidence, parseStagePlan, stageCommission, stageFinancials } from "./staged-disbursement";
 
 const stages = [
   { title: "Commande validée", grossAmount: 333_333, targetDate: "2026-11-01", qualityCriteria: "Bon de commande signé et équipements identifiés." },
@@ -32,9 +32,25 @@ test("company payout figures reconcile gross, commission and net for every stage
   assert.throws(() => stageFinancials(100, 0, 99.999));
 });
 
-test("a later stage remains blocked until the previous transfer is confirmed", () => {
-  assert.equal(canPrepareStage({ status: "qa_passed", trancheNo: 1, previousStatus: null }), true);
-  assert.equal(canPrepareStage({ status: "qa_passed", trancheNo: 2, previousStatus: "approved" }), false);
-  assert.equal(canPrepareStage({ status: "qa_passed", trancheNo: 2, previousStatus: "executed" }), true);
-  assert.equal(canPrepareStage({ status: "evidence_submitted", trancheNo: 1, previousStatus: null }), false);
+test("the first stage needs no impossible pre-payment evidence", () => {
+  assert.equal(canPrepareStage({ status: "planned", trancheNo: 1, previousTransferStatus: null, previousQualityStatus: null, previousReviewer: null }), true);
+  assert.equal(canPrepareStage({ status: "evidence_submitted", trancheNo: 1, previousTransferStatus: null, previousQualityStatus: null, previousReviewer: null }), false);
+});
+
+test("the next stage waits for both payment and independent quality review of the prior stage", () => {
+  const base = { status: "planned", trancheNo: 2, previousTransferStatus: "executed", previousQualityStatus: "qa_passed", previousReviewer: "reviewer-2" };
+  assert.equal(canPrepareStage(base), true);
+  assert.equal(canPrepareStage({ ...base, previousTransferStatus: "approved" }), false);
+  assert.equal(canPrepareStage({ ...base, previousQualityStatus: "changes_requested" }), false);
+  assert.equal(canPrepareStage({ ...base, previousReviewer: null }), false);
+});
+
+test("progress evidence and quality review happen only after the stage is paid", () => {
+  assert.equal(canSubmitStageEvidence("planned", null), false);
+  assert.equal(canSubmitStageEvidence("planned", "approved"), false);
+  assert.equal(canSubmitStageEvidence("planned", "executed"), true);
+  assert.equal(canSubmitStageEvidence("changes_requested", "executed"), true);
+  assert.equal(canSubmitStageEvidence("qa_passed", "executed"), false);
+  assert.equal(canReviewStageEvidence("evidence_submitted", "approved"), false);
+  assert.equal(canReviewStageEvidence("evidence_submitted", "executed"), true);
 });

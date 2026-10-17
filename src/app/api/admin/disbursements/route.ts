@@ -202,11 +202,19 @@ export async function POST(req: NextRequest) {
   const nextIndex = stages.findIndex((stage) => !stage.transferId);
   if (nextIndex < 0) return NextResponse.json({ error: "Toutes les étapes ont déjà été préparées." }, { status: 409 });
   const stage = stages[nextIndex];
-  const previousStatus = nextIndex === 0 ? null : stages[nextIndex - 1].transferStatus;
-  if (!canPrepareStage({ status: stage.status, trancheNo: stage.trancheNo, previousStatus }) || !stage.qaBy) {
-    return NextResponse.json({ error: nextIndex > 0 && previousStatus !== "executed"
-      ? "Le versement précédent doit être confirmé avant de préparer cette étape."
-      : "Le compte rendu et le contrôle qualité de cette étape doivent être validés." }, { status: 409 });
+  const previous = nextIndex === 0 ? null : stages[nextIndex - 1];
+  if (stage.trancheNo !== nextIndex + 1 || !canPrepareStage({
+    status: stage.status,
+    trancheNo: stage.trancheNo,
+    previousTransferStatus: previous?.transferStatus ?? null,
+    previousQualityStatus: previous?.status ?? null,
+    previousReviewer: previous?.qaBy ?? null,
+  })) {
+    return NextResponse.json({ error: stage.status !== "planned"
+      ? "Cette étape n’est plus prête pour un versement."
+      : previous && previous.transferStatus !== "executed"
+        ? "Le versement précédent doit être confirmé avant de préparer la suite."
+        : "L’utilisation de la tranche précédente doit être contrôlée et validée avant le versement suivant." }, { status: 409 });
   }
   const grossAmount = Number(stage.grossAmount);
   const priorGross = stages.slice(0, nextIndex).reduce((sum, item) => sum + BigInt(item.grossAmount), 0n);
@@ -322,13 +330,19 @@ export async function PATCH(req: NextRequest) {
   const disbursement = await database
     .prepare(
       `SELECT d.id, d.status, d.preparedBy, d.approvedBy,
-              s.status AS stageStatus, s.qaBy
+              d.trancheNo, s.status AS stageStatus,
+              previous.status AS previousQualityStatus, previous.qaBy AS previousReviewer,
+              previousTransfer.status AS previousTransferStatus
        FROM Disbursement d LEFT JOIN DisbursementStage s
        ON s.projectId = d.projectId AND s.trancheNo = d.trancheNo
+       LEFT JOIN DisbursementStage previous
+       ON previous.projectId = d.projectId AND previous.trancheNo = d.trancheNo - 1
+       LEFT JOIN Disbursement previousTransfer
+       ON previousTransfer.projectId = d.projectId AND previousTransfer.trancheNo = d.trancheNo - 1
        WHERE d.id = ? LIMIT 1`
     )
     .bind(disbursementId)
-    .first<{ id: string; status: string; preparedBy: string | null; approvedBy: string | null; stageStatus: string | null; qaBy: string | null }>();
+    .first<{ id: string; status: string; preparedBy: string | null; approvedBy: string | null; trancheNo: number; stageStatus: string | null; previousQualityStatus: string | null; previousReviewer: string | null; previousTransferStatus: string | null }>();
   if (!disbursement) {
     return NextResponse.json({ error: "Décaissement introuvable" }, { status: 404 });
   }
@@ -344,8 +358,16 @@ export async function PATCH(req: NextRequest) {
   if (disbursement.status !== "pending") {
     return NextResponse.json({ error: "Ce décaissement n'est plus en attente." }, { status: 409 });
   }
-  if (disbursement.stageStatus !== "qa_passed" || !disbursement.qaBy) {
-    return NextResponse.json({ error: "Le contrôle qualité doit être validé avant l’approbation." }, { status: 409 });
+  if (!canPrepareStage({
+    status: disbursement.stageStatus ?? "",
+    trancheNo: Number(disbursement.trancheNo),
+    previousTransferStatus: disbursement.previousTransferStatus,
+    previousQualityStatus: disbursement.previousQualityStatus,
+    previousReviewer: disbursement.previousReviewer,
+  })) {
+    return NextResponse.json({ error: Number(disbursement.trancheNo) === 1
+      ? "La première tranche n’est plus prête à être approuvée. Actualisez le dossier."
+      : "Le versement précédent et son contrôle qualité doivent être validés avant cette approbation." }, { status: 409 });
   }
 
   const now = isoNow();

@@ -67,8 +67,20 @@ export function stageFinancials(grossAmount: number, previousGross: number, comm
 export function canPrepareStage(input: {
   status: string;
   trancheNo: number;
-  previousStatus: string | null;
+  previousTransferStatus: string | null;
+  previousQualityStatus: string | null;
+  previousReviewer: string | null;
 }): boolean {
-  return input.status === "qa_passed" &&
-    (input.trancheNo === 1 || input.previousStatus === "executed");
+  if (input.status !== "planned" || !Number.isSafeInteger(input.trancheNo) || input.trancheNo < 1) return false;
+  if (input.trancheNo === 1) return true;
+  return input.previousTransferStatus === "executed" &&
+    input.previousQualityStatus === "qa_passed" && Boolean(input.previousReviewer);
+}
+
+export function canSubmitStageEvidence(status: string, transferStatus: string | null): boolean {
+  return transferStatus === "executed" && (status === "planned" || status === "changes_requested");
+}
+
+export function canReviewStageEvidence(status: string, transferStatus: string | null): boolean {
+  return transferStatus === "executed" && status === "evidence_submitted";
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowRight, CalendarDays, CheckCheck, ClipboardCheck, FileUp, Layers3, ShieldCheck } from "lucide-react";
+import { ArrowRight, CalendarDays, CheckCheck, CircleCheck, ClipboardCheck, FileUp, Layers3, ShieldCheck } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useFetch } from "@/hooks/use-fetch";
 import { useToast } from "@/hooks/use-toast";
 import { fmtFCFA } from "@/lib/finance";
+import { canPrepareStage, canReviewStageEvidence } from "@/lib/staged-disbursement";
 
 interface FundedProject { id: string; title: string; companyName: string; raisedAmount: number }
 interface Stage {
@@ -52,13 +53,15 @@ type Action = { kind: "plan" } | { kind: "qa_pass" | "request_changes" | "prepar
 const emptyStage = (): FormStage => ({ title: "", grossAmount: "", targetDate: "", qualityCriteria: "" });
 
 function stageLabel(stage: Stage) {
-  if (stage.transferStatus === "executed") return "Versement confirmé";
+  if (stage.transferStatus === "executed") {
+    if (stage.status === "qa_passed") return "Qualité validée";
+    if (stage.status === "evidence_submitted") return "À contrôler";
+    if (stage.status === "changes_requested") return "Correction demandée";
+    return "Compte rendu attendu";
+  }
   if (stage.transferStatus === "approved") return "Versement approuvé";
   if (stage.transferStatus === "pending") return "Versement à approuver";
-  if (stage.status === "qa_passed") return "Qualité validée";
-  if (stage.status === "evidence_submitted") return "À contrôler";
-  if (stage.status === "changes_requested") return "Correction demandée";
-  return "Justificatif attendu";
+  return "Étape à venir";
 }
 
 export function AdminDisbursementWorkflow({ onChanged }: { onChanged: () => void }) {
@@ -132,7 +135,7 @@ export function AdminDisbursementWorkflow({ onChanged }: { onChanged: () => void
           <div>
             <div className="flex items-center gap-2 text-xs font-medium text-[#e8c4dd]"><Layers3 className="h-4 w-4" /> FINANCEMENTS ENTREPRISES</div>
             <h2 className="mt-2 text-xl font-semibold tracking-tight sm:text-2xl">Des versements à chaque étape vérifiée</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/68">Le calendrier couvre le montant collecté. Chaque tranche demande un compte rendu, une preuve et une revue qualité avant la double validation du versement.</p>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/68">La première tranche suit les contrôles du financement et du compte entreprise. Après son versement, l’entreprise documente son utilisation ; une revue qualité indépendante ouvre la tranche suivante.</p>
           </div>
           <div className="rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-right">
             <p className="text-xs text-white/60">Calendriers suivis</p>
@@ -188,8 +191,16 @@ export function AdminDisbursementWorkflow({ onChanged }: { onChanged: () => void
           </div>
           <div className="divide-y divide-[#541249]/10">
             {items.map((stage, index) => {
-              const canPrepare = stage.status === "qa_passed" && !stage.transferId && (index === 0 || items[index - 1].transferStatus === "executed");
-              const canApprove = data?.permissions.approve && stage.transferStatus === "pending" && stage.transferPreparedBy !== data.currentAdminId;
+              const previous = index === 0 ? null : items[index - 1];
+              const cleared = canPrepareStage({
+                status: stage.status,
+                trancheNo: stage.trancheNo,
+                previousTransferStatus: previous?.transferStatus ?? null,
+                previousQualityStatus: previous?.status ?? null,
+                previousReviewer: previous?.qaBy ?? null,
+              });
+              const canPrepare = cleared && !stage.transferId;
+              const canApprove = data?.permissions.approve && cleared && stage.transferStatus === "pending" && stage.transferPreparedBy !== data.currentAdminId;
               return <div key={stage.id} className="px-4 py-4 sm:px-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0"><p className="text-sm font-semibold">{stage.trancheNo}. {stage.title}</p><p className="mt-1 text-xs text-muted-foreground">Cible : {new Date(`${stage.targetDate}T00:00:00Z`).toLocaleDateString("fr-FR")} · {fmtFCFA(stage.grossAmount)}</p></div>
@@ -200,7 +211,7 @@ export function AdminDisbursementWorkflow({ onChanged }: { onChanged: () => void
                 {stage.progressNote ? <p className="mt-2 rounded-xl bg-[#f8f4f7] p-3 text-xs leading-5"><strong>Compte rendu :</strong> {stage.progressNote}</p> : null}
                 {stage.evidenceDocumentId ? <a href={`/api/projects/documents/${stage.evidenceDocumentId}?download=1`} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-[#541249] underline-offset-2 hover:underline"><FileUp className="h-3.5 w-3.5" />{stage.evidenceFileName || "Voir le justificatif"}</a> : null}
                 {stage.qaNote ? <p className="mt-2 text-xs text-[#541249]"><strong>Revue qualité :</strong> {stage.qaNote}</p> : null}
-                {stage.status === "evidence_submitted" && data?.permissions.review && stage.plannedBy !== data.currentAdminId ? <div className="mt-3 space-y-2">
+                {canReviewStageEvidence(stage.status, stage.transferStatus) && data?.permissions.review && stage.plannedBy !== data.currentAdminId ? <div className="mt-3 space-y-2">
                   <Label htmlFor={`qa-note-${stage.id}`}>Conclusion du contrôle</Label>
                   <Textarea id={`qa-note-${stage.id}`} value={reviewNotes[stage.id] ?? ""} onChange={(event) => setReviewNotes((current) => ({ ...current, [stage.id]: event.target.value }))} className="min-h-20 rounded-xl" placeholder="Décrivez ce qui a été vérifié ou les corrections à effectuer." />
                   <div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" disabled={(reviewNotes[stage.id] ?? "").trim().length < 20} onClick={() => setAction({ kind: "request_changes", stage })}>Demander une correction</Button><Button size="sm" className="btn-nexora" disabled={(reviewNotes[stage.id] ?? "").trim().length < 20} onClick={() => setAction({ kind: "qa_pass", stage })}><ClipboardCheck className="h-4 w-4" />Valider la qualité</Button></div>
@@ -208,6 +219,7 @@ export function AdminDisbursementWorkflow({ onChanged }: { onChanged: () => void
                 {canPrepare && data?.permissions.plan ? <Button size="sm" className="btn-nexora mt-3" onClick={() => setAction({ kind: "prepare", stage })}>Préparer cette tranche <ArrowRight className="h-4 w-4" /></Button> : null}
                 {canApprove ? <Button size="sm" variant="outline" className="mt-3 border-[#541249]/25 text-[#541249]" onClick={() => setAction({ kind: "approve", stage })}><CheckCheck className="h-4 w-4" />Approuver la tranche</Button> : null}
                 {stage.transferStatus === "approved" ? <p className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"><ShieldCheck className="h-4 w-4 shrink-0" />Versement approuvé. L’exécution attend la connexion du partenaire de paiement et une confirmation bancaire.</p> : null}
+                {stage.transferStatus === "executed" ? <p className="mt-3 flex items-center gap-2 text-xs font-medium text-[#541249]"><CircleCheck className="h-4 w-4 shrink-0" />Tranche versée{stage.transferExecutedAt ? ` le ${new Date(stage.transferExecutedAt).toLocaleDateString("fr-FR")}` : ""}. {stage.status === "qa_passed" ? "Contrôle qualité clôturé." : "Le résultat reste suivi jusqu’à la validation qualité."}</p> : null}
               </div>;
             })}
           </div>
@@ -216,7 +228,7 @@ export function AdminDisbursementWorkflow({ onChanged }: { onChanged: () => void
 
       <AlertDialog open={Boolean(action)} onOpenChange={(open) => { if (!open && !busy) setAction(null); }}>
         <AlertDialogContent className="max-w-md rounded-[1.5rem] border-[#541249]/15 p-6">
-          <AlertDialogHeader><AlertDialogTitle className="text-lg font-semibold">Confirmer cette décision</AlertDialogTitle><AlertDialogDescription className="leading-6">{action?.kind === "plan" ? `Le calendrier de ${formStages.length} étapes pour ${selectedProject?.title ?? "ce projet"} sera communiqué à l’entreprise.` : action?.kind === "qa_pass" ? "Cette validation autorisera la préparation du versement correspondant, sous réserve des autres contrôles." : action?.kind === "request_changes" ? "L’entreprise devra déposer un nouveau compte rendu et un justificatif avant une nouvelle revue." : action?.kind === "prepare" ? `Cette tranche sera préparée sur le compte vérifié de l’entreprise. Montant prévu après commission : ${fmtFCFA(action.stage.netAmount)}.` : `Un second responsable approuvera le montant prévu de ${fmtFCFA(action?.stage.netAmount ?? 0)}. Le virement restera suspendu jusqu’à la confirmation du partenaire de paiement.`}</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle className="text-lg font-semibold">Confirmer cette décision</AlertDialogTitle><AlertDialogDescription className="leading-6">{action?.kind === "plan" ? `Le calendrier de ${formStages.length} étapes pour ${selectedProject?.title ?? "ce projet"} sera communiqué à l’entreprise.` : action?.kind === "qa_pass" ? "Cette validation clôturera le contrôle qualité de la tranche reçue et, s’il reste une étape, permettra de préparer le versement suivant." : action?.kind === "request_changes" ? "L’entreprise devra déposer un nouveau compte rendu et un justificatif avant une nouvelle revue." : action?.kind === "prepare" ? `Cette tranche sera préparée sur le compte vérifié de l’entreprise. Montant prévu après commission : ${fmtFCFA(action.stage.netAmount)}.` : `Un second responsable approuvera le montant prévu de ${fmtFCFA(action?.stage.netAmount ?? 0)}. Le virement restera suspendu jusqu’à la confirmation du partenaire de paiement.`}</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel disabled={busy}>Annuler</AlertDialogCancel><AlertDialogAction disabled={busy} onClick={(event) => { event.preventDefault(); void runAction(); }} className="bg-[#541249] text-white hover:bg-[#380c31]">{busy ? "Enregistrement…" : "Confirmer"}</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, type SessionAdmin } from "@/lib/auth";
 import { getD1, isoNow, requestIp } from "@/lib/d1";
-import { parseStagePlan, stageFinancials } from "@/lib/staged-disbursement";
+import { canReviewStageEvidence, parseStagePlan, stageFinancials } from "@/lib/staged-disbursement";
 
 const noStore = { "Cache-Control": "private, no-store" };
 const canRead = (admin: SessionAdmin) => ["finance", "validator", "analyst", "auditor", "superadmin"].includes(admin.role) || admin.permissions.includes("all") || admin.permissions.includes("disbursement:read");
@@ -159,12 +159,12 @@ export async function POST(req: NextRequest) {
       database.prepare(`INSERT INTO ProjectEvent (id, projectId, eventType, description, actor, createdAt)
         VALUES (?, ?, 'disbursement_plan', ?, ?, ?)`)
         .bind(crypto.randomUUID(), projectId,
-          `Calendrier de ${parsed.stages.length} versements préparé. Chaque étape exige un contrôle qualité.`,
+          `Calendrier de ${parsed.stages.length} versements préparé. L’utilisation de chaque tranche sera contrôlée après son versement.`,
           admin.adminId, now),
       database.prepare(`INSERT INTO Notification (id, userId, type, title, message, read, actionUrl, createdAt)
         VALUES (?, ?, 'payment', 'Calendrier de versement', ?, 0, 'company_dashboard', ?)`)
         .bind(crypto.randomUUID(), project.submittedBy,
-          `Le calendrier de versement du projet « ${project.title} » est disponible. Déposez le justificatif de la première étape.`, now),
+          `Le calendrier de versement du projet « ${project.title} » est disponible. Le premier versement suivra les validations internes ; votre compte rendu sera demandé après réception.`, now),
     ]);
   } catch (error) {
     console.error("disbursement_plan_failed", error);
@@ -192,8 +192,8 @@ export async function PATCH(req: NextRequest) {
   const database = getD1();
   const stage = await database.prepare(`${stagesSql} WHERE s.id = ? LIMIT 1`).bind(id).first<StageRow>();
   if (!stage) return NextResponse.json({ error: "Étape introuvable" }, { status: 404, headers: noStore });
-  if (stage.status !== "evidence_submitted" || !stage.evidenceDocumentId || !stage.progressNote) {
-    return NextResponse.json({ error: "Le compte rendu et sa pièce justificative sont requis avant la revue." }, { status: 409, headers: noStore });
+  if (!canReviewStageEvidence(stage.status, stage.transferStatus) || !stage.evidenceDocumentId || !stage.progressNote) {
+    return NextResponse.json({ error: "La tranche doit être versée, puis documentée par l’entreprise avant le contrôle qualité." }, { status: 409, headers: noStore });
   }
   if (stage.plannedBy === admin.adminId) {
     return NextResponse.json({ error: "La personne qui a préparé le calendrier ne peut pas valider son propre contrôle qualité." }, { status: 403, headers: noStore });
@@ -203,7 +203,9 @@ export async function PATCH(req: NextRequest) {
   const actionLabel = action === "qa_pass" ? "Contrôle qualité validé" : "Corrections demandées";
   const statements = [
     database.prepare(`UPDATE DisbursementStage SET status = ?, qaBy = ?, qaAt = ?, qaNote = ?, updatedAt = ?
-      WHERE id = ? AND status = 'evidence_submitted' AND evidenceDocumentId IS NOT NULL`)
+      WHERE id = ? AND status = 'evidence_submitted' AND evidenceDocumentId IS NOT NULL
+      AND EXISTS (SELECT 1 FROM Disbursement d WHERE d.projectId = DisbursementStage.projectId
+        AND d.trancheNo = DisbursementStage.trancheNo AND d.status = 'executed')`)
       .bind(nextStatus, admin.adminId, now, note, now, id),
     database.prepare(`INSERT INTO AuditLog (id, actorType, actorId, action, entityType, entityId, metadata, ipAddress, createdAt)
       SELECT ?, 'admin', ?, ?, 'disbursement_stage', ?, ?, ?, ?

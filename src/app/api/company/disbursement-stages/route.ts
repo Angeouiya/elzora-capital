@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { getD1, isoNow, requestIp } from "@/lib/d1";
-import { stageFinancials } from "@/lib/staged-disbursement";
+import { canSubmitStageEvidence, stageFinancials } from "@/lib/staged-disbursement";
 
 const noStore = { "Cache-Control": "private, no-store" };
 
@@ -75,16 +75,20 @@ export async function POST(req: NextRequest) {
   }
   const database = getD1();
   const stage = await database.prepare(`SELECT s.id, s.projectId, s.trancheNo, s.title, s.status,
-    p.title AS projectTitle, m.mandate
+    p.title AS projectTitle, m.mandate, d.status AS transferStatus
     FROM DisbursementStage s JOIN Project p ON p.id = s.projectId
     JOIN CompanyMember m ON m.companyId = p.companyId AND m.userId = ?
+    LEFT JOIN Disbursement d ON d.projectId = s.projectId AND d.trancheNo = s.trancheNo
     WHERE s.id = ? LIMIT 1`).bind(session.userId, stageId)
-    .first<Pick<CompanyStage, "id" | "projectId" | "trancheNo" | "title" | "status" | "projectTitle" | "mandate">>();
+    .first<Pick<CompanyStage, "id" | "projectId" | "trancheNo" | "title" | "status" | "projectTitle" | "mandate" | "transferStatus">>();
   if (!stage) return NextResponse.json({ error: "Étape introuvable" }, { status: 404, headers: noStore });
   if (!["submit", "sign", "manage"].includes(stage.mandate)) {
     return NextResponse.json({ error: "Votre mandat ne permet pas de transmettre un compte rendu." }, { status: 403, headers: noStore });
   }
-  if (!["planned", "changes_requested"].includes(stage.status)) {
+  if (stage.transferStatus !== "executed") {
+    return NextResponse.json({ error: "Vous pourrez transmettre le compte rendu après la confirmation du versement de cette étape." }, { status: 409, headers: noStore });
+  }
+  if (!canSubmitStageEvidence(stage.status, stage.transferStatus)) {
     return NextResponse.json({ error: "Cette étape n’attend pas de nouveau compte rendu." }, { status: 409, headers: noStore });
   }
   const document = await database.prepare(`SELECT id, uploadedAt FROM ProjectDocument
@@ -98,7 +102,9 @@ export async function POST(req: NextRequest) {
   const result = await database.batch([
     database.prepare(`UPDATE DisbursementStage SET status = 'evidence_submitted', progressNote = ?,
       evidenceDocumentId = ?, submittedBy = ?, submittedAt = ?, qaBy = NULL, qaAt = NULL,
-      qaNote = NULL, updatedAt = ? WHERE id = ? AND status IN ('planned', 'changes_requested')`)
+      qaNote = NULL, updatedAt = ? WHERE id = ? AND status IN ('planned', 'changes_requested')
+      AND EXISTS (SELECT 1 FROM Disbursement d WHERE d.projectId = DisbursementStage.projectId
+        AND d.trancheNo = DisbursementStage.trancheNo AND d.status = 'executed')`)
       .bind(progressNote, evidenceDocumentId, session.userId, now, now, stageId),
     database.prepare(`INSERT INTO AuditLog (id, actorType, actorId, action, entityType, entityId, metadata, ipAddress, createdAt)
       SELECT ?, 'user', ?, 'stage_evidence_submitted', 'disbursement_stage', ?, ?, ?, ?
