@@ -31,6 +31,7 @@ interface Stage {
   progressNote: string | null;
   evidenceDocumentId: string | null;
   evidenceFileName: string | null;
+  evidenceUploadedAt: string | null;
   submittedAt: string | null;
   qaAt: string | null;
   qaNote: string | null;
@@ -49,6 +50,7 @@ const COPY = {
     target: "Date cible", amount: "Montant de l’étape", net: "Versement prévu", commission: "Commission déduite", criteria: "Résultat à documenter après versement", report: "Compte rendu de réalisation", reportPlaceholder: "Décrivez les travaux réalisés, les résultats obtenus et ce que montre la pièce jointe.",
     proof: "Pièce justificative", choose: "Ajouter un fichier PDF, Word, Excel ou une photo (10 Mo maximum)", send: "Transmettre pour contrôle", sending: "Transmission…",
     proofSaved: "Justificatif déposé", qa: "Retour de l’équipe", planned: "À venir", reportNeeded: "Compte rendu attendu", submitted: "En contrôle qualité", changes: "Complément demandé", passed: "Qualité validée", prepared: "Versement à approuver", approved: "Versement approuvé", executed: "Versement confirmé", pendingText: "Le versement doit encore être confirmé. Aucun compte rendu n’est demandé avant réception des fonds.",
+    proofDate: "Déposé le", proofAfterTransfer: "Déposez un nouveau justificatif après la confirmation du versement de cette étape.",
     confirmTitle: "Transmettre ce compte rendu ?", confirmText: "Votre pièce sera conservée avec le suivi du projet. L’équipe pourra demander une correction si les résultats ne répondent pas aux critères annoncés.", cancel: "Revenir", confirm: "Oui, transmettre", sent: "Compte rendu transmis", error: "Le compte rendu n’a pas pu être transmis", retry: "Réessayez ou choisissez de nouveau la pièce.",
     loadingError: "Le suivi des versements est momentanément indisponible.",
   },
@@ -58,6 +60,7 @@ const COPY = {
     target: "Target date", amount: "Stage amount", net: "Expected transfer", commission: "Commission deducted", criteria: "Outcome to document after payment", report: "Progress report", reportPlaceholder: "Describe the work completed, the results achieved and what the attached file demonstrates.",
     proof: "Supporting file", choose: "Add a PDF, Word, Excel file or photo (10 MB maximum)", send: "Submit for review", sending: "Submitting…",
     proofSaved: "Evidence uploaded", qa: "Team feedback", planned: "Upcoming", reportNeeded: "Progress report needed", submitted: "Quality review", changes: "Changes requested", passed: "Quality approved", prepared: "Transfer awaiting approval", approved: "Transfer approved", executed: "Transfer confirmed", pendingText: "The transfer is not confirmed yet. No report is required before the funds arrive.",
+    proofDate: "Uploaded on", proofAfterTransfer: "Upload a new supporting file after this stage's transfer has been confirmed.",
     confirmTitle: "Submit this progress report?", confirmText: "Your file will be stored with the project record. The team may request changes if the outcome does not meet the published criteria.", cancel: "Go back", confirm: "Yes, submit", sent: "Progress report submitted", error: "The progress report could not be submitted", retry: "Try again or choose the file again.",
     loadingError: "Payment tracking is temporarily unavailable.",
   },
@@ -108,8 +111,8 @@ export function CompanyDisbursementStages({ companyId }: { companyId: string }) 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ stageId: stage.id, progressNote: draft.note, evidenceDocumentId }),
       });
-      const payload = await response.json() as { error?: string };
-      if (!response.ok) throw new Error(payload.error || copy.retry);
+      const payload = await response.json() as { error?: string; code?: string };
+      if (!response.ok) throw new Error(payload.code === "EVIDENCE_BEFORE_TRANSFER" ? copy.proofAfterTransfer : payload.error || copy.retry);
       setDrafts((current) => ({ ...current, [stage.id]: emptyDraft() }));
       setRefresh((value) => value + 1);
       toast({ title: copy.sent });
@@ -145,7 +148,7 @@ export function CompanyDisbursementStages({ companyId }: { companyId: string }) 
               <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-xl border border-[#541249]/10 bg-[#fcf9fb] px-3 py-2.5 text-xs"><span className="font-semibold text-[#541249]">{copy.net} : {money(stage.netAmount)}</span><span className="text-muted-foreground">{copy.commission} : {money(stage.commissionAmount)}</span></div>
               <p className="mt-3 rounded-xl bg-[#f9f5f8] p-3 text-xs leading-5"><strong className="text-[#541249]">{copy.criteria} :</strong> {stage.qualityCriteria}</p>
               {stage.progressNote ? <p className="mt-3 text-xs leading-6"><strong>{copy.report} :</strong> {stage.progressNote}</p> : null}
-              {stage.evidenceDocumentId ? <a href={`/api/projects/documents/${stage.evidenceDocumentId}?download=1`} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-[#541249] hover:underline"><FileCheck2 className="h-4 w-4" />{stage.evidenceFileName || copy.proofSaved}</a> : null}
+              {stage.evidenceDocumentId ? <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs"><a href={`/api/projects/documents/${stage.evidenceDocumentId}?download=1`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 font-medium text-[#541249] hover:underline"><FileCheck2 className="h-4 w-4" />{stage.evidenceFileName || copy.proofSaved}</a>{stage.evidenceUploadedAt ? <span className="text-muted-foreground">{copy.proofDate} {new Date(stage.evidenceUploadedAt).toLocaleDateString(dateLocale)}</span> : null}</div> : null}
               {stage.qaNote ? <p className="mt-3 rounded-xl border border-[#541249]/12 bg-white p-3 text-xs leading-5"><strong>{copy.qa} :</strong> {stage.qaNote}</p> : null}
               {stage.transferStatus === "approved" ? <p className="mt-3 flex items-start gap-2 text-xs text-muted-foreground"><ShieldCheck className="h-4 w-4 shrink-0 text-[#541249]" />{copy.pendingText}</p> : null}
               {stage.transferStatus === "executed" ? <p className="mt-3 flex items-center gap-2 text-xs font-medium text-[#541249]"><CircleCheck className="h-4 w-4" />{copy.executed}{stage.transferExecutedAt ? ` · ${new Date(stage.transferExecutedAt).toLocaleDateString(dateLocale)}` : ""}</p> : null}

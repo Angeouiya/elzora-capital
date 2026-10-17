@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { canPrepareStage, canReviewStageEvidence, canSubmitStageEvidence, parseStagePlan, stageCommission, stageFinancials } from "./staged-disbursement";
+import { canPrepareStage, canReviewStageEvidence, canSubmitStageEvidence, isEvidenceAfterTransfer, parseStagePlan, stageCommission, stageFinancials } from "./staged-disbursement";
 
 const stages = [
   { title: "Commande validée", grossAmount: 333_333, targetDate: "2026-11-01", qualityCriteria: "Bon de commande signé et équipements identifiés." },
@@ -53,4 +53,14 @@ test("progress evidence and quality review happen only after the stage is paid",
   assert.equal(canSubmitStageEvidence("qa_passed", "executed"), false);
   assert.equal(canReviewStageEvidence("evidence_submitted", "approved"), false);
   assert.equal(canReviewStageEvidence("evidence_submitted", "executed"), true);
+});
+
+test("quality evidence must be uploaded after the confirmed transfer", () => {
+  const paidAt = "2026-10-17T12:00:00.000Z";
+  assert.equal(isEvidenceAfterTransfer("2026-10-17T12:00:01.000Z", paidAt), true);
+  assert.equal(isEvidenceAfterTransfer(paidAt, paidAt), true);
+  assert.equal(isEvidenceAfterTransfer("2026-10-17T11:59:59.000Z", paidAt), false);
+  assert.equal(isEvidenceAfterTransfer("invalid", paidAt), false);
+  assert.equal(isEvidenceAfterTransfer(null, paidAt), false);
+  assert.equal(isEvidenceAfterTransfer("2026-10-17T12:00:01.000Z", null), false);
 });

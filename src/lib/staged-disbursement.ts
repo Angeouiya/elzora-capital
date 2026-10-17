@@ -84,3 +84,10 @@ export function canSubmitStageEvidence(status: string, transferStatus: string | 
 export function canReviewStageEvidence(status: string, transferStatus: string | null): boolean {
   return transferStatus === "executed" && status === "evidence_submitted";
 }
+
+export function isEvidenceAfterTransfer(uploadedAt: string | null, executedAt: string | null): boolean {
+  if (!uploadedAt || !executedAt) return false;
+  const uploadedTime = Date.parse(uploadedAt);
+  const executedTime = Date.parse(executedAt);
+  return Number.isFinite(uploadedTime) && Number.isFinite(executedTime) && uploadedTime >= executedTime;
+}

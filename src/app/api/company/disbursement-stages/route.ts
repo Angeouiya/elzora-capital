@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { getD1, isoNow, requestIp } from "@/lib/d1";
-import { canSubmitStageEvidence, stageFinancials } from "@/lib/staged-disbursement";
+import { canSubmitStageEvidence, isEvidenceAfterTransfer, stageFinancials } from "@/lib/staged-disbursement";
 
 const noStore = { "Cache-Control": "private, no-store" };
 
@@ -20,6 +20,7 @@ interface CompanyStage {
   progressNote: string | null;
   evidenceDocumentId: string | null;
   evidenceFileName: string | null;
+  evidenceUploadedAt: string | null;
   submittedAt: string | null;
   qaAt: string | null;
   qaNote: string | null;
@@ -41,7 +42,8 @@ export async function GET(req: NextRequest) {
     COALESCE((SELECT SUM(prior.grossAmount) FROM DisbursementStage prior
       WHERE prior.projectId = s.projectId AND prior.trancheNo < s.trancheNo), 0) AS previousGross,
     s.status, s.progressNote, s.evidenceDocumentId,
-    d.fileName AS evidenceFileName, s.submittedAt, s.qaAt, s.qaNote,
+    d.fileName AS evidenceFileName, d.uploadedAt AS evidenceUploadedAt,
+    s.submittedAt, s.qaAt, s.qaNote,
     x.status AS transferStatus, x.executedAt AS transferExecutedAt,
     p.companyId, m.mandate
     FROM DisbursementStage s JOIN Project p ON p.id = s.projectId
@@ -75,12 +77,13 @@ export async function POST(req: NextRequest) {
   }
   const database = getD1();
   const stage = await database.prepare(`SELECT s.id, s.projectId, s.trancheNo, s.title, s.status,
-    p.title AS projectTitle, m.mandate, d.status AS transferStatus
+    p.title AS projectTitle, m.mandate, d.status AS transferStatus,
+    d.executedAt AS transferExecutedAt
     FROM DisbursementStage s JOIN Project p ON p.id = s.projectId
     JOIN CompanyMember m ON m.companyId = p.companyId AND m.userId = ?
     LEFT JOIN Disbursement d ON d.projectId = s.projectId AND d.trancheNo = s.trancheNo
     WHERE s.id = ? LIMIT 1`).bind(session.userId, stageId)
-    .first<Pick<CompanyStage, "id" | "projectId" | "trancheNo" | "title" | "status" | "projectTitle" | "mandate" | "transferStatus">>();
+    .first<Pick<CompanyStage, "id" | "projectId" | "trancheNo" | "title" | "status" | "projectTitle" | "mandate" | "transferStatus" | "transferExecutedAt">>();
   if (!stage) return NextResponse.json({ error: "Étape introuvable" }, { status: 404, headers: noStore });
   if (!["submit", "sign", "manage"].includes(stage.mandate)) {
     return NextResponse.json({ error: "Votre mandat ne permet pas de transmettre un compte rendu." }, { status: 403, headers: noStore });
@@ -95,6 +98,9 @@ export async function POST(req: NextRequest) {
     WHERE id = ? AND projectId = ? AND type = 'milestone_evidence' AND isPublic = 0 LIMIT 1`)
     .bind(evidenceDocumentId, stage.projectId).first<{ id: string; uploadedAt: string }>();
   if (!document) return NextResponse.json({ error: "La pièce justificative est introuvable pour ce projet." }, { status: 400, headers: noStore });
+  if (!isEvidenceAfterTransfer(document.uploadedAt, stage.transferExecutedAt)) {
+    return NextResponse.json({ error: "Déposez un nouveau justificatif après la confirmation du versement de cette étape.", code: "EVIDENCE_BEFORE_TRANSFER" }, { status: 409, headers: noStore });
+  }
   const previousUse = await database.prepare(`SELECT id FROM DisbursementStage WHERE evidenceDocumentId = ? AND id <> ? LIMIT 1`)
     .bind(evidenceDocumentId, stageId).first<{ id: string }>();
   if (previousUse) return NextResponse.json({ error: "Cette pièce est déjà liée à une autre étape." }, { status: 409, headers: noStore });

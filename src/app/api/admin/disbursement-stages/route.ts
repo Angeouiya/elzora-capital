@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, type SessionAdmin } from "@/lib/auth";
 import { getD1, isoNow, requestIp } from "@/lib/d1";
-import { canReviewStageEvidence, parseStagePlan, stageFinancials } from "@/lib/staged-disbursement";
+import { canReviewStageEvidence, isEvidenceAfterTransfer, parseStagePlan, stageFinancials } from "@/lib/staged-disbursement";
 
 const noStore = { "Cache-Control": "private, no-store" };
 const canRead = (admin: SessionAdmin) => ["finance", "validator", "analyst", "auditor", "superadmin"].includes(admin.role) || admin.permissions.includes("all") || admin.permissions.includes("disbursement:read");
@@ -40,6 +40,7 @@ interface StageRow {
   progressNote: string | null;
   evidenceDocumentId: string | null;
   evidenceFileName: string | null;
+  evidenceUploadedAt: string | null;
   submittedAt: string | null;
   qaBy: string | null;
   qaAt: string | null;
@@ -60,7 +61,8 @@ const stagesSql = `SELECT s.id, s.projectId, s.trancheNo, s.title, s.grossAmount
   COALESCE((SELECT SUM(prior.grossAmount) FROM DisbursementStage prior
     WHERE prior.projectId = s.projectId AND prior.trancheNo < s.trancheNo), 0) AS previousGross,
   s.targetDate, s.qualityCriteria, s.status, s.plannedBy, s.progressNote,
-  s.evidenceDocumentId, d.fileName AS evidenceFileName, s.submittedAt,
+  s.evidenceDocumentId, d.fileName AS evidenceFileName,
+  d.uploadedAt AS evidenceUploadedAt, s.submittedAt,
   s.qaBy, s.qaAt, s.qaNote, s.updatedAt, p.title AS projectTitle,
   c.legalName AS companyName, p.companyId, p.submittedBy,
   x.id AS transferId, x.status AS transferStatus,
@@ -194,6 +196,9 @@ export async function PATCH(req: NextRequest) {
   if (!stage) return NextResponse.json({ error: "Étape introuvable" }, { status: 404, headers: noStore });
   if (!canReviewStageEvidence(stage.status, stage.transferStatus) || !stage.evidenceDocumentId || !stage.progressNote) {
     return NextResponse.json({ error: "La tranche doit être versée, puis documentée par l’entreprise avant le contrôle qualité." }, { status: 409, headers: noStore });
+  }
+  if (action === "qa_pass" && !isEvidenceAfterTransfer(stage.evidenceUploadedAt, stage.transferExecutedAt)) {
+    return NextResponse.json({ error: "La pièce justificative doit avoir été déposée après le versement confirmé." }, { status: 409, headers: noStore });
   }
   if (stage.plannedBy === admin.adminId) {
     return NextResponse.json({ error: "La personne qui a préparé le calendrier ne peut pas valider son propre contrôle qualité." }, { status: 403, headers: noStore });

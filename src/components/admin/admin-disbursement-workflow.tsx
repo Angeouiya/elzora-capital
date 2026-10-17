@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useFetch } from "@/hooks/use-fetch";
 import { useToast } from "@/hooks/use-toast";
 import { fmtFCFA } from "@/lib/finance";
-import { canPrepareStage, canReviewStageEvidence } from "@/lib/staged-disbursement";
+import { canPrepareStage, canReviewStageEvidence, isEvidenceAfterTransfer } from "@/lib/staged-disbursement";
 
 interface FundedProject { id: string; title: string; companyName: string; raisedAmount: number }
 interface Stage {
@@ -32,6 +32,7 @@ interface Stage {
   progressNote: string | null;
   evidenceDocumentId: string | null;
   evidenceFileName: string | null;
+  evidenceUploadedAt: string | null;
   submittedAt: string | null;
   qaBy: string | null;
   qaAt: string | null;
@@ -201,6 +202,7 @@ export function AdminDisbursementWorkflow({ onChanged }: { onChanged: () => void
               });
               const canPrepare = cleared && !stage.transferId;
               const canApprove = data?.permissions.approve && cleared && stage.transferStatus === "pending" && stage.transferPreparedBy !== data.currentAdminId;
+              const evidenceIsFresh = isEvidenceAfterTransfer(stage.evidenceUploadedAt, stage.transferExecutedAt);
               return <div key={stage.id} className="px-4 py-4 sm:px-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0"><p className="text-sm font-semibold">{stage.trancheNo}. {stage.title}</p><p className="mt-1 text-xs text-muted-foreground">Cible : {new Date(`${stage.targetDate}T00:00:00Z`).toLocaleDateString("fr-FR")} · {fmtFCFA(stage.grossAmount)}</p></div>
@@ -209,12 +211,13 @@ export function AdminDisbursementWorkflow({ onChanged }: { onChanged: () => void
                 <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs leading-5"><span className="font-semibold text-[#541249]">Net entreprise : {fmtFCFA(stage.netAmount)}</span><span className="text-muted-foreground">Commission déduite : {fmtFCFA(stage.commissionAmount)}</span></p>
                 <p className="mt-2 text-xs leading-5 text-muted-foreground"><strong className="text-foreground">À vérifier :</strong> {stage.qualityCriteria}</p>
                 {stage.progressNote ? <p className="mt-2 rounded-xl bg-[#f8f4f7] p-3 text-xs leading-5"><strong>Compte rendu :</strong> {stage.progressNote}</p> : null}
-                {stage.evidenceDocumentId ? <a href={`/api/projects/documents/${stage.evidenceDocumentId}?download=1`} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-[#541249] underline-offset-2 hover:underline"><FileUp className="h-3.5 w-3.5" />{stage.evidenceFileName || "Voir le justificatif"}</a> : null}
+                {stage.evidenceDocumentId ? <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs"><a href={`/api/projects/documents/${stage.evidenceDocumentId}?download=1`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 font-medium text-[#541249] underline-offset-2 hover:underline"><FileUp className="h-3.5 w-3.5" />{stage.evidenceFileName || "Voir le justificatif"}</a>{stage.evidenceUploadedAt ? <span className="text-muted-foreground">Déposé le {new Date(stage.evidenceUploadedAt).toLocaleDateString("fr-FR")}</span> : null}</div> : null}
+                {stage.status === "evidence_submitted" && !evidenceIsFresh ? <p className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">Cette pièce précède le versement confirmé. Demandez un nouveau justificatif avant de valider la qualité.</p> : null}
                 {stage.qaNote ? <p className="mt-2 text-xs text-[#541249]"><strong>Revue qualité :</strong> {stage.qaNote}</p> : null}
                 {canReviewStageEvidence(stage.status, stage.transferStatus) && data?.permissions.review && stage.plannedBy !== data.currentAdminId ? <div className="mt-3 space-y-2">
                   <Label htmlFor={`qa-note-${stage.id}`}>Conclusion du contrôle</Label>
                   <Textarea id={`qa-note-${stage.id}`} value={reviewNotes[stage.id] ?? ""} onChange={(event) => setReviewNotes((current) => ({ ...current, [stage.id]: event.target.value }))} className="min-h-20 rounded-xl" placeholder="Décrivez ce qui a été vérifié ou les corrections à effectuer." />
-                  <div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" disabled={(reviewNotes[stage.id] ?? "").trim().length < 20} onClick={() => setAction({ kind: "request_changes", stage })}>Demander une correction</Button><Button size="sm" className="btn-nexora" disabled={(reviewNotes[stage.id] ?? "").trim().length < 20} onClick={() => setAction({ kind: "qa_pass", stage })}><ClipboardCheck className="h-4 w-4" />Valider la qualité</Button></div>
+                  <div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" disabled={(reviewNotes[stage.id] ?? "").trim().length < 20} onClick={() => setAction({ kind: "request_changes", stage })}>Demander une correction</Button><Button size="sm" className="btn-nexora" disabled={!evidenceIsFresh || (reviewNotes[stage.id] ?? "").trim().length < 20} onClick={() => setAction({ kind: "qa_pass", stage })}><ClipboardCheck className="h-4 w-4" />Valider la qualité</Button></div>
                 </div> : null}
                 {canPrepare && data?.permissions.plan ? <Button size="sm" className="btn-nexora mt-3" onClick={() => setAction({ kind: "prepare", stage })}>Préparer cette tranche <ArrowRight className="h-4 w-4" /></Button> : null}
                 {canApprove ? <Button size="sm" variant="outline" className="mt-3 border-[#541249]/25 text-[#541249]" onClick={() => setAction({ kind: "approve", stage })}><CheckCheck className="h-4 w-4" />Approuver la tranche</Button> : null}
