@@ -69,6 +69,12 @@ const COPY = {
     passwordHint: "10 caractères minimum avec au moins trois éléments : majuscule, minuscule, chiffre ou symbole.",
     changePassword: "Modifier mon mot de passe",
     emailPassword: "Recevoir un lien sécurisé par e-mail",
+    emailPasswordHelp: "Un lien privé sera envoyé à votre adresse e-mail. Il restera valable 30 minutes et ne pourra servir qu’une seule fois.",
+    emailSending: "Envoi du lien…",
+    emailSent: "Lien envoyé",
+    emailSentHelp: "Consultez votre boîte mail pour choisir un nouveau mot de passe. Pensez aussi à vérifier vos courriers indésirables.",
+    emailUnavailable: "L’envoi du lien n’est pas disponible pour le moment. Réessayez plus tard.",
+    emailLimited: "Vous avez déjà demandé plusieurs liens. Réessayez dans une heure.",
     changing: "Modification…",
     passwordChanged: "Mot de passe modifié",
     googleConnected: "Compte Google connecté",
@@ -116,6 +122,12 @@ const COPY = {
     passwordHint: "At least 10 characters with three of: uppercase, lowercase, number or symbol.",
     changePassword: "Change my password",
     emailPassword: "Receive a secure link by email",
+    emailPasswordHelp: "A private link will be sent to your email address. It is valid for 30 minutes and can only be used once.",
+    emailSending: "Sending the link…",
+    emailSent: "Link sent",
+    emailSentHelp: "Check your inbox to choose a new password. You may also need to check your spam folder.",
+    emailUnavailable: "We cannot send the link right now. Please try again later.",
+    emailLimited: "You have requested several links already. Please try again in an hour.",
     changing: "Changing…",
     passwordChanged: "Password changed",
     googleConnected: "Google account connected",
@@ -148,6 +160,9 @@ export function Account() {
   const [error, setError] = useState<string | null>(null);
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
+  const [sendingPasswordEmail, setSendingPasswordEmail] = useState(false);
+  const [passwordEmailSent, setPasswordEmailSent] = useState(false);
+  const [passwordEmailError, setPasswordEmailError] = useState<string | null>(null);
   const [closingSession, setClosingSession] = useState<string | null>(null);
   const [profile, setProfile] = useState({ firstName: "", lastName: "", phone: "", language: locale });
   const [passwords, setPasswords] = useState({ current: "", next: "", confirm: "" });
@@ -242,6 +257,33 @@ export function Account() {
       });
     } finally {
       setSavingPassword(false);
+    }
+  };
+
+  const sendPasswordEmail = async () => {
+    setSendingPasswordEmail(true);
+    setPasswordEmailError(null);
+    try {
+      const response = await fetch("/api/auth/password/forgot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "account", locale }),
+      });
+      if (response.status === 401) {
+        setView("login");
+        return;
+      }
+      if (response.status === 429) {
+        setPasswordEmailError(copy.emailLimited);
+        return;
+      }
+      const payload = (await response.json()) as { emailAccepted?: boolean };
+      if (!response.ok || !payload.emailAccepted) throw new Error("EMAIL_NOT_ACCEPTED");
+      setPasswordEmailSent(true);
+    } catch {
+      setPasswordEmailError(copy.emailUnavailable);
+    } finally {
+      setSendingPasswordEmail(false);
     }
   };
 
@@ -363,14 +405,24 @@ export function Account() {
                 {savingPassword ? copy.changing : copy.changePassword}
               </Button>
             </div> : null}
-            <Button
-              variant="ghost"
-              className="mt-3 h-11 w-full rounded-xl text-[#541249]"
-              onClick={() => setView("forgot_password")}
-            >
-              <MailCheck className="h-4 w-4" />
-              {copy.emailPassword}
-            </Button>
+            <div className="mt-5 rounded-[1.25rem] border border-[#541249]/10 bg-[linear-gradient(135deg,#fbf6fa,#f3e8f1)] p-4 sm:p-5">
+              <div className="flex items-start gap-3.5">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-[#541249] shadow-[0_5px_16px_rgba(84,18,73,.08)]">
+                  <MailCheck className="h-5 w-5" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-[#261423]">{passwordEmailSent ? copy.emailSent : copy.emailPassword}</p>
+                  <p className="mt-1 text-xs leading-5 text-[#665662]">{passwordEmailSent ? copy.emailSentHelp : copy.emailPasswordHelp}</p>
+                  <p className="mt-2 break-all text-xs font-semibold text-[#541249]">{data.account.email}</p>
+                </div>
+              </div>
+              {passwordEmailError ? <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-white px-3 py-2.5 text-xs leading-5 text-red-700">{passwordEmailError}</p> : null}
+              {!passwordEmailSent ? (
+                <Button className="btn-nexora mt-4 h-11 w-full" onClick={() => void sendPasswordEmail()} disabled={sendingPasswordEmail}>
+                  {sendingPasswordEmail ? copy.emailSending : copy.emailPassword}
+                </Button>
+              ) : <p role="status" className="mt-4 rounded-xl border border-[#541249]/10 bg-white px-3 py-2.5 text-xs font-medium text-[#541249]">{copy.emailSent}</p>}
+            </div>
           </article>
         </div>
       </div>

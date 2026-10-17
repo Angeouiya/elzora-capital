@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireUser } from "@/lib/auth";
 import { getD1, isoNow, requestIp } from "@/lib/d1";
 import { isTransactionalEmailConfigured, sendPasswordResetEmail } from "@/lib/email";
 import {
@@ -45,11 +46,31 @@ export async function POST(req: NextRequest) {
   }
 
   const locale = body.locale === "en" ? "en" : "fr";
-  const email = normalizeResetEmail(body.email);
-  if (!isResetEmailValid(email)) return accepted(locale);
+  const accountRequest = body.mode === "account";
+  let accountUserId: string | null = null;
+  if (accountRequest) {
+    try {
+      accountUserId = (await requireUser(req)).userId;
+    } catch {
+      return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401, headers: noStore });
+    }
+  }
 
   try {
     const database = getD1();
+    const accountUser = accountUserId
+      ? await database.prepare(`SELECT id, email, firstName, language FROM User WHERE id = ? LIMIT 1`)
+        .bind(accountUserId).first<UserRow>()
+      : null;
+    if (accountRequest && !accountUser) {
+      return NextResponse.json({ error: "ACCOUNT_NOT_FOUND" }, { status: 404, headers: noStore });
+    }
+    const email = normalizeResetEmail(accountRequest ? accountUser?.email : body.email);
+    if (!isResetEmailValid(email)) {
+      return accountRequest
+        ? NextResponse.json({ error: "ACCOUNT_EMAIL_INVALID" }, { status: 400, headers: noStore })
+        : accepted(locale);
+    }
     const now = isoNow();
     const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
     const cleanupBefore = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
@@ -75,7 +96,9 @@ export async function POST(req: NextRequest) {
         .first<{ count: number }>(),
     ]);
     if (Number(emailAttempts?.count || 0) >= 3 || Number(ipAttempts?.count || 0) >= 10) {
-      return accepted(locale);
+      return accountRequest
+        ? NextResponse.json({ error: "RESET_RATE_LIMITED" }, { status: 429, headers: noStore })
+        : accepted(locale);
     }
 
     const attemptId = crypto.randomUUID();
@@ -87,7 +110,7 @@ export async function POST(req: NextRequest) {
       .bind(attemptId, emailHash, ipHash, now)
       .run();
 
-    const user = await database
+    const user = accountUser || await database
       .prepare(`SELECT id, email, firstName, language FROM User WHERE email = ? LIMIT 1`)
       .bind(email)
       .first<UserRow>();
@@ -101,9 +124,6 @@ export async function POST(req: NextRequest) {
     const resetUrl = buildPasswordResetUrl(token, preferredLocale);
 
     await database.batch([
-      database
-        .prepare(`UPDATE PasswordResetToken SET usedAt = ? WHERE userId = ? AND usedAt IS NULL`)
-        .bind(now, user.id),
       database
         .prepare(
           `INSERT INTO PasswordResetToken
@@ -135,19 +155,34 @@ export async function POST(req: NextRequest) {
         resetUrl,
         idempotencyKey: tokenId,
       });
-      await database
-        .prepare(`UPDATE PasswordResetAttempt SET delivered = 1 WHERE id = ?`)
-        .bind(attemptId)
-        .run();
     } catch (error) {
       console.error("password_reset_email_failed", error);
       await database
         .prepare(`UPDATE PasswordResetToken SET usedAt = ? WHERE id = ? AND usedAt IS NULL`)
         .bind(isoNow(), tokenId)
         .run();
+      return accountRequest
+        ? NextResponse.json({ error: "PASSWORD_EMAIL_UNAVAILABLE" }, { status: 503, headers: noStore })
+        : accepted(locale);
     }
 
-    return accepted(locale);
+    try {
+      await database.batch([
+        database
+          .prepare(`UPDATE PasswordResetAttempt SET delivered = 1 WHERE id = ?`)
+          .bind(attemptId),
+        database
+          .prepare(`UPDATE PasswordResetToken SET usedAt = ? WHERE userId = ? AND id != ? AND usedAt IS NULL AND createdAt < ?`)
+          .bind(isoNow(), user.id, tokenId, now),
+      ]);
+    } catch (error) {
+      // The email was accepted by the provider: keep its link usable even if audit cleanup fails.
+      console.error("password_reset_delivery_record_failed", error);
+    }
+
+    return accountRequest
+      ? NextResponse.json({ ok: true, emailAccepted: true }, { status: 202, headers: noStore })
+      : accepted(locale);
   } catch (error) {
     console.error("password_reset_request_failed", error);
     return NextResponse.json({ error: "PASSWORD_RESET_UNAVAILABLE" }, { status: 503, headers: noStore });
