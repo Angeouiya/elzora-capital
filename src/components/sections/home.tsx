@@ -17,8 +17,11 @@ const COPY = {
     opportunities: "Découvrir les opportunités", raise: "Présenter mon projet",
     proof: [["Sélection", "Dossiers analysés"], ["Territoire", "8 pays UEMOA"], ["Règlement", "Carte & Mobile Money"], ["Clarté", "Risques présentés"]],
     signature: "Notre conviction", signatureTitle: "Le capital mérite mieux qu’une simple liste d’offres.", signatureText: "NEXORA organise l’information, met les risques au premier plan et rend chaque décision plus lisible. Nous privilégions la clarté à toute promesse irréaliste.", signaturePoints: [["Dossiers structurés", "L’essentiel au même endroit"], ["Risques visibles", "Aucun point important masqué"], ["Décision éclairée", "Vous gardez la main"]],
-    market: "Sélection actuelle", open: "Opportunités ouvertes", loading: "Chargement…",
-    offerCount: (count: number) => `${count} offre${count > 1 ? "s" : ""} ouverte${count > 1 ? "s" : ""} aux souscriptions`, all: "Explorer tout le marché",
+    market: "Sélection actuelle", loading: "Chargement…",
+    selectionTitle: (live: number, demo: number) => live > 0 ? (demo > 0 ? "Opportunités et projets à découvrir" : "Opportunités ouvertes") : demo > 0 ? "Projets à découvrir" : "Prochaine sélection",
+    selectionCount: (live: number, demo: number) => live > 0
+      ? `${live} offre${live > 1 ? "s" : ""} ouverte${live > 1 ? "s" : ""} aux souscriptions${demo > 0 ? ` · ${demo} exemple${demo > 1 ? "s" : ""} à explorer` : ""}`
+      : `${demo} projet${demo > 1 ? "s" : ""} de démonstration · simulation sans paiement`, all: "Explorer tout le marché",
     next: "La prochaine sélection est en préparation", nextText: "Chaque dossier passe par une analyse avant publication. Créez votre compte pour suivre les prochaines ouvertures.", notify: "Créer mon accès",
     journey: "La méthode NEXORA", journeyTitle: "Simple à parcourir. Sérieux dans le fond.", step: "0", more: "Comprendre tout le parcours", economy: "Économie réelle", sectors: "Des secteurs qui façonnent le quotidien",
     steps: [["Candidature", "L’entreprise transmet ses informations financières, juridiques et opérationnelles."], ["Lecture approfondie", "Le dossier est analysé, structuré et documenté avant toute publication."], ["Mise en relation", "Les investisseurs décident, souscrivent puis suivent leur engagement dans la durée."]],
@@ -28,7 +31,11 @@ const COPY = {
     opportunities: "Discover opportunities", raise: "Present my project",
     proof: [["Selection", "Reviewed applications"], ["Coverage", "8 WAEMU countries"], ["Settlement", "Card & Mobile Money"], ["Clarity", "Risks presented"]],
     signature: "Our conviction", signatureTitle: "Capital deserves more than a simple list of deals.", signatureText: "NEXORA organizes information, puts risk in full view and makes each decision clearer. We favor clarity over unrealistic promises.", signaturePoints: [["Structured files", "The essentials in one place"], ["Visible risks", "No important point hidden"], ["Informed decision", "You stay in control"]],
-    market: "Current selection", open: "Open opportunities", loading: "Loading…", offerCount: (count: number) => `${count} opportunit${count === 1 ? "y" : "ies"} open for investment`, all: "Explore the full market",
+    market: "Current selection", loading: "Loading…",
+    selectionTitle: (live: number, demo: number) => live > 0 ? (demo > 0 ? "Opportunities and projects to explore" : "Open opportunities") : demo > 0 ? "Projects to explore" : "Next selection",
+    selectionCount: (live: number, demo: number) => live > 0
+      ? `${live} opportunit${live === 1 ? "y" : "ies"} open for investment${demo > 0 ? ` · ${demo} demo project${demo > 1 ? "s" : ""} to explore` : ""}`
+      : `${demo} demo project${demo > 1 ? "s" : ""} · simulation only, no payment`, all: "Explore the full market",
     next: "The next selection is being prepared", nextText: "Every application is reviewed before publication. Create your account to follow upcoming openings.", notify: "Create my access",
     journey: "The NEXORA method", journeyTitle: "Simple to navigate. Serious underneath.", step: "0", more: "Understand the full journey", economy: "Real economy", sectors: "Sectors shaping everyday life",
     steps: [["Application", "The company shares its financial, legal and operational information."], ["Deep review", "The application is reviewed, structured and documented before publication."], ["Connection", "Investors decide, subscribe and follow their commitment over time."]],
@@ -45,6 +52,8 @@ export function Home() {
   const locale = useAppStore((s) => s.locale);
   const { data, loading } = useFetch<{ offers: OfferDTO[] }>("/api/offers");
   const offers = data?.offers ?? [];
+  const demoCount = offers.filter((offer) => offer.isDemo).length;
+  const liveCount = offers.length - demoCount;
   const copy = COPY[locale];
   const proofItems: ReadonlyArray<readonly [string, string]> = copy.proof;
   const signaturePoints: ReadonlyArray<readonly [string, string]> = copy.signaturePoints;
@@ -110,7 +119,7 @@ export function Home() {
 
       <section className="home-section-reveal border-t border-[#541249]/10 pt-8 sm:pt-10">
         <div className="mb-4 flex items-end justify-between gap-4">
-          <div><p className="page-kicker">{copy.market}</p><h2 className="mt-2 text-2xl font-black tracking-[-.035em] sm:text-3xl">{copy.open}</h2><p className="mt-1.5 text-sm text-muted-foreground">{loading ? copy.loading : copy.offerCount(offers.length)}</p></div>
+          <div><p className="page-kicker">{copy.market}</p><h2 className="mt-2 text-2xl font-black tracking-[-.035em] sm:text-3xl">{copy.selectionTitle(liveCount, demoCount)}</h2><p className="mt-1.5 text-sm text-muted-foreground">{loading ? copy.loading : offers.length > 0 ? copy.selectionCount(liveCount, demoCount) : copy.nextText}</p></div>
           <Button variant="ghost" onClick={() => setView("explore")} className="hidden text-[#541249] sm:inline-flex">{copy.all}<ArrowRight className="h-4 w-4" /></Button>
         </div>
         {loading ? <div className="grid items-stretch gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-44 rounded-2xl sm:h-[25rem]" />)}</div>

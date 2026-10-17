@@ -24,6 +24,6 @@ export function formatDisplayMoney(
     style: "currency",
     currency,
     notation: compact ? "compact" : "standard",
-    maximumFractionDigits: currency === "XOF" ? 0 : compact ? 1 : 2,
+    maximumFractionDigits: currency === "XOF" ? (compact ? 1 : 0) : compact ? 1 : 2,
   }).format(value);
 }

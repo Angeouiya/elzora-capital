@@ -138,18 +138,19 @@ export function OfferDetail() {
   const [simulationRun, setSimulationRun] = useState(0);
   const [simulationAmount, setSimulationAmount] = useState<number | null>(null);
 
-  // Reset amount when offer changes
+  // Start with a visible estimate for the offer minimum; changing the amount
+  // still requires an explicit recalculation before displaying new figures.
   useEffect(() => {
     if (minInv > 0) setAmount(minInv);
     setAcceptAgreement(false);
     setAcceptRisks(false);
     setPaymentMethod("card");
-    setSimulationAmount(null);
-  }, [minInv, offerId]);
+    setSimulationAmount(offer?.id === offerId && minInv > 0 ? minInv : null);
+  }, [minInv, offerId, offer?.id]);
 
   // Simulation fetch
   const simUrl =
-    offerId && simulationAmount !== null && simulationAmount > 0
+    offerId && offer?.id === offerId && simulationAmount !== null && simulationAmount > 0
       ? `/api/offers/${offerId}/subscribe?amount=${simulationAmount}&run=${simulationRun}`
       : null;
   const { data: simData, loading: simLoading, error: simError } = useFetch<SimulationResult>(simUrl);
@@ -185,7 +186,8 @@ export function OfferDetail() {
   }
 
   const pct = progressPct(offer.raisedAmount, offer.fundingGoal);
-  const quickAmounts = [minInv, minInv * 2, minInv * 5, maxInv ?? minInv * 10];
+  const quickAmounts = [...new Set([minInv, minInv * 2, minInv * 5, maxInv ?? minInv * 10])]
+    .filter((value) => value >= minInv && (maxInv === null || value <= maxInv));
   const simulationAmountValid = amount >= minInv && (maxInv === null || amount <= maxInv);
   const selectedPolicy = simData?.paymentPolicy?.methods.find((item) => item.method === paymentMethod);
   const selectedMethodLimit = paymentMethod === "wallet_balance" ? Number.MAX_SAFE_INTEGER : selectedPolicy?.perTransaction ?? (paymentMethod === "mobile_money" ? 1_000_000 : paymentMethod === "card" ? 10_000_000 : 50_000_000);
@@ -478,7 +480,7 @@ export function OfferDetail() {
       <nav className="sticky top-[4.05rem] z-30 mb-4 flex gap-1.5 overflow-x-auto rounded-2xl border border-[#541249]/10 bg-[#fffefd]/94 p-1.5 shadow-[0_10px_30px_rgba(56,12,49,.07)] backdrop-blur-xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mb-5 lg:static lg:w-fit" aria-label={locale === "fr" ? "Sections de l’opportunité" : "Opportunity sections"}>
         <Button type="button" variant="ghost" size="sm" onClick={() => scrollTo("offer-overview")} className="shrink-0 rounded-xl">{text.overview}</Button>
         <Button type="button" variant="ghost" size="sm" onClick={() => scrollTo("offer-project")} className="shrink-0 rounded-xl">{text.details}</Button>
-        <Button type="button" size="sm" onClick={() => void openInvestmentJourney()} className="btn-nexora shrink-0 rounded-xl">{text.investmentCta}</Button>
+        <Button type="button" size="sm" onClick={offer.isDemo ? openSimulator : () => void openInvestmentJourney()} className="btn-nexora shrink-0 rounded-xl">{offer.isDemo ? text.runSimulation : text.investmentCta}</Button>
       </nav>
 
       <div className="grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-3">
@@ -1100,7 +1102,7 @@ export function OfferDetail() {
             <p className="text-[10px] font-semibold uppercase tracking-[.12em] text-white/55">{text.from}</p>
             <p className="tnum truncate text-sm font-extrabold">{money(minInv, true)}</p>
           </div>
-          <Button type="button" onClick={() => void openInvestmentJourney()} className="btn-nexora min-h-11 shrink-0 rounded-xl px-5">{text.investmentCta}</Button>
+          <Button type="button" onClick={offer.isDemo ? openSimulator : () => void openInvestmentJourney()} className="btn-nexora min-h-11 shrink-0 rounded-xl px-5">{offer.isDemo ? text.runSimulation : text.investmentCta}</Button>
         </div>
       </div>
       <AlertDialog open={investmentGateOpen} onOpenChange={setInvestmentGateOpen}>

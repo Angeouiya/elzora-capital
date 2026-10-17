@@ -12,4 +12,5 @@ test("formatDisplayMoney uses the selected display currency", () => {
   assert.match(formatDisplayMoney(655.957, "EUR", "fr"), /1,00/);
   assert.match(formatDisplayMoney(655.957, "USD", "en"), /1\.15/);
   assert.match(formatDisplayMoney(10_000, "XOF", "fr"), /10\s?000/);
+  assert.match(formatDisplayMoney(2_500_000, "XOF", "fr", true), /2,5\s?M/);
 });
