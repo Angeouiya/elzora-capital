@@ -55,10 +55,10 @@ export function Home() {
       <section className="public-hero home-hero-gradient home-hero-fullbleed text-white">
         <div className="home-hero-light" aria-hidden="true" />
         <div className="home-hero-inner">
-          <div className="home-hero-copy max-w-[48rem] pt-3 sm:pt-8 lg:pt-10">
+          <div className="home-hero-copy max-w-[65rem] pt-3 sm:pt-8 lg:pt-10">
             <p className="editorial-kicker">{copy.kicker}</p>
-            <h1 className="display-title mt-6 max-w-[47rem]">{copy.title}</h1>
-            <p className="mt-6 max-w-[38rem] text-sm leading-6 text-white/72 sm:text-base sm:leading-7">{copy.intro}</p>
+            <h1 className="display-title mt-6 max-w-[64rem]">{copy.title}</h1>
+            <p className="mt-6 max-w-[44rem] text-sm leading-6 text-white/72 sm:text-base sm:leading-7">{copy.intro}</p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               <Button onClick={() => setView("explore")} className="btn-nexora h-12 w-full px-5 sm:w-auto">{copy.opportunities}<ArrowRight className="h-4 w-4" /></Button>
               <Button onClick={() => setView("register")} variant="outline" className="h-12 w-full border-white/20 bg-white/7 px-5 text-white hover:bg-white/13 hover:text-white sm:w-auto"><Handshake className="h-4 w-4" />{copy.raise}</Button>

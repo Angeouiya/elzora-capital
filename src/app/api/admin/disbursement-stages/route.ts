@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, type SessionAdmin } from "@/lib/auth";
 import { getD1, isoNow, requestIp } from "@/lib/d1";
-import { parseStagePlan } from "@/lib/staged-disbursement";
+import { parseStagePlan, stageFinancials } from "@/lib/staged-disbursement";
 
 const noStore = { "Cache-Control": "private, no-store" };
 const canRead = (admin: SessionAdmin) => ["finance", "validator", "analyst", "auditor", "superadmin"].includes(admin.role) || admin.permissions.includes("all") || admin.permissions.includes("disbursement:read");
@@ -31,6 +31,8 @@ interface StageRow {
   trancheNo: number;
   title: string;
   grossAmount: number;
+  previousGross: number;
+  upfrontCommissionPct: number;
   targetDate: string;
   qualityCriteria: string;
   status: string;
@@ -54,6 +56,9 @@ interface StageRow {
 }
 
 const stagesSql = `SELECT s.id, s.projectId, s.trancheNo, s.title, s.grossAmount,
+  o.upfrontCommissionPct,
+  COALESCE((SELECT SUM(prior.grossAmount) FROM DisbursementStage prior
+    WHERE prior.projectId = s.projectId AND prior.trancheNo < s.trancheNo), 0) AS previousGross,
   s.targetDate, s.qualityCriteria, s.status, s.plannedBy, s.progressNote,
   s.evidenceDocumentId, d.fileName AS evidenceFileName, s.submittedAt,
   s.qaBy, s.qaAt, s.qaNote, s.updatedAt, p.title AS projectTitle,
@@ -62,6 +67,7 @@ const stagesSql = `SELECT s.id, s.projectId, s.trancheNo, s.title, s.grossAmount
   x.preparedBy AS transferPreparedBy, x.executedAt AS transferExecutedAt
   FROM DisbursementStage s
   JOIN Project p ON p.id = s.projectId
+  JOIN Offer o ON o.projectId = p.id
   JOIN Company c ON c.id = p.companyId
   LEFT JOIN ProjectDocument d ON d.id = s.evidenceDocumentId
   LEFT JOIN Disbursement x ON x.projectId = s.projectId AND x.trancheNo = s.trancheNo`;
@@ -86,7 +92,11 @@ export async function GET(req: NextRequest) {
       ORDER BY p.fundedAt DESC LIMIT 100`).all<FundedProject>(),
   ]);
   return NextResponse.json({
-    stages: stageResult.results.map((row) => ({ ...row, grossAmount: Number(row.grossAmount) })),
+    stages: stageResult.results.map((row) => ({
+      ...row,
+      grossAmount: Number(row.grossAmount),
+      ...stageFinancials(Number(row.grossAmount), Number(row.previousGross), Number(row.upfrontCommissionPct)),
+    })),
     eligibleProjects: projectResult.results.filter((row) =>
       !row.isDemo && row.verificationStatus === "verified" && row.verifiedBankAccount &&
       row.bankAccountVerifiedAt && Number(row.raisedAmount) > 0 &&

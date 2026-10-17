@@ -22,6 +22,8 @@ interface Stage {
   trancheNo: number;
   title: string;
   grossAmount: number;
+  commissionAmount: number;
+  netAmount: number;
   targetDate: string;
   qualityCriteria: string;
   status: string;
@@ -193,6 +195,7 @@ export function AdminDisbursementWorkflow({ onChanged }: { onChanged: () => void
                   <div className="min-w-0"><p className="text-sm font-semibold">{stage.trancheNo}. {stage.title}</p><p className="mt-1 text-xs text-muted-foreground">Cible : {new Date(`${stage.targetDate}T00:00:00Z`).toLocaleDateString("fr-FR")} · {fmtFCFA(stage.grossAmount)}</p></div>
                   <Badge variant="outline" className="border-[#541249]/15 bg-[#fbf6fa] text-[#541249]">{stageLabel(stage)}</Badge>
                 </div>
+                <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs leading-5"><span className="font-semibold text-[#541249]">Net entreprise : {fmtFCFA(stage.netAmount)}</span><span className="text-muted-foreground">Commission déduite : {fmtFCFA(stage.commissionAmount)}</span></p>
                 <p className="mt-2 text-xs leading-5 text-muted-foreground"><strong className="text-foreground">À vérifier :</strong> {stage.qualityCriteria}</p>
                 {stage.progressNote ? <p className="mt-2 rounded-xl bg-[#f8f4f7] p-3 text-xs leading-5"><strong>Compte rendu :</strong> {stage.progressNote}</p> : null}
                 {stage.evidenceDocumentId ? <a href={`/api/projects/documents/${stage.evidenceDocumentId}?download=1`} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-[#541249] underline-offset-2 hover:underline"><FileUp className="h-3.5 w-3.5" />{stage.evidenceFileName || "Voir le justificatif"}</a> : null}
@@ -213,7 +216,7 @@ export function AdminDisbursementWorkflow({ onChanged }: { onChanged: () => void
 
       <AlertDialog open={Boolean(action)} onOpenChange={(open) => { if (!open && !busy) setAction(null); }}>
         <AlertDialogContent className="max-w-md rounded-[1.5rem] border-[#541249]/15 p-6">
-          <AlertDialogHeader><AlertDialogTitle className="text-lg font-semibold">Confirmer cette décision</AlertDialogTitle><AlertDialogDescription className="leading-6">{action?.kind === "plan" ? `Le calendrier de ${formStages.length} étapes pour ${selectedProject?.title ?? "ce projet"} sera communiqué à l’entreprise.` : action?.kind === "qa_pass" ? "Cette validation autorisera la préparation du versement correspondant, sous réserve des autres contrôles." : action?.kind === "request_changes" ? "L’entreprise devra déposer un nouveau compte rendu et un justificatif avant une nouvelle revue." : action?.kind === "prepare" ? "Cette tranche sera préparée avec le montant et le compte de l’entreprise déjà vérifiés." : "Cette approbation engage un second responsable. Le virement restera suspendu jusqu’à la confirmation du partenaire de paiement."}</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle className="text-lg font-semibold">Confirmer cette décision</AlertDialogTitle><AlertDialogDescription className="leading-6">{action?.kind === "plan" ? `Le calendrier de ${formStages.length} étapes pour ${selectedProject?.title ?? "ce projet"} sera communiqué à l’entreprise.` : action?.kind === "qa_pass" ? "Cette validation autorisera la préparation du versement correspondant, sous réserve des autres contrôles." : action?.kind === "request_changes" ? "L’entreprise devra déposer un nouveau compte rendu et un justificatif avant une nouvelle revue." : action?.kind === "prepare" ? `Cette tranche sera préparée sur le compte vérifié de l’entreprise. Montant prévu après commission : ${fmtFCFA(action.stage.netAmount)}.` : `Un second responsable approuvera le montant prévu de ${fmtFCFA(action?.stage.netAmount ?? 0)}. Le virement restera suspendu jusqu’à la confirmation du partenaire de paiement.`}</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel disabled={busy}>Annuler</AlertDialogCancel><AlertDialogAction disabled={busy} onClick={(event) => { event.preventDefault(); void runAction(); }} className="bg-[#541249] text-white hover:bg-[#380c31]">{busy ? "Enregistrement…" : "Confirmer"}</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

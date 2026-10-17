@@ -51,9 +51,17 @@ export function parseStagePlan(value: unknown, fundedAmount: number): PlanResult
 }
 
 export function stageCommission(grossAmount: bigint, previousGross: bigint, commissionPct: number): bigint {
-  if (grossAmount <= 0n || previousGross < 0n) throw new Error("INVALID_STAGE_AMOUNT");
+  if (grossAmount <= 0n || previousGross < 0n || !Number.isFinite(commissionPct) || commissionPct < 0 || Math.round(commissionPct * 100) >= 10_000) {
+    throw new Error("INVALID_STAGE_AMOUNT");
+  }
   return computeUpfrontCommission(previousGross + grossAmount, commissionPct)
     - computeUpfrontCommission(previousGross, commissionPct);
+}
+
+export function stageFinancials(grossAmount: number, previousGross: number, commissionPct: number) {
+  if (!Number.isSafeInteger(grossAmount) || !Number.isSafeInteger(previousGross)) throw new Error("INVALID_STAGE_AMOUNT");
+  const commissionAmount = Number(stageCommission(BigInt(grossAmount), BigInt(previousGross), commissionPct));
+  return { commissionAmount, netAmount: grossAmount - commissionAmount };
 }
 
 export function canPrepareStage(input: {

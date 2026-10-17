@@ -877,10 +877,12 @@ textarea {
   }
   .home-hero-inner {
     width: 100%;
-    min-height: calc(100svh - 4.5rem);
+    min-height: 0;
     padding: 1.7rem .85rem 0;
+    gap: clamp(2.5rem, 9vw, 4rem);
+    justify-content: flex-start;
   }
-  .home-hero-fullbleed { min-height: calc(100svh - 4.5rem); }
+  .home-hero-fullbleed { min-height: 0; }
   .home-hero-copy { padding-top: 0; }
   .home-hero-copy .display-title {
     max-width: 21rem;

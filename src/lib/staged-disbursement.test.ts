@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { canPrepareStage, parseStagePlan, stageCommission } from "./staged-disbursement";
+import { canPrepareStage, parseStagePlan, stageCommission, stageFinancials } from "./staged-disbursement";
 
 const stages = [
   { title: "Commande validée", grossAmount: 333_333, targetDate: "2026-11-01", qualityCriteria: "Bon de commande signé et équipements identifiés." },
@@ -19,6 +19,17 @@ test("commissions across uneven stages equal the contract commission exactly", (
   const second = stageCommission(666_667n, 333_333n, 6);
   assert.equal(first + second, 60_000n);
   assert.equal(first + (333_333n - first) + second + (666_667n - second), 1_000_000n);
+});
+
+test("company payout figures reconcile gross, commission and net for every stage", () => {
+  const first = stageFinancials(333_333, 0, 6);
+  const second = stageFinancials(666_667, 333_333, 6);
+  assert.equal(first.netAmount + first.commissionAmount, 333_333);
+  assert.equal(second.netAmount + second.commissionAmount, 666_667);
+  assert.equal(first.commissionAmount + second.commissionAmount, 60_000);
+  assert.equal(first.netAmount + second.netAmount, 940_000);
+  assert.throws(() => stageFinancials(100, 0, 100));
+  assert.throws(() => stageFinancials(100, 0, 99.999));
 });
 
 test("a later stage remains blocked until the previous transfer is confirmed", () => {

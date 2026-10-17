@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { getD1, isoNow, requestIp } from "@/lib/d1";
+import { stageFinancials } from "@/lib/staged-disbursement";
 
 const noStore = { "Cache-Control": "private, no-store" };
 
@@ -11,6 +12,8 @@ interface CompanyStage {
   trancheNo: number;
   title: string;
   grossAmount: number;
+  previousGross: number;
+  upfrontCommissionPct: number;
   targetDate: string;
   qualityCriteria: string;
   status: string;
@@ -34,17 +37,25 @@ export async function GET(req: NextRequest) {
   const database = getD1();
   const result = await database.prepare(`SELECT s.id, s.projectId, p.title AS projectTitle,
     s.trancheNo, s.title, s.grossAmount, s.targetDate, s.qualityCriteria,
+    o.upfrontCommissionPct,
+    COALESCE((SELECT SUM(prior.grossAmount) FROM DisbursementStage prior
+      WHERE prior.projectId = s.projectId AND prior.trancheNo < s.trancheNo), 0) AS previousGross,
     s.status, s.progressNote, s.evidenceDocumentId,
     d.fileName AS evidenceFileName, s.submittedAt, s.qaAt, s.qaNote,
     x.status AS transferStatus, x.executedAt AS transferExecutedAt,
     p.companyId, m.mandate
     FROM DisbursementStage s JOIN Project p ON p.id = s.projectId
+    JOIN Offer o ON o.projectId = p.id
     JOIN CompanyMember m ON m.companyId = p.companyId AND m.userId = ?
     LEFT JOIN ProjectDocument d ON d.id = s.evidenceDocumentId
     LEFT JOIN Disbursement x ON x.projectId = s.projectId AND x.trancheNo = s.trancheNo
     ORDER BY p.updatedAt DESC, s.trancheNo ASC LIMIT 200`)
     .bind(session.userId).all<CompanyStage>();
-  return NextResponse.json({ stages: result.results.map((row) => ({ ...row, grossAmount: Number(row.grossAmount) })) }, { headers: noStore });
+  return NextResponse.json({ stages: result.results.map((row) => ({
+    ...row,
+    grossAmount: Number(row.grossAmount),
+    ...stageFinancials(Number(row.grossAmount), Number(row.previousGross), Number(row.upfrontCommissionPct)),
+  })) }, { headers: noStore });
 }
 
 export async function POST(req: NextRequest) {
