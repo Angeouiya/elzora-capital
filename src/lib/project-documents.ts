@@ -17,10 +17,11 @@ export const PROJECT_DOCUMENT_KINDS = [
   "financial_forecast",
   "permit_license",
   "impact_evidence",
+  "milestone_evidence",
   "other",
 ] as const;
 
-export const PROJECT_MULTI_FILE_KINDS = ["gallery", "other"] as const;
+export const PROJECT_MULTI_FILE_KINDS = ["gallery", "milestone_evidence", "other"] as const;
 export const PROJECT_PUBLIC_DOCUMENT_KINDS = [
   "pitch_deck",
   "financial_forecast",
@@ -60,6 +61,11 @@ export function canManageProjectDocuments(mandate: string) {
 
 export function isEditableProjectStatus(status: string) {
   return ["draft", "complement_requested"].includes(status);
+}
+
+export function canUploadProjectDocument(status: string, kind: string) {
+  if (kind === "milestone_evidence") return ["funded", "repaying"].includes(status);
+  return isEditableProjectStatus(status);
 }
 
 export function validateProjectFile(file: File, kind: ProjectDocumentKind): string | null {

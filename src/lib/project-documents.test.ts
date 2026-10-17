@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  canUploadProjectDocument,
   canManageProjectDocuments,
   canVisitorAccessProjectDocument,
   hasValidProjectFileMagic,
@@ -83,4 +84,10 @@ test("published offer documents are available to visitors without exposing inter
     }),
     false
   );
+  assert.equal(canUploadProjectDocument("funded", "milestone_evidence"), true);
+  assert.equal(canUploadProjectDocument("funded", "financial_statements"), false);
+  assert.equal(canUploadProjectDocument("draft", "milestone_evidence"), false);
+  assert.equal(canVisitorAccessProjectDocument({
+    kind: "milestone_evidence", isPublic: true, projectStatus: "funded", offerVisibility: "public",
+  }), false);
 });

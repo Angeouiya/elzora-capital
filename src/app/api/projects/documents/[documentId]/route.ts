@@ -94,13 +94,16 @@ export async function GET(req: Request, context: { params: Promise<{ documentId:
       actorType = "user";
       actorId = session.userId;
     } catch {
+      // An admin account may coexist with a personal account in the browser.
+    }
+    if (!allowed) {
       try {
         const admin = await requireAdmin(req);
         allowed = true;
         actorType = "admin";
         actorId = admin.adminId;
       } catch {
-        allowed = false;
+        // No permitted session was found.
       }
     }
     if (!allowed) return NextResponse.json({ error: "Accès refusé" }, { status: 403 });

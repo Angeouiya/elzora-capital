@@ -415,6 +415,7 @@ model Project {
   documents        ProjectDocument[]
   timeline         ProjectEvent[]
   disbursements    Disbursement[]
+  disbursementStages DisbursementStage[]
   equityIssuance   EquityIssuance?
   equityDividends  EquityDividend[]
   regulatoryReview RegulatoryReview?
@@ -435,6 +436,7 @@ model ProjectDocument {
   isPublic   Boolean  @default(false)
   uploadedAt DateTime @default(now())
   chunks     ProjectDocumentChunk[]
+  disbursementEvidence DisbursementStage[] @relation("StageEvidence")
 }
 
 model ProjectDocumentChunk {
@@ -1004,4 +1006,33 @@ model Disbursement {
   executedAt         DateTime?
   paymentRef         String?
   createdAt          DateTime  @default(now())
+
+  @@unique([projectId, trancheNo])
+}
+
+model DisbursementStage {
+  id                 String   @id @default(cuid())
+  projectId          String
+  project            Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  trancheNo          Int
+  title              String
+  grossAmount        BigInt
+  targetDate         String
+  qualityCriteria    String
+  status             String   @default("planned") // planned, evidence_submitted, changes_requested, qa_passed
+  plannedBy          String
+  progressNote       String?
+  evidenceDocumentId String?
+  evidenceDocument   ProjectDocument? @relation("StageEvidence", fields: [evidenceDocumentId], references: [id], onDelete: SetNull)
+  submittedBy        String?
+  submittedAt        DateTime?
+  qaBy               String?
+  qaAt               DateTime?
+  qaNote             String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([projectId, trancheNo])
+  @@index([projectId, status])
+  @@index([evidenceDocumentId])
 }

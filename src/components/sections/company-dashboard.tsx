@@ -30,6 +30,7 @@ import { simulateDebtFinancing } from "@/lib/finance";
 import { formatDisplayMoney } from "@/lib/display-money";
 import { CompanyOnboarding } from "@/components/company/company-onboarding";
 import { CompanyVerificationPanel } from "@/components/company/company-verification-panel";
+import { CompanyDisbursementStages } from "@/components/company/company-disbursement-stages";
 import { getCountryLabel, getSectorLabel } from "@/lib/countries";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -924,6 +925,10 @@ export function CompanyDashboard() {
           </div>
         )}
       </div>
+
+      {selectedCompanyId && selectedCompany ? (
+        <CompanyDisbursementStages key={`${selectedCompanyId}-stages`} companyId={selectedCompanyId} />
+      ) : null}
 
       {/* Mes financements — repayment schedule for funded/repaying projects */}
       <div className="mt-6">

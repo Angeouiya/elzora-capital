@@ -12,10 +12,10 @@ import {
   PROJECT_MAX_GALLERY_IMAGES,
   PROJECT_DOCUMENT_KINDS,
   PROJECT_MULTI_FILE_KINDS,
+  canUploadProjectDocument,
   canManageProjectDocuments,
   hasValidProjectFileMagic,
   isPublicProjectDocumentKind,
-  isEditableProjectStatus,
   validateProjectFile,
   type ProjectDocumentKind,
 } from "@/lib/project-documents";
@@ -99,10 +99,6 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
   if (!canManageProjectDocuments(access.mandate)) {
     return NextResponse.json({ error: "Votre autorisation ne permet pas d'ajouter des pièces" }, { status: 403, headers: noStore });
   }
-  if (!isEditableProjectStatus(access.status)) {
-    return NextResponse.json({ error: "Ce dossier n'est plus modifiable" }, { status: 409, headers: noStore });
-  }
-
   let form: FormData;
   try {
     form = await req.formData();
@@ -114,6 +110,9 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
   if (!PROJECT_DOCUMENT_KINDS.includes(kind as ProjectDocumentKind)) {
     return NextResponse.json({ error: "Catégorie de pièce invalide" }, { status: 400, headers: noStore });
   }
+  if (!canUploadProjectDocument(access.status, kind)) {
+    return NextResponse.json({ error: "Ce dossier n'accepte plus cette pièce" }, { status: 409, headers: noStore });
+  }
   const fileValue = form.get("file");
   if (!(fileValue instanceof File)) {
     return NextResponse.json({ error: "Sélectionnez un fichier" }, { status: 400, headers: noStore });
@@ -123,7 +122,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
 
   const replaceRequested = form.get("replace") !== "0";
   const replaceExisting =
-    replaceRequested && !PROJECT_MULTI_FILE_KINDS.includes(kind as "gallery" | "other");
+    replaceRequested && !PROJECT_MULTI_FILE_KINDS.includes(kind as "gallery" | "milestone_evidence" | "other");
   const previous = replaceExisting
     ? await database
         .prepare(`SELECT id, storageKey FROM ProjectDocument WHERE projectId = ? AND type = ?`)

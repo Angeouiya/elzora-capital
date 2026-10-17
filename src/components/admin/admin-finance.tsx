@@ -2,6 +2,7 @@
 import { useMemo, useState } from "react";
 import { useFetch } from "@/hooks/use-fetch";
 import { useToast } from "@/hooks/use-toast";
+import { AdminDisbursementWorkflow } from "@/components/admin/admin-disbursement-workflow";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -199,6 +200,7 @@ function EmptyState({
 
 export function AdminFinance() {
   const { toast } = useToast();
+  const [disbursementReload, setDisbursementReload] = useState(0);
   const [equityReload, setEquityReload] = useState(0);
   const [equityForms, setEquityForms] = useState<Record<string, EquityFormState>>({});
   const [equityAction, setEquityAction] = useState<string | null>(null);
@@ -206,7 +208,7 @@ export function AdminFinance() {
   const [dividendReasons, setDividendReasons] = useState<Record<string, string>>({});
   const { data, loading } = useFetch<AdminStatsResponse>("/api/admin/stats");
   const { data: disbursementData, loading: disbursementsLoading } =
-    useFetch<DisbursementsResponse>("/api/admin/disbursements");
+    useFetch<DisbursementsResponse>(`/api/admin/disbursements?refresh=${disbursementReload}`);
   const { data: equityData, loading: equityLoading, error: equityError } =
     useFetch<EquityIssuancesResponse>(`/api/admin/equity-issuances?refresh=${equityReload}`);
   const { data: dividendData, loading: dividendsLoading, error: dividendsError } =
@@ -440,57 +442,8 @@ export function AdminFinance() {
         </CardContent>
       </Card>
 
-      {/* 2. Décaissements */}
-      <Card className="mt-6 overflow-hidden p-0">
-        <CardHeader className="bg-secondary/40 pb-3 pt-4">
-          <CardTitle className="flex items-center gap-2 text-base font-semibold">
-            <HandCoins className="h-4 w-4" />
-            Décaissements (vers entreprises)
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {disbursements.length === 0 ? (
-            <EmptyState
-              title="Aucun décaissement en cours"
-              desc="Les versements apparaîtront après financement complet et validation du compte entreprise."
-              icon={HandCoins}
-            />
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-secondary/20 hover:bg-secondary/20">
-                  <TableHead>Projet</TableHead>
-                  <TableHead>Entreprise</TableHead>
-                  <TableHead className="text-right">Brut</TableHead>
-                  <TableHead className="text-right">Net</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead>Date</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {disbursements.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="text-sm font-medium">{item.project.title}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {item.project.company.tradeName || item.project.company.legalName}
-                    </TableCell>
-                    <TableCell className="tnum text-right text-sm">{fmtFCFA(item.grossAmount)}</TableCell>
-                    <TableCell className="tnum text-right text-sm font-semibold">{fmtFCFA(item.netAmount)}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="text-xs">
-                        {item.status === "pending" ? "À approuver" : item.status === "approved" ? "Approuvé" : item.status === "executed" ? "Versé" : item.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {new Date(item.createdAt).toLocaleDateString("fr-FR")}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+      {/* 2. Versements par étapes */}
+      <AdminDisbursementWorkflow onChanged={() => setDisbursementReload((value) => value + 1)} />
 
       {/* 3. Registre des participations */}
       <Card className="mt-6 overflow-hidden p-0">

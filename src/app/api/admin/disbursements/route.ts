@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, requirePermission, type SessionAdmin } from "@/lib/auth";
 import { getD1, isoNow, requestIp } from "@/lib/d1";
-import { computeUpfrontCommission } from "@/lib/finance";
+import { canPrepareStage, stageCommission } from "@/lib/staged-disbursement";
 
 interface DisbursementRow extends Record<string, unknown> {
   id: string;
@@ -34,11 +34,25 @@ interface ProjectFundingRow extends Record<string, unknown> {
   verificationStatus: string;
   verifiedBankAccount: string | null;
   bankAccountVerifiedAt: string | null;
+  offerStatus: string;
+  isDemo: number;
+}
+
+interface StageRow extends Record<string, unknown> {
+  id: string;
+  trancheNo: number;
+  title: string;
+  grossAmount: number;
+  status: string;
+  qaBy: string | null;
+  transferId: string | null;
+  transferStatus: string | null;
 }
 
 function hasAnyPermission(admin: SessionAdmin, permissions: string[]): boolean {
   return (
     admin.permissions.includes("all") ||
+    ["finance", "validator", "auditor", "superadmin"].includes(admin.role) ||
     permissions.some((permission) => admin.permissions.includes(permission))
   );
 }
@@ -118,7 +132,7 @@ export async function POST(req: NextRequest) {
   let admin;
   try {
     admin = await requireAdmin(req);
-    requirePermission(admin, "disbursement:prepare");
+    if (!["finance", "superadmin"].includes(admin.role)) requirePermission(admin, "disbursement:prepare");
   } catch (error) {
     return NextResponse.json(
       { error: String(error).includes("FORBIDDEN") ? "Permission refusée" : "Non authentifié" },
@@ -133,10 +147,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Payload invalide" }, { status: 400 });
   }
   const projectId = String(body.projectId || "").trim();
-  const grossAmount = Number(body.grossAmount);
-  if (!projectId || !Number.isSafeInteger(grossAmount) || grossAmount <= 0) {
+  if (!projectId) {
     return NextResponse.json(
-      { error: "Projet et montant positif requis." },
+      { error: "Choisissez un projet." },
       { status: 400 }
     );
   }
@@ -146,6 +159,7 @@ export async function POST(req: NextRequest) {
     .prepare(
       `SELECT p.id, p.title, p.status, p.companyId,
               o.id AS offerId, o.raisedAmount, o.upfrontCommissionPct,
+              o.status AS offerStatus, o.isDemo,
               c.verificationStatus, c.verifiedBankAccount,
               c.bankAccountVerifiedAt
        FROM Project p
@@ -158,7 +172,7 @@ export async function POST(req: NextRequest) {
   if (!project) {
     return NextResponse.json({ error: "Projet introuvable" }, { status: 404 });
   }
-  if (!["funded", "repaying"].includes(project.status) || !project.offerId) {
+  if (!["funded", "repaying"].includes(project.status) || !project.offerId || project.offerStatus !== "funded" || project.isDemo) {
     return NextResponse.json(
       { error: "Le financement doit être atteint avant toute préparation." },
       { status: 409 }
@@ -174,31 +188,35 @@ export async function POST(req: NextRequest) {
       { status: 409 }
     );
   }
-  if (grossAmount > Number(project.raisedAmount || 0)) {
-    return NextResponse.json(
-      { error: "Le montant dépasse le capital effectivement collecté." },
-      { status: 409 }
-    );
+  const stageResult = await database.prepare(`SELECT s.id, s.trancheNo, s.title, s.grossAmount,
+    s.status, s.qaBy, d.id AS transferId, d.status AS transferStatus
+    FROM DisbursementStage s LEFT JOIN Disbursement d
+    ON d.projectId = s.projectId AND d.trancheNo = s.trancheNo
+    WHERE s.projectId = ? ORDER BY s.trancheNo ASC`)
+    .bind(projectId).all<StageRow>();
+  const stages = stageResult.results;
+  if (stages.length < 2) return NextResponse.json(
+    { error: "Un calendrier de plusieurs étapes doit être validé avant la préparation." },
+    { status: 409 }
+  );
+  const nextIndex = stages.findIndex((stage) => !stage.transferId);
+  if (nextIndex < 0) return NextResponse.json({ error: "Toutes les étapes ont déjà été préparées." }, { status: 409 });
+  const stage = stages[nextIndex];
+  const previousStatus = nextIndex === 0 ? null : stages[nextIndex - 1].transferStatus;
+  if (!canPrepareStage({ status: stage.status, trancheNo: stage.trancheNo, previousStatus }) || !stage.qaBy) {
+    return NextResponse.json({ error: nextIndex > 0 && previousStatus !== "executed"
+      ? "Le versement précédent doit être confirmé avant de préparer cette étape."
+      : "Le compte rendu et le contrôle qualité de cette étape doivent être validés." }, { status: 409 });
   }
-
-  const existing = await database
-    .prepare(
-      `SELECT id, status FROM Disbursement
-       WHERE projectId = ? AND trancheNo = 1 AND status IN ('pending', 'approved')
-       LIMIT 1`
-    )
-    .bind(projectId)
-    .first<{ id: string; status: string }>();
-  if (existing) {
-    return NextResponse.json(
-      { disbursement: existing, idempotent: true, message: "Une préparation est déjà en cours." },
-      { status: 200 }
-    );
+  const grossAmount = Number(stage.grossAmount);
+  const priorGross = stages.slice(0, nextIndex).reduce((sum, item) => sum + BigInt(item.grossAmount), 0n);
+  if (!Number.isSafeInteger(grossAmount) || grossAmount <= 0 || priorGross + BigInt(grossAmount) > BigInt(project.raisedAmount || 0)) {
+    return NextResponse.json({ error: "Le calendrier dépasse le capital effectivement collecté." }, { status: 409 });
   }
-
   const gross = BigInt(grossAmount);
-  const upfront = computeUpfrontCommission(gross, Number(project.upfrontCommissionPct || 6));
+  const upfront = stageCommission(gross, priorGross, Number(project.upfrontCommissionPct ?? 6));
   const net = gross - upfront;
+  if (net <= 0n) return NextResponse.json({ error: "Le montant net de cette étape est invalide." }, { status: 409 });
   const disbursementId = crypto.randomUUID();
   const now = isoNow();
   try {
@@ -209,7 +227,7 @@ export async function POST(req: NextRequest) {
            (id, projectId, grossAmount, upfrontCommission, netAmount,
             beneficiaryAccount, trancheNo, status, preparedBy, approvedBy,
             executedAt, paymentRef, createdAt)
-           VALUES (?, ?, ?, ?, ?, ?, 1, 'pending', ?, NULL, NULL, NULL, ?)`
+           VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, NULL, NULL, NULL, ?)`
         )
         .bind(
           disbursementId,
@@ -218,6 +236,7 @@ export async function POST(req: NextRequest) {
           Number(upfront),
           Number(net),
           project.verifiedBankAccount,
+          stage.trancheNo,
           admin.adminId,
           now
         ),
@@ -231,7 +250,7 @@ export async function POST(req: NextRequest) {
           crypto.randomUUID(),
           admin.adminId,
           disbursementId,
-          JSON.stringify({ projectId, grossAmount, upfrontCommission: Number(upfront), netAmount: Number(net) }),
+          JSON.stringify({ projectId, stageId: stage.id, trancheNo: stage.trancheNo, grossAmount, upfrontCommission: Number(upfront), netAmount: Number(net) }),
           requestIp(req),
           now
         ),
@@ -251,6 +270,7 @@ export async function POST(req: NextRequest) {
         grossAmount,
         upfrontCommission: Number(upfront),
         netAmount: Number(net),
+        trancheNo: stage.trancheNo,
         status: "pending",
         preparedBy: admin.adminId,
         createdAt: now,
@@ -281,9 +301,8 @@ export async function PATCH(req: NextRequest) {
   }
 
   try {
-    requirePermission(
-      admin,
-      action === "approve" ? "disbursement:approve" : "disbursement:execute"
+    if (!["finance", "validator", "superadmin"].includes(admin.role)) requirePermission(
+      admin, action === "approve" ? "disbursement:approve" : "disbursement:execute"
     );
   } catch {
     return NextResponse.json({ error: "Permission refusée" }, { status: 403 });
@@ -302,11 +321,14 @@ export async function PATCH(req: NextRequest) {
   const database = getD1();
   const disbursement = await database
     .prepare(
-      `SELECT id, status, preparedBy, approvedBy
-       FROM Disbursement WHERE id = ? LIMIT 1`
+      `SELECT d.id, d.status, d.preparedBy, d.approvedBy,
+              s.status AS stageStatus, s.qaBy
+       FROM Disbursement d LEFT JOIN DisbursementStage s
+       ON s.projectId = d.projectId AND s.trancheNo = d.trancheNo
+       WHERE d.id = ? LIMIT 1`
     )
     .bind(disbursementId)
-    .first<{ id: string; status: string; preparedBy: string | null; approvedBy: string | null }>();
+    .first<{ id: string; status: string; preparedBy: string | null; approvedBy: string | null; stageStatus: string | null; qaBy: string | null }>();
   if (!disbursement) {
     return NextResponse.json({ error: "Décaissement introuvable" }, { status: 404 });
   }
@@ -321,6 +343,9 @@ export async function PATCH(req: NextRequest) {
   }
   if (disbursement.status !== "pending") {
     return NextResponse.json({ error: "Ce décaissement n'est plus en attente." }, { status: 409 });
+  }
+  if (disbursement.stageStatus !== "qa_passed" || !disbursement.qaBy) {
+    return NextResponse.json({ error: "Le contrôle qualité doit être validé avant l’approbation." }, { status: 409 });
   }
 
   const now = isoNow();
